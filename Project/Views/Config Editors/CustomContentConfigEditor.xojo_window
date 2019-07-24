@@ -70,7 +70,7 @@ Begin ConfigEditor CustomContentConfigEditor Implements NotificationKit.Receiver
       DataSource      =   ""
       Enabled         =   True
       Format          =   ""
-      Height          =   321
+      Height          =   88
       HelpTag         =   ""
       HideSelection   =   True
       Index           =   -2147483648
@@ -166,6 +166,32 @@ Begin ConfigEditor CustomContentConfigEditor Implements NotificationKit.Receiver
       UseFocusRing    =   True
       Visible         =   True
       Width           =   150
+   End
+   Begin BeaconCodeEditor BeaconCodeEditor1
+      AutoDeactivate  =   True
+      Content         =   ""
+      Enabled         =   True
+      Height          =   221
+      HelpTag         =   ""
+      Index           =   -2147483648
+      InitialParent   =   ""
+      Left            =   0
+      LockBottom      =   True
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   True
+      LockTop         =   False
+      Scope           =   2
+      SelContent      =   ""
+      SelEnd          =   ""
+      SelLength       =   ""
+      SelStart        =   ""
+      TabIndex        =   4
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Top             =   161
+      Visible         =   True
+      Width           =   608
    End
 End
 #tag EndWindow
@@ -427,6 +453,9 @@ End
 #tag Events ConfigArea
 	#tag Event
 		Sub TextChange()
+		  Self.BeaconCodeEditor1.Content = Me.Text
+		  return
+		  
 		  Self.UpdateTextColors()
 		  
 		  If Self.SettingUp Then
