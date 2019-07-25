@@ -2,6 +2,12 @@
 Protected Class BeaconCodeEditor
 Inherits TextInputCanvas
 	#tag Event
+		Function CharacterAtPoint(x as integer, y as integer) As integer
+		  Return Floor(Self.CharacterAtPoint(X, Y))
+		End Function
+	#tag EndEvent
+
+	#tag Event
 		Function FontNameAtLocation(location as integer) As string
 		  #Pragma Unused Location
 		  Return "Source Code Pro"
@@ -18,6 +24,18 @@ Inherits TextInputCanvas
 	#tag Event
 		Sub InsertText(text as string, range as TextRange)
 		  Self.InsertText(Text, Range.Location, Range.Length)
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Sub MouseMove(X As Integer, Y As Integer)
+		  Dim Index As Double = Self.CharacterAtPoint(X, Y)
+		  If Index = -1 Then
+		    Return
+		  End If
+		  
+		  Dim Char As String = Mid(Self.mContent, Floor(Index) + 1, 1)
+		  System.DebugLog(Str(Index, "-0.00") + ": " + Char)
 		End Sub
 	#tag EndEvent
 
@@ -43,35 +61,38 @@ Inherits TextInputCanvas
 		  G.ForeColor = CurrentTheme.BackgroundColor
 		  G.FillRect(0, 0, G.Width, G.Height)
 		  G.ForeColor = CurrentTheme.PlainTextColor.AtOpacity(0.05)
-		  G.FillRect(0, 0, 40, G.Height)
-		  G.ForeColor = CurrentTheme.PlainTextColor.AtOpacity(0.3)
-		  G.FillRect(40, 0, 1, G.Height)
+		  G.FillRect(0, 0, Self.GutterWidth, G.Height)
+		  G.ForeColor = CurrentTheme.PlainTextColor.AtOpacity(0.15)
+		  G.FillRect(Self.GutterWidth, 0, 1, G.Height)
 		  
 		  G.TextFont = "Source Code Pro"
 		  G.TextSize = 12
 		  G.TextUnit = FontUnits.Point
 		  
+		  Self.mCharacterWidth = G.StringWidth("m")
 		  Self.mLineHeight = Ceil(G.TextHeight * 1.2)
 		  Self.mBaselineHeight = Ceil((((G.TextHeight * 1.2) - G.CapHeight) / 2) + G.CapHeight)
 		  
 		  Dim LineTop As Integer = Self.mScrollY * -1
-		  Dim Area As Graphics = G.Clip(41, 0, G.Width - 41, G.Height)
-		  Dim Gutter As Graphics = G.Clip(0, 0, 39, G.Height)
+		  Dim Area As Graphics = G.Clip(Self.GutterWidth + 1, 0, G.Width - 41, G.Height)
+		  Dim Gutter As Graphics = G.Clip(0, 0, Self.GutterWidth, G.Height)
 		  Dim Ascent As Integer = Ceil(G.CapHeight)
 		  Area.ForeColor = CurrentTheme.PlainTextColor
 		  Gutter.ForeColor = Area.ForeColor.AtOpacity(0.5)
 		  Gutter.TextSize = 10
 		  For I As Integer = 0 To Self.mContentLines.Ubound
+		    Dim Line As BeaconCodeLine = Self.mContentLines(I)
 		    Dim LineBottom As Integer = LineTop + Self.mLineHeight
 		    If LineBottom < 0 Or LineTop > G.Height Then
+		      Line.Visible = False
 		      Continue
 		    End If
 		    
-		    Dim Line As BeaconCodeLine = Self.mContentLines(I)
-		    Line.Render(Area, New REALbasic.Rect(0, LineTop, Area.Width, Self.mLineHeight), CurrentTheme, 5, Self.mBaselineHeight)
+		    Line.Render(Area, New REALbasic.Rect(0, LineTop, Area.Width, Self.mLineHeight), CurrentTheme, Self.LeftPadding, Self.mBaselineHeight)
+		    Line.Visible = True
 		    
 		    Dim LineNum As String = Str(I + 1, "0")
-		    Gutter.DrawString(LineNum, Gutter.Width - (Gutter.StringWidth(LineNum) + 2), LineTop + Self.mBaselineHeight)
+		    Gutter.DrawString(LineNum, Gutter.Width - (Gutter.StringWidth(LineNum) + 3), LineTop + Self.mBaselineHeight)
 		    
 		    LineTop = LineTop + Self.mLineHeight
 		  Next
@@ -99,11 +120,49 @@ Inherits TextInputCanvas
 
 
 	#tag Method, Flags = &h21
+		Private Function CharacterAtPoint(X As Integer, Y As Integer) As Double
+		  Dim Point As New REALbasic.Point(X, Y)
+		  Dim TotalCharacterIndex As Integer
+		  For Each Line As BeaconCodeLine In Self.mContentLines
+		    If Line.Visible = False Then
+		      TotalCharacterIndex = TotalCharacterIndex + Len(Line.Content) + 1
+		      Continue
+		    End If
+		    
+		    Dim Rect As REALbasic.Rect = Line.Rect
+		    If Rect = Nil Or Rect.Contains(Point) = False Then
+		      TotalCharacterIndex = TotalCharacterIndex + Len(Line.Content) + 1
+		      Continue
+		    End If
+		    
+		    X = X - (Self.GutterWidth + Self.LeftPadding)
+		    If X < 0 Then
+		      Return -1
+		    End If
+		    
+		    Dim CharacterIndex As Double = X / Self.mCharacterWidth
+		    If CharacterIndex >= Len(Line.Content) Then
+		      Return -1
+		    End If
+		    Return TotalCharacterIndex + CharacterIndex
+		  Next
+		  
+		  Return -1
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub InsertText(NewText As String, StartPosition As UInteger, Length As UInteger)
 		  Dim LeftChunk As String = Left(Self.mContent, StartPosition)
 		  Dim RightChunk As String = Mid(Self.mContent, StartPosition + Length + 1)
 		  Self.mContent = LeftChunk + NewText + RightChunk
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function OffsetAtPoint(X As Integer, Y As Integer) As Integer
+		  Return Round(Self.CharacterAtPoint(X, Y))
+		End Function
 	#tag EndMethod
 
 
@@ -115,11 +174,13 @@ Inherits TextInputCanvas
 		#tag EndGetter
 		#tag Setter
 			Set
+			  Dim EOL As String = Encodings.ASCII.Chr(10)
+			  Value = ReplaceLineEndings(Value, EOL)
+			  
 			  If StrComp(Self.mContent, Value, 0) <> 0 Then
 			    Self.mContent = Value
 			    
-			    Dim EOL As String = Encodings.ASCII.Chr(10)
-			    Dim NewLines() As String = Split(ReplaceLineEndings(Value, EOL), EOL)
+			    Dim NewLines() As String = Split(Value, EOL)
 			    Dim Dict As New Dictionary
 			    For I As Integer = 0 To Self.mContentLines.Ubound
 			      Dict.Value(Self.mContentLines(I).Content) = I
@@ -145,6 +206,10 @@ Inherits TextInputCanvas
 
 	#tag Property, Flags = &h21
 		Private mBaselineHeight As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mCharacterWidth As Double
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -248,6 +313,13 @@ Inherits TextInputCanvas
 		#tag EndSetter
 		SelStart As UInteger
 	#tag EndComputedProperty
+
+
+	#tag Constant, Name = GutterWidth, Type = Double, Dynamic = False, Default = \"40", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = LeftPadding, Type = Double, Dynamic = False, Default = \"5", Scope = Private
+	#tag EndConstant
 
 
 	#tag ViewBehavior

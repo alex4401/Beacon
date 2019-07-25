@@ -52,7 +52,6 @@ Protected Class BeaconCodeLine
 		  End If
 		  
 		  If Self.mCachedPic = Nil Or Self.mCachedPic.Width <> Rect.Width * G.ScaleX Or Self.mCachedPic.Height <> Rect.Height * G.ScaleY Then
-		    Dim StartTime As Double = Microseconds
 		    Dim Pic As New Picture(Rect.Width * G.ScaleX, Rect.Height * G.ScaleY)
 		    Pic.HorizontalResolution = 72 * G.ScaleX
 		    Pic.VerticalResolution = 72 * G.ScaleY
@@ -119,7 +118,6 @@ Protected Class BeaconCodeLine
 		      Pic.Graphics.ForeColor = Theme.PlainTextColor
 		      Pic.Graphics.DrawString(Self.mContent, OffsetX, OffsetY)
 		    End If
-		    System.DebugLog(Str((Microseconds - StartTime) * 0.001, "0") + "ms to render line")
 		    
 		    Self.mCachedPic = Pic
 		  End If
@@ -279,6 +277,10 @@ Protected Class BeaconCodeLine
 		#tag EndGetter
 		Rect As REALbasic.Rect
 	#tag EndComputedProperty
+
+	#tag Property, Flags = &h0
+		Visible As Boolean
+	#tag EndProperty
 
 
 	#tag ViewBehavior
