@@ -35,8 +35,21 @@ Inherits TextInputCanvas
 		  End If
 		  
 		  Dim Char As String = Self.mContent.Middle(Floor(Index), 1)
-		  System.DebugLog(Str(Index, "-0.00") + ": " + Char)
+		  //System.DebugLog(Str(Index, "-0.00") + ": " + Char)
 		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Function MouseWheel(X As Integer, Y As Integer, deltaX as Integer, deltaY as Integer) As Boolean
+		  Dim WheelData As New BeaconUI.ScrollEvent(Self.mLineHeight, DeltaX, DeltaY)
+		  If RaiseEvent MouseWheel(X, Y, DeltaX, DeltaY, WheelData) Then
+		    Return True
+		  End If
+		  
+		  Self.ScrollY(False) = Self.ScrollY + WheelData.ScrollY
+		  Self.ScrollX(False) = Self.ScrollX + WheelData.ScrollX
+		  Return True
+		End Function
 	#tag EndEvent
 
 	#tag Event
@@ -77,19 +90,24 @@ Inherits TextInputCanvas
 		  Dim LineTop As Integer = Self.mScrollY * -1
 		  Dim Area As Graphics = G.Clip(Self.GutterWidth + 1, 0, G.Width - 41, G.Height)
 		  Dim Gutter As Graphics = G.Clip(0, 0, Self.GutterWidth, G.Height)
+		  
 		  //Dim Ascent As Integer = Ceil(G.CapHeight)
 		  Area.DrawingColor = CurrentTheme.PlainTextColor
 		  Gutter.DrawingColor = Area.DrawingColor.AtOpacity(0.5)
 		  Gutter.FontSize = 10
+		  Dim ContentWidth As Integer
 		  For I As Integer = 0 To Self.mContentLines.LastRowIndex
 		    Dim Line As BeaconCodeLine = Self.mContentLines(I)
+		    ContentWidth = Max(ContentWidth, Area.TextWidth(Line.Content))
+		    
 		    Dim LineBottom As Integer = LineTop + Self.mLineHeight
 		    If LineBottom < 0 Or LineTop > G.Height Then
 		      Line.Visible = False
+		      LineTop = LineTop + Self.mLineHeight
 		      Continue
 		    End If
 		    
-		    Line.Render(Area, New Xojo.Rect(0, LineTop, Area.Width, Self.mLineHeight), CurrentTheme, Self.LeftPadding, Self.mBaselineHeight)
+		    Line.Render(Area, New Xojo.Rect(0, LineTop, Area.Width, Self.mLineHeight), CurrentTheme, Self.LeftPadding + (Self.mScrollX * -1), Self.mBaselineHeight)
 		    Line.Visible = True
 		    
 		    Dim LineNum As String = Str(I + 1, "0")
@@ -97,6 +115,10 @@ Inherits TextInputCanvas
 		    
 		    LineTop = LineTop + Self.mLineHeight
 		  Next
+		  Self.mContentHeight = Self.mLineHeight * (Self.mContentLines.Count)
+		  Self.mContentWidth = ContentWidth
+		  Self.ScrollX(False) = Self.ScrollX
+		  Self.ScrollY(False) = Self.ScrollY
 		  //System.DebugLog(Str((Microseconds - Start) * 0.001, "0") + "ms to paint")
 		End Sub
 	#tag EndEvent
@@ -136,7 +158,7 @@ Inherits TextInputCanvas
 		      Continue
 		    End If
 		    
-		    X = X - (Self.GutterWidth + Self.LeftPadding)
+		    X = X - (Self.GutterWidth + Self.LeftPadding + Self.mScrollX)
 		    If X < 0 Then
 		      Return -1
 		    End If
@@ -166,6 +188,49 @@ Inherits TextInputCanvas
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Function ScrollX() As Integer
+		  Return Self.mScrollX
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub ScrollX(Animated As Boolean = False, Assigns Value As Integer)
+		  Value = Max(Min(Value, Self.ScrollMaxX), 0)
+		  
+		  If Self.mScrollX = Value Then
+		    Return
+		  End If
+		  
+		  Self.mScrollX = Value
+		  Self.Invalidate(False)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function ScrollY() As Integer
+		  Return Self.mScrollY
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub ScrollY(Animated As Boolean = False, Assigns Value As Integer)
+		  Value = Max(Min(Value, Self.ScrollMaxY), 0)
+		  
+		  If Self.mScrollY = Value Then
+		    Return
+		  End If
+		  
+		  Self.mScrollY = Value
+		  Self.Invalidate(False)
+		End Sub
+	#tag EndMethod
+
+
+	#tag Hook, Flags = &h0
+		Event MouseWheel(MouseX As Integer, MouseY As Integer, PixelsX As Integer, PixelsY As Integer, WheelData As BeaconUI.ScrollEvent) As Boolean
+	#tag EndHook
+
 
 	#tag Property, Flags = &h21
 		Private mBaselineHeight As Integer
@@ -180,7 +245,15 @@ Inherits TextInputCanvas
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
+		Private mContentHeight As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
 		Private mContentLines() As BeaconCodeLine
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mContentWidth As Integer
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -214,6 +287,24 @@ Inherits TextInputCanvas
 	#tag Property, Flags = &h21
 		Private mSelStart As UInteger
 	#tag EndProperty
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return Max((Self.mContentWidth + Self.GutterWidth + Self.ScrollWidth + Self.LeftPadding) - Self.Width, 0)
+			End Get
+		#tag EndGetter
+		ScrollMaxX As Integer
+	#tag EndComputedProperty
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return Max((Self.mContentHeight + Self.ScrollWidth) - Self.Height, 0)
+			End Get
+		#tag EndGetter
+		ScrollMaxY As Integer
+	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
@@ -320,6 +411,9 @@ Inherits TextInputCanvas
 	#tag EndConstant
 
 	#tag Constant, Name = LeftPadding, Type = Double, Dynamic = False, Default = \"5", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = ScrollWidth, Type = Double, Dynamic = False, Default = \"15", Scope = Private
 	#tag EndConstant
 
 
@@ -514,6 +608,22 @@ Inherits TextInputCanvas
 			Group="Behavior"
 			InitialValue=""
 			Type="UInteger"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="ScrollMaxY"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="ScrollMaxX"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
 			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior

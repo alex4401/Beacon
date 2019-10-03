@@ -417,6 +417,8 @@ Begin BeaconDialog DocumentExportWindow
       LockRight       =   True
       LockTop         =   True
       Scope           =   2
+      ScrollMaxX      =   0
+      ScrollMaxY      =   0
       TabIndex        =   13
       TabPanelIndex   =   0
       TabStop         =   True
@@ -866,6 +868,8 @@ End
 	#tag EndEvent
 	#tag Event
 		Sub Pressed()
+		  Self.ContentArea.ScrollY(False) = 0
+		  Self.ContentArea.ScrollX(False) = 0
 		  Self.RefreshContentArea()
 		  Self.CheckButtons()
 		End Sub

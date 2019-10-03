@@ -48,10 +48,12 @@ Protected Class BeaconCodeLine
 		  Static KeywordMatcher As Regex
 		  If KeywordMatcher = Nil Then
 		    KeywordMatcher = New Regex
-		    KeywordMatcher.SearchPattern = "^([a-zA-Z0-9_]+)(\[(\d+)\])?=(.+)$"
+		    KeywordMatcher.SearchPattern = "^([a-zA-Z0-9_\.]+)(\[(\d+)\])?=(.*)$"
 		  End If
 		  
-		  If Self.mCachedPic = Nil Or Self.mCachedPic.Width <> Rect.Width * G.ScaleX Or Self.mCachedPic.Height <> Rect.Height * G.ScaleY Then
+		  If Self.mCachedPic = Nil Or Self.mCachedOffset = Nil Or Self.mCachedPic.Width <> Rect.Width * G.ScaleX Or Self.mCachedPic.Height <> Rect.Height * G.ScaleY Or Self.mCachedOffset.X <> OffsetX Or Self.mCachedOffset.Y <> OffsetY Then
+		    Dim OffsetCache As New Xojo.Point(OffsetX, OffsetY)
+		    
 		    Dim Pic As New Picture(Rect.Width * G.ScaleX, Rect.Height * G.ScaleY)
 		    Pic.HorizontalResolution = 72 * G.ScaleX
 		    Pic.VerticalResolution = 72 * G.ScaleY
@@ -122,6 +124,7 @@ Protected Class BeaconCodeLine
 		    End If
 		    
 		    Self.mCachedPic = Pic
+		    Self.mCachedOffset = OffsetCache
 		  End If
 		  
 		  G.DrawPicture(Self.mCachedPic, Rect.Left, Rect.Top, Rect.Width, Rect.Height, 0, 0, Self.mCachedPic.Width, Self.mCachedPic.Height)
@@ -259,6 +262,10 @@ Protected Class BeaconCodeLine
 		#tag EndGetter
 		Length As UInteger
 	#tag EndComputedProperty
+
+	#tag Property, Flags = &h21
+		Private mCachedOffset As Xojo.Point
+	#tag EndProperty
 
 	#tag Property, Flags = &h21
 		Private mCachedPic As Picture
