@@ -34,14 +34,15 @@ Inherits TextInputCanvas
 		    Return
 		  End If
 		  
-		  Dim Char As String = Mid(Self.mContent, Floor(Index) + 1, 1)
+		  Dim Char As String = Self.mContent.Middle(Floor(Index), 1)
 		  System.DebugLog(Str(Index, "-0.00") + ": " + Char)
 		End Sub
 	#tag EndEvent
 
 	#tag Event
 		Sub Paint(g as Graphics, areas() as object)
-		  Dim Start As Double = Microseconds
+		  #Pragma Unused Areas
+		  
 		  Dim CurrentTheme As BeaconCodeTheme
 		  If SystemColors.IsDarkMode Then
 		    CurrentTheme = New BeaconCodeTheme(&c17171700, &cFFFFFF00, &cFC5FA200, &c6C798500, &c98E7D400, &c98E7D400, &c9586F400, &c9586F400, &c6C798500, &cFC8E3E00)
@@ -49,7 +50,7 @@ Inherits TextInputCanvas
 		    CurrentTheme = New BeaconCodeTheme(&cFFFFFF00, &c00000000, &c9A239200, &c3F4F6100, &c3900A000, &c3900A000, &c1C00CE00, &c1C00CE00, &c52657900, &c63381F00)
 		  End If
 		  If Self.mLastTheme = Nil Or G.ScaleX <> Self.mLastScaleX Or G.ScaleY <> Self.mLastScaleY Or Self.mLastTheme.Matches(CurrentTheme) = False Then
-		    For I As Integer = 0 To Self.mContentLines.Ubound
+		    For I As Integer = 0 To Self.mContentLines.LastRowIndex
 		      Self.mContentLines(I).Invalidate()
 		    Next
 		  End If
@@ -58,29 +59,29 @@ Inherits TextInputCanvas
 		  Self.mLastScaleX = G.ScaleX
 		  Self.mLastScaleY = G.ScaleY
 		  
-		  G.ForeColor = CurrentTheme.BackgroundColor
-		  G.FillRect(0, 0, G.Width, G.Height)
-		  G.ForeColor = CurrentTheme.PlainTextColor.AtOpacity(0.05)
-		  G.FillRect(0, 0, Self.GutterWidth, G.Height)
-		  G.ForeColor = CurrentTheme.PlainTextColor.AtOpacity(0.15)
-		  G.FillRect(Self.GutterWidth, 0, 1, G.Height)
+		  G.DrawingColor = CurrentTheme.BackgroundColor
+		  G.FillRectangle(0, 0, G.Width, G.Height)
+		  G.DrawingColor = CurrentTheme.PlainTextColor.AtOpacity(0.05)
+		  G.FillRectangle(0, 0, Self.GutterWidth, G.Height)
+		  G.DrawingColor = CurrentTheme.PlainTextColor.AtOpacity(0.15)
+		  G.FillRectangle(Self.GutterWidth, 0, 1, G.Height)
 		  
-		  G.TextFont = "Source Code Pro"
-		  G.TextSize = 12
-		  G.TextUnit = FontUnits.Point
+		  G.FontName = "Source Code Pro"
+		  G.FontSize = 12
+		  G.FontUnit = FontUnits.Point
 		  
-		  Self.mCharacterWidth = G.StringWidth("m")
+		  Self.mCharacterWidth = G.TextWidth("m")
 		  Self.mLineHeight = Ceil(G.TextHeight * 1.2)
 		  Self.mBaselineHeight = Ceil((((G.TextHeight * 1.2) - G.CapHeight) / 2) + G.CapHeight)
 		  
 		  Dim LineTop As Integer = Self.mScrollY * -1
 		  Dim Area As Graphics = G.Clip(Self.GutterWidth + 1, 0, G.Width - 41, G.Height)
 		  Dim Gutter As Graphics = G.Clip(0, 0, Self.GutterWidth, G.Height)
-		  Dim Ascent As Integer = Ceil(G.CapHeight)
-		  Area.ForeColor = CurrentTheme.PlainTextColor
-		  Gutter.ForeColor = Area.ForeColor.AtOpacity(0.5)
-		  Gutter.TextSize = 10
-		  For I As Integer = 0 To Self.mContentLines.Ubound
+		  //Dim Ascent As Integer = Ceil(G.CapHeight)
+		  Area.DrawingColor = CurrentTheme.PlainTextColor
+		  Gutter.DrawingColor = Area.DrawingColor.AtOpacity(0.5)
+		  Gutter.FontSize = 10
+		  For I As Integer = 0 To Self.mContentLines.LastRowIndex
 		    Dim Line As BeaconCodeLine = Self.mContentLines(I)
 		    Dim LineBottom As Integer = LineTop + Self.mLineHeight
 		    If LineBottom < 0 Or LineTop > G.Height Then
@@ -88,11 +89,11 @@ Inherits TextInputCanvas
 		      Continue
 		    End If
 		    
-		    Line.Render(Area, New REALbasic.Rect(0, LineTop, Area.Width, Self.mLineHeight), CurrentTheme, Self.LeftPadding, Self.mBaselineHeight)
+		    Line.Render(Area, New Xojo.Rect(0, LineTop, Area.Width, Self.mLineHeight), CurrentTheme, Self.LeftPadding, Self.mBaselineHeight)
 		    Line.Visible = True
 		    
 		    Dim LineNum As String = Str(I + 1, "0")
-		    Gutter.DrawString(LineNum, Gutter.Width - (Gutter.StringWidth(LineNum) + 3), LineTop + Self.mBaselineHeight)
+		    Gutter.DrawText(LineNum, Gutter.Width - (Gutter.TextWidth(LineNum) + 3), LineTop + Self.mBaselineHeight)
 		    
 		    LineTop = LineTop + Self.mLineHeight
 		  Next
@@ -108,30 +109,30 @@ Inherits TextInputCanvas
 
 	#tag Event
 		Function TextForRange(range as TextRange) As string
-		  Return Mid(Self.mContent, Range.Location + 1, Range.Length)
+		  Return Self.mContent.Middle(Range.Location, Range.Length)
 		End Function
 	#tag EndEvent
 
 	#tag Event
 		Function TextLength() As integer
-		  Return Len(Self.mContent)
+		  Return Self.mContent.Length
 		End Function
 	#tag EndEvent
 
 
 	#tag Method, Flags = &h21
 		Private Function CharacterAtPoint(X As Integer, Y As Integer) As Double
-		  Dim Point As New REALbasic.Point(X, Y)
+		  Dim Point As New Xojo.Point(X, Y)
 		  Dim TotalCharacterIndex As Integer
 		  For Each Line As BeaconCodeLine In Self.mContentLines
 		    If Line.Visible = False Then
-		      TotalCharacterIndex = TotalCharacterIndex + Len(Line.Content) + 1
+		      TotalCharacterIndex = TotalCharacterIndex + Line.Content.Length + 1
 		      Continue
 		    End If
 		    
-		    Dim Rect As REALbasic.Rect = Line.Rect
+		    Dim Rect As Xojo.Rect = Line.Rect
 		    If Rect = Nil Or Rect.Contains(Point) = False Then
-		      TotalCharacterIndex = TotalCharacterIndex + Len(Line.Content) + 1
+		      TotalCharacterIndex = TotalCharacterIndex + Line.Content.Length + 1
 		      Continue
 		    End If
 		    
@@ -141,7 +142,7 @@ Inherits TextInputCanvas
 		    End If
 		    
 		    Dim CharacterIndex As Double = X / Self.mCharacterWidth
-		    If CharacterIndex >= Len(Line.Content) Then
+		    If CharacterIndex >= Line.Content.Length Then
 		      Return -1
 		    End If
 		    Return TotalCharacterIndex + CharacterIndex
@@ -153,8 +154,8 @@ Inherits TextInputCanvas
 
 	#tag Method, Flags = &h21
 		Private Sub InsertText(NewText As String, StartPosition As UInteger, Length As UInteger)
-		  Dim LeftChunk As String = Left(Self.mContent, StartPosition)
-		  Dim RightChunk As String = Mid(Self.mContent, StartPosition + Length + 1)
+		  Dim LeftChunk As String = Self.mContent.Left(StartPosition)
+		  Dim RightChunk As String = Self.mContent.Middle(StartPosition + Length)
 		  Self.mContent = LeftChunk + NewText + RightChunk
 		End Sub
 	#tag EndMethod
@@ -175,24 +176,24 @@ Inherits TextInputCanvas
 		#tag Setter
 			Set
 			  Dim EOL As String = Encodings.ASCII.Chr(10)
-			  Value = ReplaceLineEndings(Value, EOL)
+			  Value = Value.ReplaceLineEndings(EOL)
 			  
 			  If StrComp(Self.mContent, Value, 0) <> 0 Then
 			    Self.mContent = Value
 			    
-			    Dim NewLines() As String = Split(Value, EOL)
+			    Dim NewLines() As String = Value.Split(EOL)
 			    Dim Dict As New Dictionary
-			    For I As Integer = 0 To Self.mContentLines.Ubound
+			    For I As Integer = 0 To Self.mContentLines.LastRowIndex
 			      Dict.Value(Self.mContentLines(I).Content) = I
 			    Next
 			    
 			    Dim NewContentLines() As BeaconCodeLine
-			    For I As Integer = 0 To NewLines.Ubound
+			    For I As Integer = 0 To NewLines.LastRowIndex
 			      Dim OldIdx As Integer = Dict.Lookup(NewLines(I), -1)
 			      If OldIdx = -1 Then
-			        NewContentLines.Append(New BeaconCodeLine(NewLines(I)))
+			        NewContentLines.AddRow(New BeaconCodeLine(NewLines(I)))
 			      Else
-			        NewContentLines.Append(Self.mContentLines(OldIdx))
+			        NewContentLines.AddRow(Self.mContentLines(OldIdx))
 			      End If
 			    Next
 			    Self.mContentLines = NewContentLines
@@ -259,13 +260,13 @@ Inherits TextInputCanvas
 			    Return ""
 			  End If
 			  
-			  Return Mid(Self.mContent, Self.mSelStart + 1, Self.mSelLength)
+			  Return Self.mContent.Middle(Self.mSelStart, Self.mSelLength)
 			End Get
 		#tag EndGetter
 		#tag Setter
 			Set
 			  Self.InsertText(Value, Self.mSelStart, Self.mSelLength)
-			  Self.mSelLength = Len(Value)
+			  Self.mSelLength = Value.Length
 			End Set
 		#tag EndSetter
 		SelContent As String
@@ -327,6 +328,7 @@ Inherits TextInputCanvas
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
 			EditorType="String"
 		#tag EndViewProperty
@@ -334,6 +336,7 @@ Inherits TextInputCanvas
 			Name="Index"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="Integer"
 			EditorType="Integer"
 		#tag EndViewProperty
@@ -341,6 +344,7 @@ Inherits TextInputCanvas
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
 			EditorType="String"
 		#tag EndViewProperty
@@ -348,6 +352,7 @@ Inherits TextInputCanvas
 			Name="Left"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
 			EditorType="Integer"
 		#tag EndViewProperty
@@ -355,6 +360,7 @@ Inherits TextInputCanvas
 			Name="Top"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
 			EditorType="Integer"
 		#tag EndViewProperty
@@ -378,6 +384,7 @@ Inherits TextInputCanvas
 			Name="LockLeft"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
 			EditorType="Boolean"
 		#tag EndViewProperty
@@ -385,6 +392,7 @@ Inherits TextInputCanvas
 			Name="LockTop"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
 			EditorType="Boolean"
 		#tag EndViewProperty
@@ -392,6 +400,7 @@ Inherits TextInputCanvas
 			Name="LockRight"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
 			EditorType="Boolean"
 		#tag EndViewProperty
@@ -399,11 +408,13 @@ Inherits TextInputCanvas
 			Name="LockBottom"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
 			EditorType="Boolean"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabPanelIndex"
+			Visible=false
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
@@ -427,8 +438,11 @@ Inherits TextInputCanvas
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="InitialParent"
+			Visible=false
 			Group="Position"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Visible"
@@ -442,6 +456,7 @@ Inherits TextInputCanvas
 			Name="HelpTag"
 			Visible=true
 			Group="Appearance"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
@@ -463,30 +478,43 @@ Inherits TextInputCanvas
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Content"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="SelStart"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="UInteger"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="SelLength"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="UInteger"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="SelContent"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="SelEnd"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="UInteger"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

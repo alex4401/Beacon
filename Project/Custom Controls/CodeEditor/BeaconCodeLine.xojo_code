@@ -44,7 +44,7 @@ Protected Class BeaconCodeLine
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Render(G As Graphics, Rect As REALbasic.Rect, Theme As BeaconCodeTheme, OffsetX As Integer, OffsetY As Integer)
+		Sub Render(G As Graphics, Rect As Xojo.Rect, Theme As BeaconCodeTheme, OffsetX As Integer, OffsetY As Integer)
 		  Static KeywordMatcher As Regex
 		  If KeywordMatcher = Nil Then
 		    KeywordMatcher = New Regex
@@ -57,85 +57,85 @@ Protected Class BeaconCodeLine
 		    Pic.VerticalResolution = 72 * G.ScaleY
 		    Pic.Graphics.ScaleX = G.ScaleX
 		    Pic.Graphics.ScaleY = G.ScaleY
-		    Pic.Graphics.TextFont = G.TextFont
-		    Pic.Graphics.TextSize = G.TextSize
-		    Pic.Graphics.TextUnit = G.TextUnit
+		    Pic.Graphics.FontName = G.FontName
+		    Pic.Graphics.FontSize = G.FontSize
+		    Pic.Graphics.FontUnit = G.FontUnit
 		    
 		    Dim KeywordMatches As RegexMatch = KeywordMatcher.Search(Self.mContent)
 		    
 		    If Self.mContent.BeginsWith("[") And Self.mContent.EndsWith("]") Then
-		      Pic.Graphics.ForeColor = Theme.MarkupColor
-		      Pic.Graphics.DrawString(Self.mContent, OffsetX, OffsetY)
+		      Pic.Graphics.DrawingColor = Theme.MarkupColor
+		      Pic.Graphics.DrawText(Self.mContent, OffsetX, OffsetY)
 		    ElseIf Self.mContent.BeginsWith("//") Then
-		      Pic.Graphics.ForeColor = Theme.CommentColor
-		      Pic.Graphics.DrawString(Self.mContent, OffsetX, OffsetY)
+		      Pic.Graphics.DrawingColor = Theme.CommentColor
+		      Pic.Graphics.DrawText(Self.mContent, OffsetX, OffsetY)
 		    ElseIf Self.mContent.BeginsWith("#") Then
-		      Pic.Graphics.ForeColor = Theme.PragmaColor
-		      Pic.Graphics.DrawString(Self.mContent, OffsetX, OffsetY)
+		      Pic.Graphics.DrawingColor = Theme.PragmaColor
+		      Pic.Graphics.DrawText(Self.mContent, OffsetX, OffsetY)
 		    ElseIf KeywordMatches <> Nil Then
 		      Dim Keyword As String = KeywordMatches.SubExpressionString(1)
 		      Dim KeywordParameter As String = If(KeywordMatches.SubExpressionCount > 2, KeywordMatches.SubExpressionString(3), "")
 		      Dim ValuePart As String = Keywordmatches.SubExpressionString(4)
 		      
 		      Dim Offset As Double
-		      Pic.Graphics.ForeColor = Theme.KeywordColor
-		      Pic.Graphics.DrawString(Keyword, OffsetX, OffsetY)
-		      Offset = Pic.Graphics.StringWidth(Keyword)
+		      Pic.Graphics.DrawingColor = Theme.KeywordColor
+		      Pic.Graphics.DrawText(Keyword, OffsetX, OffsetY)
+		      Offset = Pic.Graphics.TextWidth(Keyword)
 		      If KeywordParameter <> "" Then
-		        Pic.Graphics.ForeColor = Theme.MarkupColor
-		        Pic.Graphics.DrawString("[", OffsetX + Offset, OffsetY)
-		        Offset = Offset + Pic.Graphics.StringWidth("[")
-		        Pic.Graphics.ForeColor = Theme.PlainTextColor
-		        Pic.Graphics.DrawString(KeywordParameter, OffsetX + Offset, OffsetY)
-		        Offset = Offset + Pic.Graphics.StringWidth(KeywordParameter)
-		        Pic.Graphics.ForeColor = Theme.MarkupColor
-		        Pic.Graphics.DrawString("]", OffsetX + Offset, OffsetY)
-		        Offset = Offset + Pic.Graphics.StringWidth("]")
+		        Pic.Graphics.DrawingColor = Theme.MarkupColor
+		        Pic.Graphics.DrawText("[", OffsetX + Offset, OffsetY)
+		        Offset = Offset + Pic.Graphics.TextWidth("[")
+		        Pic.Graphics.DrawingColor = Theme.PlainTextColor
+		        Pic.Graphics.DrawText(KeywordParameter, OffsetX + Offset, OffsetY)
+		        Offset = Offset + Pic.Graphics.TextWidth(KeywordParameter)
+		        Pic.Graphics.DrawingColor = Theme.MarkupColor
+		        Pic.Graphics.DrawText("]", OffsetX + Offset, OffsetY)
+		        Offset = Offset + Pic.Graphics.TextWidth("]")
 		      End If
-		      Pic.Graphics.ForeColor = Theme.MarkupColor
-		      Pic.Graphics.DrawString("=", OffsetX + Offset, OffsetY)
-		      Offset = Offset + Pic.Graphics.StringWidth("=")
-		      If Len(ValuePart) > 1 And ValuePart.BeginsWith("(") Then
-		        Dim Pos As UInteger = 1
+		      Pic.Graphics.DrawingColor = Theme.MarkupColor
+		      Pic.Graphics.DrawText("=", OffsetX + Offset, OffsetY)
+		      Offset = Offset + Pic.Graphics.TextWidth("=")
+		      If ValuePart.Length > 1 And ValuePart.BeginsWith("(") Then
+		        Dim Pos As UInteger = 0
 		        Dim DoubleOffsetX As Double = OffsetX + Offset
 		        Dim DoubleOffsetY As Double = OffsetY
 		        Self.RenderArray(ValuePart, Pos, Pic.Graphics, DoubleOffsetX, DoubleOffsetY, Theme)
 		      Else
 		        If ValuePart = "True" Then
-		          Pic.Graphics.ForeColor = Theme.TrueColor
+		          Pic.Graphics.DrawingColor = Theme.TrueColor
 		        ElseIf ValuePart = "False" Then
-		          Pic.Graphics.ForeColor = Theme.FalseColor
-		        ElseIf Len(ValuePart) > 1 And ValuePart.BeginsWith("""") Then
-		          Pic.Graphics.ForeColor = Theme.StringColor
+		          Pic.Graphics.DrawingColor = Theme.FalseColor
+		        ElseIf ValuePart.Length > 1 And ValuePart.BeginsWith("""") Then
+		          Pic.Graphics.DrawingColor = Theme.StringColor
 		        ElseIf Self.IsValueNumeric(ValuePart) Then
-		          Pic.Graphics.ForeColor = Theme.NumberColor
+		          Pic.Graphics.DrawingColor = Theme.NumberColor
 		        Else
-		          Pic.Graphics.ForeColor = Theme.StringColor
+		          Pic.Graphics.DrawingColor = Theme.StringColor
 		        End If
-		        Pic.Graphics.DrawString(ValuePart, OffsetX + Offset, OffsetY)
+		        Pic.Graphics.DrawText(ValuePart, OffsetX + Offset, OffsetY)
 		      End If
 		    Else
-		      Pic.Graphics.ForeColor = Theme.PlainTextColor
-		      Pic.Graphics.DrawString(Self.mContent, OffsetX, OffsetY)
+		      Pic.Graphics.DrawingColor = Theme.PlainTextColor
+		      Pic.Graphics.DrawText(Self.mContent, OffsetX, OffsetY)
 		    End If
 		    
 		    Self.mCachedPic = Pic
 		  End If
 		  
 		  G.DrawPicture(Self.mCachedPic, Rect.Left, Rect.Top, Rect.Width, Rect.Height, 0, 0, Self.mCachedPic.Width, Self.mCachedPic.Height)
-		  Self.mRect = New REALbasic.Rect(Rect.Left, Rect.Top, Rect.Width, Rect.Height)
+		  Self.mRect = New Xojo.Rect(Rect.Left, Rect.Top, Rect.Width, Rect.Height)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub RenderArray(ValuePart As String, ByRef StartPos As UInteger, G As Graphics, ByRef OffsetX As Double, ByRef OffsetY As Double, Theme As BeaconCodeTheme)
-		  If Mid(ValuePart, StartPos, 1) <> "(" Then
+		  If ValuePart.Middle(StartPos, 1) <> "(" Then
 		    Return
 		  End If
 		  
-		  G.ForeColor = Theme.MarkupColor
-		  G.DrawString("(", OffsetX, OffsetY)
-		  OffsetX = OffsetX + G.StringWidth("(")
+		  G.DrawingColor = Theme.MarkupColor
+		  G.DrawText("(", OffsetX, OffsetY)
+		  OffsetX = OffsetX + G.TextWidth("(")
 		  StartPos = StartPos + 1
 		  
 		  Dim ValueMatcher As New Regex
@@ -143,72 +143,71 @@ Protected Class BeaconCodeLine
 		  
 		  Dim NextChar As String
 		  Do
-		    NextChar = Mid(ValuePart, StartPos, 1)
+		    NextChar = ValuePart.Middle(StartPos, 1)
 		    If NextChar = "(" Then
 		      Self.RenderArray(ValuePart, StartPos, G, OffsetX, OffsetY, Theme)
 		      Continue
 		    ElseIf NextChar = "," Or NextChar = ")" Or NextChar = "" Then
-		      G.ForeColor = Theme.MarkupColor
-		      G.DrawString(NextChar, OffsetX, OffsetY)
-		      OffsetX = OffsetX + G.StringWidth(NextChar)
+		      G.DrawingColor = Theme.MarkupColor
+		      G.DrawText(NextChar, OffsetX, OffsetY)
+		      OffsetX = OffsetX + G.TextWidth(NextChar)
 		      StartPos = StartPos + 1
 		      Continue
 		    End If
 		    
-		    Dim ValueMatch As RegexMatch = ValueMatcher.Search(Mid(ValuePart, StartPos))
+		    Dim ValueMatch As RegexMatch = ValueMatcher.Search(ValuePart.Middle(StartPos))
 		    If ValueMatch = Nil Then
 		      Break
 		      Return
 		    End If
 		    
-		    Dim MatchedPart As String = ValueMatch.SubExpressionString(0)
 		    Dim KeywordPart As String = ValueMatch.SubExpressionString(2)
 		    Dim ParameterPart As String = ValueMatch.SubExpressionString(4)
 		    Dim Value As String = ValueMatch.SubExpressionString(5)
 		    
 		    If KeywordPart <> "" Then
-		      G.ForeColor = Theme.KeywordColor
-		      G.DrawString(KeywordPart, OffsetX, OffsetY)
-		      OffsetX = OffsetX + G.StringWidth(KeywordPart)
+		      G.DrawingColor = Theme.KeywordColor
+		      G.DrawText(KeywordPart, OffsetX, OffsetY)
+		      OffsetX = OffsetX + G.TextWidth(KeywordPart)
 		      If ParameterPart <> "" Then
-		        G.ForeColor = Theme.MarkupColor
-		        G.DrawString("[", OffsetX, OffsetY)
-		        OffsetX = OffsetX + G.StringWidth("[")
-		        G.ForeColor = Theme.PlainTextColor
-		        G.DrawString(ParameterPart, OffsetX, OffsetY)
-		        OffsetX = OffsetX + G.StringWidth(ParameterPart)
-		        G.ForeColor = Theme.MarkupColor
-		        G.DrawString("]", OffsetX, OffsetY)
-		        OffsetX = OffsetX + G.StringWidth("]")
+		        G.DrawingColor = Theme.MarkupColor
+		        G.DrawText("[", OffsetX, OffsetY)
+		        OffsetX = OffsetX + G.TextWidth("[")
+		        G.DrawingColor = Theme.PlainTextColor
+		        G.DrawText(ParameterPart, OffsetX, OffsetY)
+		        OffsetX = OffsetX + G.TextWidth(ParameterPart)
+		        G.DrawingColor = Theme.MarkupColor
+		        G.DrawText("]", OffsetX, OffsetY)
+		        OffsetX = OffsetX + G.TextWidth("]")
 		      End If
-		      G.ForeColor = Theme.MarkupColor
-		      G.DrawString("=", OffsetX, OffsetY)
-		      OffsetX = OffsetX + G.StringWidth("=")
-		      StartPos = StartPos + Len(ValueMatch.SubExpressionString(1))
+		      G.DrawingColor = Theme.MarkupColor
+		      G.DrawText("=", OffsetX, OffsetY)
+		      OffsetX = OffsetX + G.TextWidth("=")
+		      StartPos = StartPos + ValueMatch.SubExpressionString(1).Length
 		    End If
 		    
 		    If Value.BeginsWith("(") Then
 		      Self.RenderArray(Value, StartPos, G, OffsetX, OffsetY, Theme)
 		    Else
 		      If Value = "True" Then
-		        G.ForeColor = Theme.TrueColor
+		        G.DrawingColor = Theme.TrueColor
 		      ElseIf Value = "False" Then
-		        G.ForeColor = Theme.FalseColor
+		        G.DrawingColor = Theme.FalseColor
 		      ElseIf Self.IsValueNumeric(Value) Then
-		        G.ForeColor = Theme.NumberColor
+		        G.DrawingColor = Theme.NumberColor
 		      Else
-		        G.ForeColor = Theme.StringColor
+		        G.DrawingColor = Theme.StringColor
 		      End If
-		      G.DrawString(Value, OffsetX, OffsetY)
-		      OffsetX = OffsetX + G.StringWidth(Value)
-		      StartPos = StartPos + Len(Value)
+		      G.DrawText(Value, OffsetX, OffsetY)
+		      OffsetX = OffsetX + G.TextWidth(Value)
+		      StartPos = StartPos + Value.Length
 		    End If
 		  Loop Until NextChar = ")" Or NextChar = ""
 		  
 		  #if false
-		    G.ForeColor = Theme.MarkupColor
-		    G.DrawString(NextChar, OffsetX, OffsetY)
-		    OffsetX = OffsetX + G.StringWidth(NextChar)
+		    G.DrawingColor = Theme.MarkupColor
+		    G.DrawText(NextChar, OffsetX, OffsetY)
+		    OffsetX = OffsetX + G.TextWidth(NextChar)
 		    StartPos = StartPos + 1
 		  #endif
 		  
@@ -228,9 +227,9 @@ Protected Class BeaconCodeLine
 		      
 		      Dim NextChar As String = Mid(ValuePart, StartPos, 1)
 		      If NextChar = "," Or NextChar = ")" Then
-		        G.ForeColor = Theme.MarkupColor
-		        G.DrawString(NextChar, OffsetX, OffsetY)
-		        OffsetX = OffsetX + G.StringWidth(NextChar)
+		        G.DrawingColor = Theme.MarkupColor
+		        G.DrawText(NextChar, OffsetX, OffsetY)
+		        OffsetX = OffsetX + G.TextWidth(NextChar)
 		        StartPos = StartPos + Len(NextChar)
 		      End If
 		    Loop Until ValueMatch = Nil
@@ -251,7 +250,7 @@ Protected Class BeaconCodeLine
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  Return Len(Self.mContent)
+			  Return Self.mContent.Length
 			End Get
 		#tag EndGetter
 		Length As UInteger
@@ -266,16 +265,16 @@ Protected Class BeaconCodeLine
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mRect As REALbasic.Rect
+		Private mRect As Xojo.Rect
 	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  Return New REALbasic.Rect(Self.mRect.Left, Self.mRect.Top, Self.mRect.Width, Self.mRect.Height)
+			  Return New Xojo.Rect(Self.mRect.Left, Self.mRect.Top, Self.mRect.Width, Self.mRect.Height)
 			End Get
 		#tag EndGetter
-		Rect As REALbasic.Rect
+		Rect As Xojo.Rect
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h0
@@ -288,7 +287,9 @@ Protected Class BeaconCodeLine
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -296,12 +297,15 @@ Protected Class BeaconCodeLine
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -309,6 +313,7 @@ Protected Class BeaconCodeLine
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -316,17 +321,31 @@ Protected Class BeaconCodeLine
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Content"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Length"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="UInteger"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Visible"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class
