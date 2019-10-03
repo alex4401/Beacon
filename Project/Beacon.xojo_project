@@ -383,6 +383,7 @@ Class=BeaconCodeEditor;Custom Controls/CodeEditor/BeaconCodeEditor.xojo_code;&h0
 Class=BeaconCodeLine;Custom Controls/CodeEditor/BeaconCodeLine.xojo_code;&h0000000010254FFF;&h000000005DDE87FF;false
 Class=BeaconCodeRange;Custom Controls/CodeEditor/BeaconCodeRange.xojo_code;&h0000000056769FFF;&h000000005DDE87FF;false
 Class=BeaconCodeTheme;Custom Controls/CodeEditor/BeaconCodeTheme.xojo_code;&h000000002EF67FFF;&h000000005DDE87FF;false
+Class=BeaconTextShape;Custom Controls/CodeEditor/BeaconTextShape.xojo_code;&h000000006F5D6FFF;&h000000005DDE87FF;false
 AppMenuBar=MainMenuBar
 MajorVersion=1
 MinorVersion=3

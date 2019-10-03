@@ -107,7 +107,7 @@ Inherits TextInputCanvas
 		      Continue
 		    End If
 		    
-		    Line.Render(Area, New Xojo.Rect(0, LineTop, Area.Width, Self.mLineHeight), CurrentTheme, Self.LeftPadding + (Self.mScrollX * -1), Self.mBaselineHeight)
+		    Line.Render(Area, New Xojo.Rect(0, LineTop, Area.Width, Self.mLineHeight), CurrentTheme, Self.LeftPadding + (Self.mScrollX * -1), LineTop + Self.mBaselineHeight)
 		    Line.Visible = True
 		    
 		    Dim LineNum As String = Str(I + 1, "0")
