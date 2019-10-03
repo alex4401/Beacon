@@ -103,8 +103,10 @@ Protected Class BeaconCodeLine
 		      Else
 		        If ValuePart = "True" Then
 		          Pic.Graphics.DrawingColor = Theme.TrueColor
+		          ValuePart = "True" // To capitalize
 		        ElseIf ValuePart = "False" Then
 		          Pic.Graphics.DrawingColor = Theme.FalseColor
+		          ValuePart = "False" // To capitalize
 		        ElseIf ValuePart.Length > 1 And ValuePart.BeginsWith("""") Then
 		          Pic.Graphics.DrawingColor = Theme.StringColor
 		        ElseIf Self.IsValueNumeric(ValuePart) Then
@@ -191,8 +193,10 @@ Protected Class BeaconCodeLine
 		    Else
 		      If Value = "True" Then
 		        G.DrawingColor = Theme.TrueColor
+		        Value = "True" // To capitalize
 		      ElseIf Value = "False" Then
 		        G.DrawingColor = Theme.FalseColor
+		        Value = "False" // To capitalize
 		      ElseIf Self.IsValueNumeric(Value) Then
 		        G.DrawingColor = Theme.NumberColor
 		      Else

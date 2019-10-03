@@ -454,7 +454,7 @@ End
 	#tag EndEvent
 	#tag Event
 		Sub TextChanged()
-		  Self.BeaconCodeEditor1.Content = Me.Value
+		  Self.BeaconCodeEditor1.Value = Me.Value
 		  Return
 		  
 		  Self.UpdateTextColors()

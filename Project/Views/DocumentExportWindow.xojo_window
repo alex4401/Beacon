@@ -59,54 +59,6 @@ Begin BeaconDialog DocumentExportWindow
       Visible         =   True
       Width           =   96
    End
-   Begin CodeArea ContentArea
-      AcceptTabs      =   False
-      Alignment       =   0
-      AutoDeactivate  =   True
-      AutomaticallyCheckSpelling=   False
-      BackColor       =   &cFFFFFF00
-      Bold            =   False
-      Border          =   False
-      DataField       =   ""
-      DataSource      =   ""
-      Enabled         =   True
-      Format          =   ""
-      Height          =   553
-      HelpTag         =   ""
-      HideSelection   =   True
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   0
-      LimitText       =   0
-      LineHeight      =   0.0
-      LineSpacing     =   1.0
-      LockBottom      =   True
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   True
-      LockTop         =   True
-      Mask            =   ""
-      Multiline       =   True
-      ReadOnly        =   True
-      Scope           =   2
-      ScrollbarHorizontal=   False
-      ScrollbarVertical=   True
-      Styled          =   False
-      TabIndex        =   6
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   ""
-      TextColor       =   &c00000000
-      TextFont        =   "Source Code Pro"
-      TextSize        =   0.0
-      TextUnit        =   0
-      Top             =   61
-      Transparent     =   False
-      Underline       =   False
-      UseFocusRing    =   True
-      Visible         =   True
-      Width           =   900
-   End
    Begin UITweaks.ResizedPushButton SaveButton
       AutoDeactivate  =   True
       Bold            =   False
@@ -204,7 +156,6 @@ Begin BeaconDialog DocumentExportWindow
       Width           =   140
    End
    Begin Timer ClipboardWatcher
-      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Mode            =   2
@@ -421,7 +372,6 @@ Begin BeaconDialog DocumentExportWindow
       Width           =   442
    End
    Begin Beacon.Rewriter GameIniRewriter
-      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Priority        =   5
@@ -430,7 +380,6 @@ Begin BeaconDialog DocumentExportWindow
       TabPanelIndex   =   0
    End
    Begin Beacon.Rewriter GameUserSettingsRewriter
-      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Priority        =   5
@@ -439,7 +388,6 @@ Begin BeaconDialog DocumentExportWindow
       TabPanelIndex   =   0
    End
    Begin Beacon.Rewriter FileRewriter
-      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Priority        =   5
@@ -448,13 +396,33 @@ Begin BeaconDialog DocumentExportWindow
       TabPanelIndex   =   0
    End
    Begin Beacon.Rewriter ClipboardRewriter
-      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Priority        =   5
       Scope           =   2
       StackSize       =   0
       TabPanelIndex   =   0
+   End
+   Begin BeaconCodeEditor ContentArea
+      AutoDeactivate  =   True
+      Enabled         =   True
+      Height          =   553
+      HelpTag         =   ""
+      Index           =   -2147483648
+      InitialParent   =   ""
+      Left            =   0
+      LockBottom      =   True
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   True
+      LockTop         =   True
+      Scope           =   2
+      TabIndex        =   13
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Top             =   61
+      Visible         =   True
+      Width           =   900
    End
 End
 #tag EndWindow

@@ -167,44 +167,6 @@ Inherits TextInputCanvas
 	#tag EndMethod
 
 
-	#tag ComputedProperty, Flags = &h0
-		#tag Getter
-			Get
-			  Return Self.mContent
-			End Get
-		#tag EndGetter
-		#tag Setter
-			Set
-			  Dim EOL As String = Encodings.ASCII.Chr(10)
-			  Value = Value.ReplaceLineEndings(EOL)
-			  
-			  If StrComp(Self.mContent, Value, 0) <> 0 Then
-			    Self.mContent = Value
-			    
-			    Dim NewLines() As String = Value.Split(EOL)
-			    Dim Dict As New Dictionary
-			    For I As Integer = 0 To Self.mContentLines.LastRowIndex
-			      Dict.Value(Self.mContentLines(I).Content) = I
-			    Next
-			    
-			    Dim NewContentLines() As BeaconCodeLine
-			    For I As Integer = 0 To NewLines.LastRowIndex
-			      Dim OldIdx As Integer = Dict.Lookup(NewLines(I), -1)
-			      If OldIdx = -1 Then
-			        NewContentLines.AddRow(New BeaconCodeLine(NewLines(I)))
-			      Else
-			        NewContentLines.AddRow(Self.mContentLines(OldIdx))
-			      End If
-			    Next
-			    Self.mContentLines = NewContentLines
-			    
-			    Self.Invalidate()
-			  End If
-			End Set
-		#tag EndSetter
-		Content As String
-	#tag EndComputedProperty
-
 	#tag Property, Flags = &h21
 		Private mBaselineHeight As Integer
 	#tag EndProperty
@@ -313,6 +275,44 @@ Inherits TextInputCanvas
 			End Set
 		#tag EndSetter
 		SelStart As UInteger
+	#tag EndComputedProperty
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return Self.mContent
+			End Get
+		#tag EndGetter
+		#tag Setter
+			Set
+			  Dim EOL As String = Encodings.ASCII.Chr(10)
+			  Value = Value.ReplaceLineEndings(EOL)
+			  
+			  If StrComp(Self.mContent, Value, 0) <> 0 Then
+			    Self.mContent = Value
+			    
+			    Dim NewLines() As String = Value.Split(EOL)
+			    Dim Dict As New Dictionary
+			    For I As Integer = 0 To Self.mContentLines.LastRowIndex
+			      Dict.Value(Self.mContentLines(I).Content) = I
+			    Next
+			    
+			    Dim NewContentLines() As BeaconCodeLine
+			    For I As Integer = 0 To NewLines.LastRowIndex
+			      Dim OldIdx As Integer = Dict.Lookup(NewLines(I), -1)
+			      If OldIdx = -1 Then
+			        NewContentLines.AddRow(New BeaconCodeLine(NewLines(I)))
+			      Else
+			        NewContentLines.AddRow(Self.mContentLines(OldIdx))
+			      End If
+			    Next
+			    Self.mContentLines = NewContentLines
+			    
+			    Self.Invalidate()
+			  End If
+			End Set
+		#tag EndSetter
+		Value As String
 	#tag EndComputedProperty
 
 
@@ -477,7 +477,7 @@ Inherits TextInputCanvas
 			EditorType="Boolean"
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Content"
+			Name="Value"
 			Visible=false
 			Group="Behavior"
 			InitialValue=""
