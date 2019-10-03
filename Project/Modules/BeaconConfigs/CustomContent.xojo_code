@@ -2,30 +2,44 @@
 Protected Class CustomContent
 Inherits Beacon.ConfigGroup
 	#tag Event
-		Sub ReadDictionary(Dict As Xojo.Core.Dictionary, Identity As Beacon.Identity)
-		  Self.mGameIniContent = Self.ReadContent(Dict.Lookup("Game.ini", ""), Identity)
-		  Self.mGameUserSettingsIniContent = Self.ReadContent(Dict.Lookup("GameUserSettings.ini", ""), Identity)
+		Sub ReadDictionary(Dict As Dictionary, Identity As Beacon.Identity, Document As Beacon.Document)
+		  Self.mGameIniContent = Self.ReadContent(Dict.Lookup("Game.ini", ""), Identity, Document)
+		  Self.mGameUserSettingsIniContent = Self.ReadContent(Dict.Lookup("GameUserSettings.ini", ""), Identity, Document)
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub WriteDictionary(Dict As Xojo.Core.DIctionary, Identity As Beacon.Identity)
-		  Dict.Value("Game.ini") = Self.WriteContent(Self.mGameIniContent, Identity)
-		  Dict.Value("GameUserSettings.ini") = Self.WriteContent(Self.mGameUserSettingsIniContent, Identity)
+		Sub WriteDictionary(Dict As Dictionary, Document As Beacon.Document)
+		  Dict.Value("Game.ini") = Self.WriteContent(Self.mGameIniContent, Document)
+		  Dict.Value("GameUserSettings.ini") = Self.WriteContent(Self.mGameUserSettingsIniContent, Document)
 		End Sub
 	#tag EndEvent
 
 
 	#tag Method, Flags = &h0
-		Shared Function ConfigName() As Text
+		Shared Function ConfigName() As String
 		  Return "CustomContent"
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function Decrypt(Input As String, Identity As Beacon.Identity) As String
+		Private Function Decrypt(Input As String, Identity As Beacon.Identity, Document As Beacon.Document) As String
 		  Try
-		    Dim SecureDict As Xojo.Core.Dictionary = Xojo.Data.ParseJSON(Input.ToText)
+		    #Pragma BreakOnExceptions False
+		    Dim Decrypted As String = Document.Decrypt(Input).DefineEncoding(Encodings.UTF8)
+		    #Pragma BreakOnExceptions Default
+		    If Self.mEncryptedValues = Nil Then
+		      Self.mEncryptedValues = New Dictionary
+		    End If
+		    Self.mEncryptedValues.Value(EncodeHex(Crypto.SHA512(Decrypted))) = Input
+		    Return Decrypted
+		  Catch Err As RuntimeException
+		  End Try
+		  
+		  Try
+		    #Pragma BreakOnExceptions False
+		    Dim SecureDict As Dictionary = Beacon.ParseJSON(Input)
+		    #Pragma BreakOnExceptions Default
 		    If Not SecureDict.HasAllKeys("Key", "Vector", "Content", "Hash") Then
 		      Return ""
 		    End If
@@ -61,18 +75,17 @@ Inherits Beacon.ConfigGroup
 		      End If
 		      Decrypted = Decrypted.DefineEncoding(Encodings.UTF8)
 		      
-		      If Self.mEncryptedValues = Nil Then
-		        Self.mEncryptedValues = New Dictionary
-		      End If
-		      Self.mEncryptedValues.Value(ComputedHash) = Input
+		      // Do not store to encrypted values when decrypting legacy content so the
+		      // new encryption will be used on save.
 		      
 		      Return Decrypted
 		    #else
 		      #Pragma Error "Not implemented"
 		    #endif
 		  Catch Err As RuntimeException
-		    Return ""
 		  End Try
+		  
+		  Return ""
 		End Function
 	#tag EndMethod
 
@@ -83,37 +96,19 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function Encrypt(Input As String, Identity As Beacon.Identity) As String
+		Private Function Encrypt(Input As String, Document As Beacon.Document) As String
 		  Try
 		    Dim Hash As String = EncodeHex(Crypto.SHA512(Input))
 		    If Self.mEncryptedValues <> Nil And Self.mEncryptedValues.HasKey(Hash) Then
 		      Return Self.mEncryptedValues.Value(Hash)
 		    End If
 		    
-		    #if Not TargetiOS
-		      Dim AES As New M_Crypto.AES_MTC(AES_MTC.EncryptionBits.Bits256)
-		      Dim Key As MemoryBlock = Crypto.GenerateRandomBytes(128)
-		      Dim Vector As MemoryBlock = Crypto.GenerateRandomBytes(16)
-		      AES.SetKey(Key)
-		      AES.SetInitialVector(Vector)
-		      Dim Encrypted As Global.MemoryBlock = AES.EncryptCBC(Input)
-		      
-		      Dim SecureDict As New Xojo.Core.Dictionary
-		      SecureDict.Value("Key") = EncodeHex(Identity.Encrypt(Key))
-		      SecureDict.Value("Vector") = EncodeHex(Vector)
-		      SecureDict.Value("Content") = EncodeHex(Encrypted)
-		      SecureDict.Value("Hash") = Hash
-		      
-		      Dim JSON As String = Xojo.Data.GenerateJSON(SecureDict)
-		      If Self.mEncryptedValues = Nil Then
-		        Self.mEncryptedValues = New Dictionary
-		      End If
-		      Self.mEncryptedValues.Value(Hash) = JSON
-		      
-		      Return JSON
-		    #else
-		      #Pragma Error "Not implemented"
-		    #endIf
+		    Dim Encrypted As String = Document.Encrypt(Input.ConvertEncoding(Encodings.UTF8))
+		    If Self.mEncryptedValues = Nil Then
+		      Self.mEncryptedValues = New Dictionary
+		    End If
+		    Self.mEncryptedValues.Value(Hash) = Encrypted
+		    Return Encrypted
 		  Catch Err As RuntimeException
 		    Return ""
 		  End Try
@@ -123,12 +118,12 @@ Inherits Beacon.ConfigGroup
 	#tag Method, Flags = &h21
 		Private Function FilterIniText(Input As String) As String
 		  Dim EOL As String = Encodings.ASCII.Chr(10)
-		  Input = ReplaceLineEndings(Input, EOL)
+		  Input = Input.ReplaceLineEndings(EOL)
 		  
 		  Dim InsideBeaconSection As Boolean
 		  Dim Lines() As String = Input.Split(EOL)
 		  Dim FilteredLines() As String
-		  For I As Integer = 0 To Lines.Ubound
+		  For I As Integer = 0 To Lines.LastRowIndex
 		    Dim Line As String = Lines(I).Trim
 		    If Line = "[Beacon]" Then
 		      InsideBeaconSection = True
@@ -137,7 +132,7 @@ Inherits Beacon.ConfigGroup
 		    End If
 		    
 		    If Not InsideBeaconSection Then
-		      FilteredLines.Append(Line)
+		      FilteredLines.AddRow(Line)
 		    End If
 		  Next
 		  
@@ -153,12 +148,17 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub GameIniContent(SupportedConfigs As Xojo.Core.Dictionary = Nil, Assigns Value As String)
+		Sub GameIniContent(SupportedConfigs As Dictionary = Nil, Assigns Value As String)
 		  If SupportedConfigs <> Nil Then
 		    Dim ConfigValues() As Beacon.ConfigValue = Self.IniValues(Beacon.ShooterGameHeader, Value, SupportedConfigs, Nil)
-		    Dim ConfigDict As New Xojo.Core.Dictionary
+		    Dim ConfigDict As New Dictionary
 		    Beacon.ConfigValue.FillConfigDict(ConfigDict, ConfigValues)
-		    Value = Beacon.RewriteIniContent("", ConfigDict, False)
+		    
+		    Dim Errored As Boolean
+		    Dim Rewritten As String = Beacon.Rewriter.Rewrite("", ConfigDict, "", Beacon.Rewriter.EncodingFormat.Unicode, Errored)
+		    If Not Errored Then
+		      Value = Rewritten
+		    End If
 		  End If
 		  
 		  If StrComp(Self.mGameIniContent, Value, 0) <> 0 Then
@@ -169,13 +169,25 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GameIniValues(SourceDocument As Beacon.Document, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
-		  Return Self.GameIniValues(SourceDocument, New Xojo.Core.Dictionary, Profile)
+		Function GameIniValues(SourceDocument As Beacon.Document, Identity As Beacon.Identity, Mask As UInt64) As Beacon.ConfigValue()
+		  #Pragma Unused SourceDocument
+		  #Pragma Unused Identity
+		  #Pragma Unused Mask
+		  
+		  Dim Err As UnsupportedOperationException
+		  Err.Message = "Do not call this one!"
+		  Raise Err
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GameIniValues(SourceDocument As Beacon.Document, ExistingConfigs As Xojo.Core.Dictionary, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
+		Function GameIniValues(SourceDocument As Beacon.Document, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
+		  Return Self.GameIniValues(SourceDocument, New Dictionary, Profile)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function GameIniValues(SourceDocument As Beacon.Document, ExistingConfigs As Dictionary, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
 		  #Pragma Unused SourceDocument
 		  
 		  Return Self.IniValues(Beacon.ShooterGameHeader, Self.mGameIniContent, ExistingConfigs, Profile)
@@ -189,17 +201,17 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub GameUserSettingsIniContent(SupportedConfigs As Xojo.Core.Dictionary = Nil, Assigns Value As String)
+		Sub GameUserSettingsIniContent(SupportedConfigs As Dictionary = Nil, Assigns Value As String)
 		  If SupportedConfigs <> Nil Then
 		    Dim ConfigValues() As Beacon.ConfigValue = Self.IniValues(Beacon.ServerSettingsHeader, Value, SupportedConfigs, Nil)
 		    
-		    Dim ProtectedKeys As New Xojo.Core.Dictionary
+		    Dim ProtectedKeys As New Dictionary
 		    ProtectedKeys.Value("ServerSettings.ServerAdminPassword") = True
 		    ProtectedKeys.Value("ServerSettings.ServerPassword") = True
 		    ProtectedKeys.Value("AuctionHouse.MarketID") = True
 		    
 		    // Make sure passwords get encrypted on save
-		    For I As Integer = ConfigValues.Ubound DownTo 0
+		    For I As Integer = ConfigValues.LastRowIndex DownTo 0
 		      Dim ConfigValue As Beacon.ConfigValue = ConfigValues(I)
 		      If ConfigValue.Value = "" Then
 		        Continue
@@ -210,9 +222,14 @@ Inherits Beacon.ConfigGroup
 		      End If
 		    Next
 		    
-		    Dim ConfigDict As New Xojo.Core.Dictionary
+		    Dim ConfigDict As New Dictionary
 		    Beacon.ConfigValue.FillConfigDict(ConfigDict, ConfigValues)
-		    Value = Beacon.RewriteIniContent("", ConfigDict, False)
+		    
+		    Dim Errored As Boolean
+		    Dim Rewritten As String = Beacon.Rewriter.Rewrite("", ConfigDict, "", Beacon.Rewriter.EncodingFormat.Unicode, Errored)
+		    If Not Errored Then
+		      Value = Rewritten
+		    End If
 		  End If
 		  
 		  If StrComp(Self.mGameUserSettingsIniContent, Value, 0) <> 0 Then
@@ -223,13 +240,25 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GameUserSettingsIniValues(SourceDocument As Beacon.Document, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
-		  Return Self.GameUserSettingsIniValues(SourceDocument, New Xojo.Core.Dictionary, Profile)
+		Function GameUserSettingsIniValues(SourceDocument As Beacon.Document, Identity As Beacon.Identity, Mask As UInt64) As Beacon.ConfigValue()
+		  #Pragma Unused SourceDocument
+		  #Pragma Unused Identity
+		  #Pragma Unused Mask
+		  
+		  Dim Err As UnsupportedOperationException
+		  Err.Message = "Do not call this one!"
+		  Raise Err
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GameUserSettingsIniValues(SourceDocument As Beacon.Document, ExistingConfigs As Xojo.Core.Dictionary, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
+		Function GameUserSettingsIniValues(SourceDocument As Beacon.Document, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
+		  Return Self.GameUserSettingsIniValues(SourceDocument, New Dictionary, Profile)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function GameUserSettingsIniValues(SourceDocument As Beacon.Document, ExistingConfigs As Dictionary, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
 		  #Pragma Unused SourceDocument
 		  
 		  Return Self.IniValues(Beacon.ServerSettingsHeader, Self.mGameUserSettingsIniContent, ExistingConfigs, Profile)
@@ -237,9 +266,9 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function IniValues(InitialHeader As Text, Source As String, ExistingConfigs As Xojo.Core.Dictionary, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
+		Private Function IniValues(InitialHeader As String, Source As String, ExistingConfigs As Dictionary, Profile As Beacon.ServerProfile) As Beacon.ConfigValue()
 		  Source = Source.ReplaceAll(Self.EncryptedTag, "")
-		  Source = ReplaceLineEndings(Source, Encodings.ASCII.Chr(10))
+		  Source = Source.ReplaceLineEndings(Encodings.ASCII.Chr(10))
 		  
 		  Dim Lines() As String = Source.Split(Encodings.ASCII.Chr(10))
 		  Dim Parser As New CustomContentParser(InitialHeader, ExistingConfigs, Profile)
@@ -254,7 +283,7 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function ReadContent(Input As String, Identity As Beacon.Identity) As String
+		Private Function ReadContent(Input As String, Identity As Beacon.Identity, Document As Beacon.Document) As String
 		  Input = Input.GuessEncoding
 		  
 		  Dim Pos As Integer
@@ -274,8 +303,8 @@ Inherits Beacon.ConfigGroup
 		    
 		    Dim Prefix As String = Input.Left(StartPos)
 		    Dim Suffix As String = Input.Right(Input.Length - EndPos)
-		    Dim EncryptedContent As String = Input.SubString(StartPos, EndPos - StartPos)
-		    Dim DecryptedContent As String = Self.Decrypt(EncryptedContent, Identity)
+		    Dim EncryptedContent As String = Input.Middle(StartPos, EndPos - StartPos)
+		    Dim DecryptedContent As String = Self.Decrypt(EncryptedContent, Identity, Document)
 		    
 		    If DecryptedContent = "" Then
 		      Prefix = Prefix.Left(Prefix.Length - Self.EncryptedTag.Length)
@@ -297,7 +326,7 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function WriteContent(Input As String, Identity As Beacon.Identity) As String
+		Private Function WriteContent(Input As String, Document As Beacon.Document) As String
 		  Dim Pos As Integer
 		  
 		  Do
@@ -314,8 +343,8 @@ Inherits Beacon.ConfigGroup
 		    
 		    Dim Prefix As String = Input.Left(StartPos)
 		    Dim Suffix As String = Input.Right(Input.Length - EndPos)
-		    Dim DecryptedContent As String = Input.SubString(StartPos, EndPos - StartPos)
-		    Dim EncryptedContent As String = Self.Encrypt(DecryptedContent, Identity)
+		    Dim DecryptedContent As String = Input.Middle(StartPos, EndPos - StartPos)
+		    Dim EncryptedContent As String = Self.Encrypt(DecryptedContent, Document)
 		    
 		    Input = Prefix + EncryptedContent + Suffix
 		    Pos = Prefix.Length + EncryptedContent.Length + Self.EncryptedTag.Length
@@ -344,14 +373,19 @@ Inherits Beacon.ConfigGroup
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="IsImplicit"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -359,12 +393,15 @@ Inherits Beacon.ConfigGroup
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -372,6 +409,7 @@ Inherits Beacon.ConfigGroup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -379,6 +417,7 @@ Inherits Beacon.ConfigGroup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

@@ -4,8 +4,8 @@ Inherits ControlCanvas
 Implements ObservationKit.Observer
 	#tag Event
 		Function MouseDown(X As Integer, Y As Integer) As Boolean
-		  Dim Point As New REALbasic.Point(X, Y)
-		  For I As Integer = 0 To Self.mTabRects.Ubound
+		  Dim Point As New Xojo.Point(X, Y)
+		  For I As Integer = 0 To Self.mTabRects.LastRowIndex
 		    If Self.mTabRects(I) = Nil Then
 		      Continue
 		    End If
@@ -63,7 +63,7 @@ Implements ObservationKit.Observer
 		    Return
 		  End If
 		  
-		  Dim Point As New REALbasic.Point(X, Y)
+		  Dim Point As New Xojo.Point(X, Y)
 		  If Self.mCloseBoxes(Self.mMouseDownIndex) <> Nil And Self.mCloseBoxes(Self.mMouseDownIndex).Contains(Point) Then
 		    RaiseEvent ShouldDismissView(Self.mMouseDownIndex)
 		  End If
@@ -98,14 +98,14 @@ Implements ObservationKit.Observer
 		    
 		    Dim Clip As Graphics = G.Clip(LeftPos, 0, TabWidth, G.Height)
 		    If Self.mSelectedIndex <> I Then
-		      Clip.ForeColor = SystemColors.ControlBackgroundColor
-		      Clip.FillRect(0, 0, Clip.Width, Clip.Height - 1)
-		      Clip.ForeColor = SystemColors.SeparatorColor
-		      Clip.FillRect(0, Clip.Height - 1, Clip.Width, 1)
+		      Clip.DrawingColor = SystemColors.ControlBackgroundColor
+		      Clip.FillRectangle(0, 0, Clip.Width, Clip.Height - 1)
+		      Clip.DrawingColor = SystemColors.SeparatorColor
+		      Clip.FillRectangle(0, Clip.Height - 1, Clip.Width, 1)
 		    End If
 		    
 		    Dim View As BeaconSubview = RaiseEvent ViewAtIndex(I)
-		    Dim CloseRect As REALbasic.Rect = Self.mCloseBoxes(I)
+		    Dim CloseRect As Xojo.Rect = Self.mCloseBoxes(I)
 		    Dim BoxState As CloseBoxState = CloseBoxState.Normal
 		    If CloseRect <> Nil Then
 		      If Self.mHoverRect = CloseRect Then
@@ -125,14 +125,14 @@ Implements ObservationKit.Observer
 		      CloseRect.Offset(LeftPos, 0)
 		    End If
 		    Self.mCloseBoxes(I) = CloseRect
-		    Self.mTabRects(I) = New REALbasic.Rect(LeftPos, 0, TabWidth, G.Height)
+		    Self.mTabRects(I) = New Xojo.Rect(LeftPos, 0, TabWidth, G.Height)
 		    
 		    If View <> Nil And View.Progress <> BeaconSubview.ProgressNone Then
 		      Dim Progress As Graphics = G.Clip(Self.mTabRects(I).Left, Self.mTabRects(I).Top, Self.mTabRects(I).Width, Self.ProgressHeight)
 		      
 		      Dim ProgressBackColor As Color = SystemColors.QuaternaryLabelColor
-		      Progress.ForeColor = ProgressBackColor
-		      Progress.FillRect(0, 0, Progress.Width, Progress.Height)
+		      Progress.DrawingColor = ProgressBackColor
+		      Progress.FillRectangle(0, 0, Progress.Width, Progress.Height)
 		      
 		      If View.Progress = BeaconSubview.ProgressIndeterminate Then
 		        // This is the tricky animated one
@@ -140,10 +140,10 @@ Implements ObservationKit.Observer
 		          IndeterminatePattern = BeaconUI.IconWithColor(IconTabIndeterminatePattern, SystemColors.SelectedContentBackgroundColor)
 		        End If
 		        
-		        If Microseconds - Self.mLastCycleTime > Self.IndeterminateCyclePeriod Then
-		          Self.mLastCycleTime = Microseconds
+		        If System.Microseconds - Self.mLastCycleTime > Self.IndeterminateCyclePeriod Then
+		          Self.mLastCycleTime = System.Microseconds
 		        End If
-		        Dim CycleProgress As Double = (Microseconds - Self.mLastCycleTime) / Self.IndeterminateCyclePeriod
+		        Dim CycleProgress As Double = (System.Microseconds - Self.mLastCycleTime) / Self.IndeterminateCyclePeriod
 		        Dim CycleOffset As Integer = IndeterminatePattern.Width * CycleProgress
 		        
 		        For X As Integer = IndeterminatePattern.Width * -1 To Progress.Width Step IndeterminatePattern.Width
@@ -154,22 +154,22 @@ Implements ObservationKit.Observer
 		        Self.mUpdateIndeterminateKey = CallLater.Schedule(10, WeakAddressOf UpdateIndeterminate)
 		      Else
 		        Dim FillWidth As Integer = Self.mTabRects(I).Width * View.Progress
-		        Progress.ForeColor = SystemColors.SelectedContentBackgroundColor
-		        Progress.FillRect(0, 0, FillWidth, Progress.Height)
+		        Progress.DrawingColor = SystemColors.SelectedContentBackgroundColor
+		        Progress.FillRectangle(0, 0, FillWidth, Progress.Height)
 		      End If
 		    End If
 		    
 		    LeftPos = LeftPos + TabWidth
 		    G.ClearRect(LeftPos, 0, 1, G.Height - 1)
-		    G.ForeColor = SystemColors.SeparatorColor
-		    G.FillRect(LeftPos, 0, 1, G.Height)
+		    G.DrawingColor = SystemColors.SeparatorColor
+		    G.FillRectangle(LeftPos, 0, 1, G.Height)
 		    LeftPos = LeftPos + 1
 		  Next
 		  
-		  G.ForeColor = SystemColors.ControlBackgroundColor
-		  G.FillRect(LeftPos, 0, G.Width - LeftPos, G.Height - 1)
-		  G.ForeColor = SystemColors.SeparatorColor
-		  G.FillRect(LeftPos, G.Height - 1, G.Width - LeftPos, 1)
+		  G.DrawingColor = SystemColors.ControlBackgroundColor
+		  G.FillRectangle(LeftPos, 0, G.Width - LeftPos, G.Height - 1)
+		  G.DrawingColor = SystemColors.SeparatorColor
+		  G.FillRectangle(LeftPos, G.Height - 1, G.Width - LeftPos, 1)
 		End Sub
 	#tag EndEvent
 
@@ -181,41 +181,41 @@ Implements ObservationKit.Observer
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub DrawTabCell(G As Graphics, View As BeaconSubview, BoxState As CloseBoxState, ByRef CloseRect As REALbasic.Rect)
+		Private Sub DrawTabCell(G As Graphics, View As BeaconSubview, BoxState As CloseBoxState, ByRef CloseRect As Xojo.Rect)
 		  Const CellPadding = 4
 		  Const ButtonSize = 16
 		  
 		  Dim MaxCaptionWidth As Integer = G.Width - ((ButtonSize * 2) + (CellPadding * 4))
 		  
 		  Dim Caption As String = View.ToolbarCaption
-		  Dim CaptionWidth As Double = Min(G.StringWidth(Caption), MaxCaptionWidth)
+		  Dim CaptionWidth As Double = Min(G.TextWidth(Caption), MaxCaptionWidth)
 		  Dim CaptionLeft As Double = (G.Width - CaptionWidth) / 2
 		  Dim CaptionBottom As Double = (G.Height / 2) + (G.CapHeight / 2)
 		  
-		  G.ForeColor = SystemColors.ControlTextColor
-		  G.DrawString(Caption, CaptionLeft, CaptionBottom, MaxCaptionWidth, True)
+		  G.DrawingColor = SystemColors.ControlTextColor
+		  G.DrawText(Caption, CaptionLeft, CaptionBottom, MaxCaptionWidth, True)
 		  
 		  Dim ButtonTop As Double = (G.Height - ButtonSize) / 2
 		  
-		  If View.ContentsChanged Then
-		    Dim ModifiedIcon As Picture = BeaconUI.IconWithColor(IconModified, G.ForeColor.AtOpacity(0.5))
+		  If View.Changed Then
+		    Dim ModifiedIcon As Picture = BeaconUI.IconWithColor(IconModified, G.DrawingColor.AtOpacity(0.5))
 		    G.DrawPicture(ModifiedIcon, CellPadding, ButtonTop, ButtonSize, ButtonSize, 0, 0, ModifiedIcon.Width, ModifiedIcon.Height)
 		  End If
 		  
 		  If View.CanBeClosed Then
-		    Dim IconColor As Color = G.ForeColor.AtOpacity(0.5)
+		    Dim IconColor As Color = G.DrawingColor.AtOpacity(0.5)
 		    If BoxState <> CloseBoxState.Normal Then
-		      IconColor = G.ForeColor
+		      IconColor = G.DrawingColor
 		    End If
 		    
-		    CloseRect = New REALbasic.Rect(G.Width - (ButtonSize + CellPadding), ButtonTop, ButtonSize, ButtonSize)
+		    CloseRect = New Xojo.Rect(G.Width - (ButtonSize + CellPadding), ButtonTop, ButtonSize, ButtonSize)
 		    
 		    Dim CloseIcon As Picture = BeaconUI.IconWithColor(IconClose, IconColor)
 		    G.DrawPicture(CloseIcon, CloseRect.Left, CloseRect.Top, CloseRect.Width, CloseRect.Height, 0, 0, CloseIcon.Width, CloseIcon.Height)
 		    
 		    If BoxState = CloseBoxState.Pressed Then
-		      G.ForeColor = &c00000080
-		      G.FillRoundRect(CloseRect.Left, CloseRect.Top, CloseRect.Width, CloseRect.Height, 4, 4)
+		      G.DrawingColor = &c00000080
+		      G.FillRoundRectangle(CloseRect.Left, CloseRect.Top, CloseRect.Width, CloseRect.Height, 4, 4)
 		    End If
 		  End If
 		End Sub
@@ -223,9 +223,9 @@ Implements ObservationKit.Observer
 
 	#tag Method, Flags = &h21
 		Private Sub MouseMove(X As Integer, Y As Integer)
-		  Dim HoverRect As REALbasic.Rect
-		  Dim Point As New REALbasic.Point(X, Y)
-		  For I As Integer = 0 To Self.mCloseBoxes.Ubound
+		  Dim HoverRect As Xojo.Rect
+		  Dim Point As New Xojo.Point(X, Y)
+		  For I As Integer = 0 To Self.mCloseBoxes.LastRowIndex
 		    If Self.mCloseBoxes(I) = Nil Then
 		      Continue
 		    End If
@@ -244,7 +244,7 @@ Implements ObservationKit.Observer
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub ObservedValueChanged(Source As ObservationKit.Observable, Key As Text, Value As Auto)
+		Sub ObservedValueChanged(Source As ObservationKit.Observable, Key As String, Value As Variant)
 		  // Part of the ObservationKit.Observer interface.
 		  
 		  #Pragma Unused Source
@@ -288,7 +288,7 @@ Implements ObservationKit.Observer
 			  If Self.mCount <> Value Then
 			    Self.mCount = Value
 			    
-			    Dim OldBound As Integer = Self.mTabRects.Ubound
+			    Dim OldBound As Integer = Self.mTabRects.LastRowIndex
 			    Dim NewBound As Integer = Value - 1
 			    For I As Integer = OldBound + 1 To NewBound
 			      Dim View As BeaconSubview = RaiseEvent ViewAtIndex(I)
@@ -308,7 +308,7 @@ Implements ObservationKit.Observer
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h21
-		Private mCloseBoxes(-1) As REALbasic.Rect
+		Private mCloseBoxes(-1) As Xojo.Rect
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -316,7 +316,7 @@ Implements ObservationKit.Observer
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mHoverRect As REALbasic.Rect
+		Private mHoverRect As Xojo.Rect
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -332,7 +332,7 @@ Implements ObservationKit.Observer
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mTabRects(-1) As REALbasic.Rect
+		Private mTabRects(-1) As Xojo.Rect
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -377,25 +377,76 @@ Implements ObservationKit.Observer
 
 	#tag ViewBehavior
 		#tag ViewProperty
+			Name="DoubleBuffer"
+			Visible=false
+			Group="Behavior"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Tooltip"
+			Visible=true
+			Group="Appearance"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowAutoDeactivate"
+			Visible=true
+			Group="Appearance"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowFocusRing"
+			Visible=true
+			Group="Appearance"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowFocus"
+			Visible=true
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowTabs"
+			Visible=true
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
 			Name="Index"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="Integer"
-			EditorType="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Height"
@@ -403,41 +454,55 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="25"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="InitialParent"
+			Visible=false
 			Group="Position"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockBottom"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockLeft"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockRight"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockTop"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabIndex"
@@ -445,12 +510,15 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabPanelIndex"
+			Visible=false
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabStop"
@@ -458,12 +526,15 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="True"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Width"
@@ -471,20 +542,15 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="100"
 			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AutoDeactivate"
-			Visible=true
-			Group="Appearance"
-			InitialValue="True"
-			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Backdrop"
 			Visible=true
 			Group="Appearance"
+			InitialValue=""
 			Type="Picture"
-			EditorType="Picture"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Enabled"
@@ -492,20 +558,7 @@ Implements ObservationKit.Observer
 			Group="Appearance"
 			InitialValue="True"
 			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="HelpTag"
-			Visible=true
-			Group="Appearance"
-			Type="String"
-			EditorType="MultiLineEditor"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="UseFocusRing"
-			Visible=true
-			Group="Appearance"
-			InitialValue="True"
-			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Visible"
@@ -513,33 +566,7 @@ Implements ObservationKit.Observer
 			Group="Appearance"
 			InitialValue="True"
 			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AcceptFocus"
-			Visible=true
-			Group="Behavior"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AcceptTabs"
-			Visible=true
-			Group="Behavior"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="DoubleBuffer"
-			Visible=true
-			Group="Behavior"
-			InitialValue="False"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="EraseBackground"
-			Visible=true
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Transparent"
@@ -547,23 +574,31 @@ Implements ObservationKit.Observer
 			Group="Behavior"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="ScrollSpeed"
+			Visible=false
 			Group="Behavior"
 			InitialValue="20"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Count"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="SelectedIndex"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

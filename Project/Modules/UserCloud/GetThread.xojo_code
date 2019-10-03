@@ -9,44 +9,44 @@ Inherits Thread
 		    Return
 		  End If
 		  
-		  Dim Content As Xojo.Core.MemoryBlock = Self.mResponse.Content
+		  Dim Content As MemoryBlock = Self.mResponse.Content
 		  If BeaconEncryption.IsEncrypted(Content) Then
 		    Try
 		      Content = BeaconEncryption.SymmetricDecrypt(App.IdentityManager.CurrentIdentity.UserCloudKey, Content)
-		    Catch Err As Xojo.Crypto.CryptoException
+		    Catch Err As RuntimeException
 		      // Ok?
 		      CleanupRequest(Self.mRequest)
 		      Return
 		    End Try
 		    
 		    Dim Decompressor As New _GZipString
-		    Content = Beacon.ConvertMemoryBlock(Decompressor.Decompress(Beacon.ConvertMemoryBlock(Content)))
+		    Content = Decompressor.Decompress(Content)
 		  End If
 		  
 		  // So where do we put the file now?
-		  Dim URL As Text = Self.mResponse.URL
-		  Dim BaseURL As Text = BeaconAPI.URL("/file")
+		  Dim URL As String = Self.mResponse.URL
+		  Dim BaseURL As String = BeaconAPI.URL("/file")
 		  If Not URL.BeginsWith(BaseURL) Then
 		    // What the hell is going on here?
 		    CleanupRequest(Self.mRequest)
 		    Return
 		  End If
 		  
-		  Dim RemotePath As Text = URL.Mid(BaseURL.Length)
+		  Dim RemotePath As String = URL.Middle(BaseURL.Length)
 		  Dim LocalFile As FolderItem = LocalFile(RemotePath)
 		  If LocalFile.Exists Then
-		    Dim CreationDate As Date = LocalFile.CreationDate
-		    Dim ModificationDate As Date = LocalFile.ModificationDate
+		    Dim CreationDate As DateTime = LocalFile.CreationDateTime
+		    Dim ModificationDate As DateTime = LocalFile.ModificationDateTime
 		    Dim Stream As BinaryStream = BinaryStream.Open(LocalFile, True)
-		    Stream.Position = 0
+		    Stream.BytePosition = 0
 		    Stream.Length = 0
-		    Stream.Write(Beacon.ConvertMemoryBlock(Content))
+		    Stream.Write(Content)
 		    Stream.Close
-		    LocalFile.CreationDate = CreationDate
-		    LocalFile.ModificationDate = ModificationDate
+		    LocalFile.CreationDateTime = CreationDate
+		    LocalFile.ModificationDateTime = ModificationDate
 		  Else
 		    Dim Stream As BinaryStream = BinaryStream.Create(LocalFile, True)
-		    Stream.Write(Beacon.ConvertMemoryBlock(Content))
+		    Stream.Write(Content)
 		    Stream.Close
 		  End If
 		  
@@ -77,22 +77,25 @@ Inherits Thread
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="Integer"
-			EditorType="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Priority"
@@ -100,6 +103,7 @@ Inherits Thread
 			Group="Behavior"
 			InitialValue="5"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="StackSize"
@@ -107,6 +111,7 @@ Inherits Thread
 			Group="Behavior"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

@@ -5,7 +5,6 @@ Begin BeaconSubview BlueprintMultiEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,7 @@ Begin BeaconSubview BlueprintMultiEditor
       Caption         =   "Edit Multiple"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -65,7 +64,7 @@ Begin BeaconSubview BlueprintMultiEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -95,7 +94,7 @@ Begin BeaconSubview BlueprintMultiEditor
       Border          =   15
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   100
       HelpTag         =   ""
       Index           =   -2147483648
@@ -147,7 +146,7 @@ Begin BeaconSubview BlueprintMultiEditor
       Top             =   173
       Transparent     =   False
       Underline       =   False
-      Value           =   False
+      Value           =   "False"
       Visible         =   True
       Width           =   140
    End
@@ -261,17 +260,17 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Dim Maps() As Beacon.Map = Beacon.Maps.All
 		  Dim OfficialMaps(), ThirdPartyMaps() As Beacon.Map
 		  Dim OfficialMasks(), ThirdPartyMasks() As UInt64
 		  For Each Map As Beacon.Map In Maps
 		    If Map.Official Then
-		      OfficialMaps.Append(Map)
-		      OfficialMasks.Append(Map.Mask)
+		      OfficialMaps.AddRow(Map)
+		      OfficialMasks.AddRow(Map.Mask)
 		    Else
-		      ThirdPartyMaps.Append(Map)
-		      ThirdPartyMasks.Append(Map.Mask)
+		      ThirdPartyMaps.AddRow(Map)
+		      ThirdPartyMasks.AddRow(Map.Mask)
 		    End If
 		  Next
 		  OfficialMasks.SortWith(OfficialMaps)
@@ -290,7 +289,7 @@ End
 		    Check.Top = OfficialNextTop
 		    Check.Left = OfficialLeft
 		    OfficialNextTop = OfficialNextTop + Check.Height + 12
-		    Self.mMapCheckboxes.Append(Check)
+		    Self.mMapCheckboxes.AddRow(Check)
 		  Next
 		  For Each Map As Beacon.Map In ThirdPartyMaps
 		    Dim Check As Checkbox = New MapCheckboxes
@@ -299,7 +298,7 @@ End
 		    Check.Top = ThirdPartyNextTop
 		    Check.Left = ThirdPartyLeft
 		    ThirdPartyNextTop = ThirdPartyNextTop + Check.Height + 12
-		    Self.mMapCheckboxes.Append(Check)
+		    Self.mMapCheckboxes.AddRow(Check)
 		  Next
 		End Sub
 	#tag EndEvent
@@ -308,8 +307,8 @@ End
 	#tag Method, Flags = &h0
 		Function Blueprints() As Beacon.Blueprint()
 		  Dim Blueprints() As Beacon.Blueprint
-		  Redim Blueprints(Self.mBlueprints.Ubound)
-		  For I As Integer = 0 To Self.mBlueprints.Ubound
+		  Redim Blueprints(Self.mBlueprints.LastRowIndex)
+		  For I As Integer = 0 To Self.mBlueprints.LastRowIndex
 		    Blueprints(I) = Self.mBlueprints(I).Clone
 		  Next
 		  Return Blueprints
@@ -341,8 +340,8 @@ End
 		  End If
 		  
 		  If Blueprints <> Nil Then
-		    Redim Self.mBlueprints(Blueprints.Ubound)
-		    For I As Integer = 0 To Blueprints.Ubound
+		    Redim Self.mBlueprints(Blueprints.LastRowIndex)
+		    For I As Integer = 0 To Blueprints.LastRowIndex
 		      Self.mBlueprints(I) = Blueprints(I).MutableClone
 		    Next
 		  Else
@@ -366,7 +365,7 @@ End
 		  End If
 		  
 		  Self.mModified = Value
-		  Self.ContentsChanged = Value
+		  Self.Changed = Value
 		  Self.Header.SaveButton.Enabled = Value
 		  Self.Header.RevertButton.Enabled = Value
 		End Sub
@@ -382,7 +381,7 @@ End
 		  For Each Blueprint As Beacon.Blueprint In Self.mBlueprints
 		    Dim Saved As Beacon.Blueprint = LocalData.SharedInstance.GetBlueprintByObjectID(Blueprint.ObjectID)
 		    If Saved <> Nil Then
-		      Blueprints.Append(Saved)
+		      Blueprints.AddRow(Saved)
 		    End If
 		  Next
 		  Self.Modified = False
@@ -392,14 +391,14 @@ End
 
 	#tag Method, Flags = &h0
 		Sub Save()
-		  Dim AddTags() As Text = Self.Picker.RequiredTags.ToText
-		  Dim RemoveTags() As Text = Self.Picker.ExcludedTags.ToText
+		  Dim AddTags() As String = Self.Picker.RequiredTags
+		  Dim RemoveTags() As String = Self.Picker.ExcludedTags
 		  
 		  Dim AddMask, ClearMask As UInt64
 		  For Each Check As Checkbox In Self.mMapCheckboxes
-		    If Check.State = Checkbox.CheckedStates.Checked Then
+		    If Check.VisualState = Checkbox.VisualStates.Checked Then
 		      AddMask = AddMask Or Check.Index
-		    ElseIf Check.State = Checkbox.CheckedStates.Unchecked Then
+		    ElseIf Check.VisualState = Checkbox.VisualStates.Unchecked Then
 		      ClearMask = ClearMask Or Check.Index
 		    End If
 		  Next
@@ -410,7 +409,7 @@ End
 		    Blueprint.RemoveTags(RemoveTags)
 		  Next
 		  
-		  If LocalData.SharedInstance.SaveBlueprints(Self.mBlueprints) <> (Self.mBlueprints.Ubound + 1) Then
+		  If LocalData.SharedInstance.SaveBlueprints(Self.mBlueprints) <> (Self.mBlueprints.LastRowIndex + 1) Then
 		    Break
 		  Else
 		    Self.Modified = False
@@ -434,29 +433,29 @@ End
 		      End If
 		    Next
 		    
-		    Dim BlueprintTags() As Text = Blueprint.Tags
+		    Dim BlueprintTags() As String = Blueprint.Tags
 		    For Each Tag As String In BlueprintTags
 		      Tags.Value(Tag) = Tags.Lookup(Tag, 0) + 1
 		    Next
 		  Next
 		  
-		  Dim BlueprintCount As Integer = Self.mBlueprints.Ubound + 1
+		  Dim BlueprintCount As Integer = Self.mBlueprints.LastRowIndex + 1
 		  For Each Check As Checkbox In Self.mMapCheckboxes
 		    Dim Count As Integer = Masks.Lookup(Check.Index, 0)
 		    If Count = 0 Then
-		      Check.State = Checkbox.CheckedStates.Unchecked
+		      Check.VisualState = Checkbox.VisualStates.Unchecked
 		    ElseIf Count = BlueprintCount Then
-		      Check.State = Checkbox.CheckedStates.Checked
+		      Check.VisualState = Checkbox.VisualStates.Checked
 		    Else
-		      Check.State = Checkbox.CheckedStates.Indeterminate
+		      Check.VisualState = Checkbox.VisualStates.Indeterminate
 		    End If
 		  Next
 		  
 		  Dim CommonTags() As String
-		  For I As Integer = 0 To Tags.Count - 1
+		  For I As Integer = 0 To Tags.KeyCount - 1
 		    Dim Tag As String = Tags.Key(I)
 		    If Tags.Lookup(Tag, 0) = BlueprintCount Then
-		      CommonTags.Append(Tag)
+		      CommonTags.AddRow(Tag)
 		    End If
 		  Next
 		  Self.Picker.SetSelections(CommonTags, Nil)
@@ -488,7 +487,7 @@ End
 
 #tag Events Header
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "SaveButton"
 		    Self.Save()
@@ -498,7 +497,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.LeftItems.Append(New BeaconToolbarItem("SaveButton", IconToolbarSave, False, "Save Object"))
 		  Me.LeftItems.Append(New BeaconToolbarItem("RevertButton", IconToolbarRevert, False, "Revert Changes"))
 		End Sub
@@ -506,7 +505,7 @@ End
 #tag EndEvents
 #tag Events Picker
 	#tag Event
-		Sub Change()
+		Sub TagsChanged()
 		  If Not Self.mSettingUp Then
 		    Self.Modified = True
 		  End If
@@ -533,7 +532,7 @@ End
 #tag EndEvents
 #tag Events MapCheckboxes
 	#tag Event
-		Sub Action(index as Integer)
+		Sub ValueChanged(index as Integer)
 		  If Self.mSettingUp Then
 		    Return
 		  End If
@@ -544,8 +543,74 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="ToolbarCaption"
+		Name="EraseBackground"
+		Visible=false
 		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ToolbarCaption"
+		Visible=false
+		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -555,6 +620,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -562,26 +628,31 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -589,6 +660,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -596,53 +668,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -650,6 +740,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -657,7 +748,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -665,7 +756,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -673,72 +764,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -746,7 +780,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -754,6 +788,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

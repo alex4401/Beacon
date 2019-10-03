@@ -5,7 +5,6 @@ Begin LibrarySubview LibraryPaneMenu Implements NotificationKit.Receiver
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -68,13 +67,13 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
+		Sub Closing()
 		  NotificationKit.Ignore(Self, Preferences.Notification_OnlineTokenChanged, Preferences.Notification_OnlineStateChanged, UserCloud.Notification_SyncStarted, UserCloud.Notification_SyncFinished)
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.RebuildMenu()
 		  NotificationKit.Watch(Self, Preferences.Notification_OnlineTokenChanged, Preferences.Notification_OnlineStateChanged, UserCloud.Notification_SyncStarted, UserCloud.Notification_SyncFinished)
 		End Sub
@@ -95,33 +94,33 @@ End
 	#tag Method, Flags = &h1
 		Protected Sub RebuildMenu()
 		  Dim Links() As Pair
-		  Links.Append("Check for Updates" : "beacon://action/checkforupdate")
-		  Links.Append("Update Engrams" : "beacon://action/checkforengrams")
+		  Links.AddRow("Check for Updates" : "beacon://action/checkforupdate")
+		  Links.AddRow("Update Engrams" : "beacon://action/checkforengrams")
 		  If Preferences.OnlineEnabled Then
 		    If UserCloud.IsBusy Then
-		      Links.Append("Syncing Cloud Files…" : "")
+		      Links.AddRow("Syncing Cloud Files…" : "")
 		    Else
-		      Links.Append("Sync Cloud Files" : "beacon://syncusercloud")
+		      Links.AddRow("Sync Cloud Files" : "beacon://syncusercloud")
 		    End If
 		  End If
-		  Links.Append("Release Notes" : "beacon://releasenotes")
-		  Links.Append(Nil)
+		  Links.AddRow("Release Notes" : "beacon://releasenotes")
+		  Links.AddRow(Nil)
 		  
 		  If Not Preferences.OnlineEnabled Then
-		    Links.Append("Enable Cloud && Community" : "beacon://enableonline")
+		    Links.AddRow("Enable Cloud && Community" : "beacon://enableonline")
 		  Else
 		    If App.IdentityManager.CurrentIdentity = Nil Or App.IdentityManager.CurrentIdentity.LoginKey = "" Then
-		      Links.Append("Sign In" : "beacon://signin")
+		      Links.AddRow("Sign In" : "beacon://signin")
 		    Else
-		      Links.Append(App.IdentityManager.CurrentIdentity.LoginKey : "")
-		      Links.Append("Manage Account" : "beacon://showaccount")
-		      Links.Append("Sign Out" : "beacon://signout")
+		      Links.AddRow(App.IdentityManager.CurrentIdentity.LoginKey : "")
+		      Links.AddRow("Manage Account" : "beacon://showaccount")
+		      Links.AddRow("Sign Out" : "beacon://signout")
 		    End If
 		  End If
-		  Links.Append(Nil)
+		  Links.AddRow(Nil)
 		  
-		  Links.Append("Admin Spawn Codes" : "beacon://spawncodes")
-		  Links.Append("Report a Problem" : "beacon://reportproblem")
+		  Links.AddRow("Admin Spawn Codes" : "beacon://spawncodes")
+		  Links.AddRow("Report a Problem" : "beacon://reportproblem")
 		  
 		  Self.SetContents(Links)
 		End Sub
@@ -129,11 +128,11 @@ End
 
 	#tag Method, Flags = &h0
 		Sub SetContents(Links() As Pair)
-		  If Self.mLabelsBound = Links.Ubound Then
+		  If Self.mLabelsBound = Links.LastRowIndex Then
 		    // Possibly unchanged
 		    Dim Changed As Boolean
-		    For I As Integer = 0 To Links.Ubound
-		      If If(Links(I) <> Nil, Links(I).Left, "") <> Self.Labels(I).Text And If(Links(I) <> Nil, Links(I).Right, "") <> Self.Labels(I).URL Then
+		    For I As Integer = 0 To Links.LastRowIndex
+		      If If(Links(I) <> Nil, Links(I).Left, "") <> Self.Labels(I).Value And If(Links(I) <> Nil, Links(I).Right, "") <> Self.Labels(I).URL Then
 		        Changed = True
 		        Exit For I
 		      End If
@@ -150,7 +149,7 @@ End
 		  Next
 		  Self.mLabelsBound = 0
 		  
-		  For I As Integer = 0 To Links.Ubound
+		  For I As Integer = 0 To Links.LastRowIndex
 		    Dim LastBottom As Integer = 20
 		    If I > 0 Then
 		      LastBottom = Self.Labels(I - 1).Top + Self.Labels(I - 1).Height
@@ -166,7 +165,7 @@ End
 		    Self.Labels(I).Left = 20
 		    Self.Labels(I).Width = Self.Width - 40
 		    Self.Labels(I).Visible = Links(I) <> Nil And Links(I).Left <> ""
-		    Self.Labels(I).Text = If(Links(I) <> Nil, Links(I).Left, "")
+		    Self.Labels(I).Value = If(Links(I) <> Nil, Links(I).Left, "")
 		    Self.Labels(I).ShowAsLink = If(Links(I) <> Nil, Links(I).Right <> "", False)
 		    Self.Labels(I).URL = If(Links(I) <> Nil, Links(I).Right, "")
 		  Next
@@ -183,7 +182,7 @@ End
 
 #tag Events Labels
 	#tag Event
-		Sub Action(index as Integer)
+		Sub Pressed(index as Integer)
 		  Dim URL As String = Self.Labels(Index).URL
 		  If URL = "" Then
 		    Return
@@ -199,7 +198,7 @@ End
 		    Dim WelcomeWindow As New UserWelcomeWindow(True)
 		    WelcomeWindow.ShowModal()
 		  Case "beacon://showaccount"
-		    ShowURL(Beacon.WebURL("/account/auth.php?session_id=" + Preferences.OnlineToken + "&return=" + Beacon.EncodeURLComponent(Beacon.WebURL("/account/"))))
+		    ShowURL(Beacon.WebURL("/account/auth.php?session_id=" + Preferences.OnlineToken + "&return=" + EncodeURLComponent(Beacon.WebURL("/account/"))))
 		  Case "beacon://spawncodes"
 		    App.ShowSpawnCodes()
 		  Case "beacon://reportproblem"
@@ -230,10 +229,76 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -241,6 +306,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -248,10 +314,13 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -259,15 +328,17 @@ End
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -275,6 +346,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -282,53 +354,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -336,6 +426,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -343,7 +434,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -351,7 +442,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -359,72 +450,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -432,7 +466,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -440,6 +474,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

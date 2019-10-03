@@ -5,7 +5,6 @@ Begin ConfigEditor ExperienceCurvesConfigEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,6 @@ Begin ConfigEditor ExperienceCurvesConfigEditor
       Caption         =   ""
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -66,7 +64,6 @@ Begin ConfigEditor ExperienceCurvesConfigEditor
       DoubleBuffer    =   False
       DrawCaptions    =   True
       Enabled         =   True
-      EraseBackground =   False
       Height          =   60
       HelpTag         =   ""
       Index           =   -2147483648
@@ -97,7 +94,6 @@ Begin ConfigEditor ExperienceCurvesConfigEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -151,10 +147,10 @@ Begin ConfigEditor ExperienceCurvesConfigEditor
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
+      SelectionChangeBlocked=   False
       SelectionType   =   1
       ShowDropIndicator=   False
       TabIndex        =   4
@@ -177,7 +173,7 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.MinimumWidth = 710
 		  Self.MinimumHeight = 368
 		  
@@ -203,9 +199,9 @@ End
 		    Return
 		  End If
 		  
-		  Dim Tag As Text = Issue.UserData
-		  Dim Parts() As Text = Tag.Split(":")
-		  Dim Level As Integer = Integer.FromText(Parts(1))
+		  Dim Tag As String = Issue.UserData
+		  Dim Parts() As String = Tag.Split(":")
+		  Dim Level As Integer = Integer.FromString(Parts(1))
 		  Select Case Parts(0)
 		  Case "Player"
 		    Self.Switcher.SelectedIndex = 1
@@ -222,7 +218,7 @@ End
 
 	#tag Method, Flags = &h1
 		Protected Function Config(ForWriting As Boolean) As BeaconConfigs.ExperienceCurves
-		  Static ConfigName As Text = BeaconConfigs.ExperienceCurves.ConfigName
+		  Static ConfigName As String = BeaconConfigs.ExperienceCurves.ConfigName
 		  
 		  Dim Document As Beacon.Document = Self.Document
 		  Dim Config As BeaconConfigs.ExperienceCurves
@@ -246,7 +242,7 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ConfigLabel() As Text
+		Function ConfigLabel() As String
 		  Return Language.LabelForConfig(BeaconConfigs.ExperienceCurves.ConfigName)
 		End Function
 	#tag EndMethod
@@ -260,14 +256,14 @@ End
 		  Dim Config As BeaconConfigs.ExperienceCurves = Self.Config(True)
 		  Config.DinoLevelCap = LocalData.SharedInstance.GetIntegerVariable("Dino Level Cap")
 		  
-		  Dim TextList As Text = LocalData.SharedInstance.GetTextVariable("Dino Default Experience")
-		  Dim List() As Text = TextList.Split(",")
-		  For I As Integer = 0 To List.Ubound
-		    Config.DinoExperience(I) = UInt64.FromText(List(I))
+		  Dim TextList As String = LocalData.SharedInstance.GetStringVariable("Dino Default Experience")
+		  Dim List() As String = TextList.Split(",")
+		  For I As Integer = 0 To List.LastRowIndex
+		    Config.DinoExperience(I) = UInt64.FromString(List(I))
 		  Next
 		  
 		  Self.UpdateList()
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
@@ -280,14 +276,14 @@ End
 		  Dim Config As BeaconConfigs.ExperienceCurves = Self.Config(True)
 		  Config.PlayerLevelCap = LocalData.SharedInstance.GetIntegerVariable("Player Level Cap")
 		  
-		  Dim TextList As Text = LocalData.SharedInstance.GetTextVariable("Player Default Experience")
-		  Dim List() As Text = TextList.Split(",")
-		  For I As Integer = 0 To List.Ubound
-		    Config.PlayerExperience(I) = UInt64.FromText(List(I))
+		  Dim TextList As String = LocalData.SharedInstance.GetStringVariable("Player Default Experience")
+		  Dim List() As String = TextList.Split(",")
+		  For I As Integer = 0 To List.LastRowIndex
+		    Config.PlayerExperience(I) = UInt64.FromString(List(I))
 		  Next
 		  
 		  Self.UpdateList()
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
@@ -321,7 +317,7 @@ End
 		    Dim SelectLevels(0) As Integer
 		    SelectLevels(0) = Level
 		    Self.UpdateList(SelectLevels)
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  End If
 		End Sub
 	#tag EndMethod
@@ -342,7 +338,7 @@ End
 		  End If
 		  
 		  Dim Levels() As UInt64 = ExperienceWizard.Present(Self, Level, MinXP)
-		  If Levels.Ubound = -1 Then
+		  If Levels.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
@@ -356,7 +352,7 @@ End
 		  Next
 		  
 		  Self.UpdateList()
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
@@ -366,7 +362,7 @@ End
 		  Dim LevelXP, MinXP, MaxXP As UInt64
 		  Dim Config As BeaconConfigs.ExperienceCurves = Self.Config(False)
 		  
-		  Index = Self.List.ListIndex
+		  Index = Self.List.SelectedRowIndex
 		  Level = Index + 2
 		  
 		  If Self.ViewingPlayerStats Then
@@ -391,7 +387,7 @@ End
 		    Dim SelectLevels(0) As Integer
 		    SelectLevels(0) = Level
 		    Self.UpdateList(SelectLevels)
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  End If
 		End Sub
 	#tag EndMethod
@@ -399,9 +395,9 @@ End
 	#tag Method, Flags = &h21
 		Private Sub UpdateList()
 		  Dim SelectedLevels() As Integer
-		  For I As Integer = 0 To Self.List.ListCount - 1
+		  For I As Integer = 0 To Self.List.RowCount - 1
 		    If Self.List.Selected(I) Then
-		      SelectedLevels.Append(Val(Self.List.Cell(I, 0)))
+		      SelectedLevels.AddRow(Val(Self.List.CellValueAt(I, 0)))
 		    End If
 		  Next
 		  Self.UpdateList(SelectedLevels)
@@ -410,7 +406,7 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateList(SelectLevels() As Integer)
-		  Self.List.DeleteAllRows
+		  Self.List.RemoveAllRows
 		  
 		  Dim Config As BeaconConfigs.ExperienceCurves = Self.Config(False)
 		  Dim Levels() As UInt64
@@ -427,13 +423,13 @@ End
 		    IndexOffset = 1
 		  End If
 		  
-		  For I As Integer = 0 To Levels.Ubound
+		  For I As Integer = 0 To Levels.LastRowIndex
 		    Dim Level As Integer = I + IndexOffset
 		    Dim XP As UInt64 = Levels(I)
 		    Dim IsAscensionLevel As Boolean = Level > (MaxLevel - AscensionLevels)
 		    
 		    Self.List.AddRow(Format(Level, "0,"), Format(XP, "-0,"), If(IsAscensionLevel, "Yes", "No"))
-		    Self.List.Selected(Self.List.LastIndex) = SelectLevels.IndexOf(Level) > -1
+		    Self.List.Selected(Self.List.LastAddedRowIndex) = SelectLevels.IndexOf(Level) > -1
 		  Next
 		  
 		  Self.List.EnsureSelectionIsVisible(False)
@@ -456,7 +452,7 @@ End
 
 #tag Events LeftButtons
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddButton"
 		    Self.ShowAddExperience()
@@ -474,7 +470,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.LeftItems.Append(New BeaconToolbarItem("AddButton", IconToolbarAdd, "Add a level"))
 		  Me.LeftItems.Append(New BeaconToolbarItem("WizardButton", IconToolbarWizard, "Add multiple levels using a configuration wizard"))
 		  Me.LeftItems.Append(New BeaconToolbarItem("EditButton", IconToolbarEdit, False, "Edit the selected level"))
@@ -484,7 +480,7 @@ End
 #tag EndEvents
 #tag Events Switcher
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.Add(ShelfItem.NewFlexibleSpacer)
 		  Me.Add(IconPlayers, "Players", "players")
 		  Me.Add(IconTames, "Tames", "tames")
@@ -493,7 +489,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
+		Sub Pressed()
 		  Dim SettingUp As Boolean = Self.SettingUp
 		  Self.SettingUp = True
 		  Dim SelectedLevels() As Integer
@@ -504,21 +500,21 @@ End
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Open()
-		  Me.ColumnAlignment(0) = Listbox.AlignRight
-		  Me.ColumnAlignment(1) = Listbox.AlignRight
-		  Me.ColumnAlignment(2) = Listbox.AlignCenter
+		Sub Opening()
+		  Me.ColumnAlignmentAt(0) = Listbox.Alignments.Right
+		  Me.ColumnAlignmentAt(1) = Listbox.Alignments.Right
+		  Me.ColumnAlignmentAt(2) = Listbox.Alignments.Center
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Self.List.SelCount > 0
+		  Return Self.List.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
 		Sub PerformClear(Warn As Boolean)
 		  If Warn Then
-		    Dim Count As Integer = Self.List.SelCount
+		    Dim Count As Integer = Self.List.SelectedRowCount
 		    If Count = 1 Then
 		      If Not Self.ShowConfirm("Are you sure you want to delete this experience requirement?", "You will be removing the experience requirement for the selected level. All later level requirements will be moved down. For example, when deleting level 2, level 3's requirement would become the new level 2 requirement.", "Delete", "Cancel") Then
 		        Return
@@ -532,9 +528,9 @@ End
 		  
 		  Dim Player As Boolean = Self.ViewingPlayerStats
 		  Dim Config As BeaconConfigs.ExperienceCurves
-		  Dim Modified As Boolean = Self.ContentsChanged
+		  Dim Modified As Boolean = Self.Changed
 		  
-		  For I As Integer = Self.List.ListCount - 1 DownTo 0
+		  For I As Integer = Self.List.RowCount - 1 DownTo 0
 		    If Not Self.List.Selected(I) Then
 		      Continue
 		    End If
@@ -554,17 +550,17 @@ End
 		  
 		  Dim Levels() As Integer
 		  Self.UpdateList(Levels)
-		  Self.ContentsChanged = Modified
+		  Self.Changed = Modified
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
-		  Self.LeftButtons.EditButton.Enabled = Me.SelCount = 1
+		Sub SelectionChanged()
+		  Self.LeftButtons.EditButton.Enabled = Me.SelectedRowCount = 1
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub DoubleClick()
-		  If Me.SelCount = 1 Then
+		Sub DoubleClicked()
+		  If Me.SelectedRowCount = 1 Then
 		    Self.ShowEditExperience()
 		  End If
 		End Sub
@@ -572,10 +568,76 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -583,6 +645,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -590,10 +653,13 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -601,15 +667,17 @@ End
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -617,6 +685,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -624,53 +693,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -678,6 +765,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -685,7 +773,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -693,7 +781,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -701,72 +789,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -774,7 +805,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -782,6 +813,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

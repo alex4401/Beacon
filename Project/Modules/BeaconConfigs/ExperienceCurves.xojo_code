@@ -2,11 +2,50 @@
  Attributes ( OmniVersion = 1 ) Protected Class ExperienceCurves
 Inherits Beacon.ConfigGroup
 	#tag Event
-		Sub GameIniValues(SourceDocument As Beacon.Document, Values() As Beacon.ConfigValue, Mask As UInt64)
-		  #Pragma Unused Mask
+		Sub DetectIssues(Document As Beacon.Document, Issues() As Beacon.Issue)
+		  #Pragma Unused Document
+		  
+		  Dim ConfigName As String = ConfigKey
+		  Dim Locale As Locale = Locale.Current
+		  
+		  If Self.mPlayerLevels.LastRowIndex = -1 And Self.mDinoLevels.LastRowIndex > -1 Then
+		    Issues.AddRow(New Beacon.Issue(ConfigName, "Ark requires player experience to be defined if editing dino experience."))
+		  ElseIf Self.PlayerLevelCap <= Self.AscensionLevels Then
+		    Issues.AddRow(New Beacon.Issue(ConfigName, "Must define at least " + Self.AscensionLevels.ToString(Locale) + " player levels to handle ascension correctly."))
+		  End If
+		  
+		  For I As Integer = 0 To Self.mPlayerLevels.LastRowIndex
+		    Dim Level As Integer = I + 2
+		    Dim XP As Integer = Self.mPlayerLevels(I)
+		    Dim LastXP As UInt64 = If(I > 0, Self.mPlayerLevels(I - 1), 0)
+		    If XP < LastXP Then
+		      Issues.AddRow(New Beacon.Issue(ConfigName, "Player level " + Level.ToString(Locale) + " required experience is lower than the previous level.", "Player:" + Level.ToString))
+		    End If
+		    If XP > Self.MaxSupportedXP Then
+		      Issues.AddRow(New Beacon.Issue(ConfigName, "Player level " + Level.ToString(Locale) + " required experience is greater than Ark's limit of " + Format(Self.MaxSupportedXP, "0,") + ".", "Player:" + Level.ToString))
+		    End If
+		  Next
+		  
+		  For I As Integer = 0 To Self.mDinoLevels.LastRowIndex
+		    Dim Level As Integer = I + 2
+		    Dim XP As Integer = Self.mDinoLevels(I)
+		    Dim LastXP As UInt64 = If(I > 0, Self.mDinoLevels(I - 1), 0)
+		    If XP < LastXP Then
+		      Issues.AddRow(New Beacon.Issue(ConfigName, "Dino level " + Level.ToString(Locale) + " required experience is lower than the previous level.", "Dino:" + Level.ToString))
+		    End If
+		    If XP > Self.MaxSupportedXP Then
+		      Issues.AddRow(New Beacon.Issue(ConfigName, "Dino level " + Level.ToString(Locale) + " required experience is greater than Ark's limit of " + Format(Self.MaxSupportedXP, "0,") + ".", "Dino:" + Level.ToString))
+		    End If
+		  Next
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Sub GameIniValues(SourceDocument As Beacon.Document, Values() As Beacon.ConfigValue, Profile As Beacon.ServerProfile)
+		  #Pragma Unused Profile
 		  #Pragma Unused SourceDocument
 		  
-		  If Self.mPlayerLevels.Ubound = -1 Then
+		  If Self.mPlayerLevels.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
@@ -16,40 +55,41 @@ Inherits Beacon.ConfigGroup
 		  // Index 150 is level 152
 		  // Index 178 is level 180
 		  // This is because players start at level 1, not level 0. Then the 0-based array needs to be accounted for.
-		  Dim Chunks() As Text
-		  For Index As Integer = 0 To Self.mPlayerLevels.Ubound
+		  Dim Chunks() As String
+		  For Index As Integer = 0 To Self.mPlayerLevels.LastRowIndex
 		    Dim XP As UInt64 = Self.mPlayerLevels(Index)
-		    Chunks.Append("ExperiencePointsForLevel[" + Index.ToText + "]=" + XP.ToText)
+		    Chunks.AddRow("ExperiencePointsForLevel[" + Index.ToString + "]=" + XP.ToString)
 		  Next
 		  
-		  Values.Append(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "LevelExperienceRampOverrides", "(" + Chunks.Join(",") + ")"))
-		  Values.Append(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "OverrideMaxExperiencePointsPlayer", MaxXP.ToText))
+		  Values.AddRow(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "LevelExperienceRampOverrides", "(" + Chunks.Join(",") + ")"))
+		  Values.AddRow(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "OverrideMaxExperiencePointsPlayer", MaxXP.ToString))
 		  
-		  If Self.mDinoLevels.Ubound = -1 Then
+		  If Self.mDinoLevels.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
 		  Redim Chunks(-1)
 		  MaxXP = Self.DinoMaxExperience
 		  
-		  For Index As Integer = 0 To Self.mDinoLevels.Ubound
+		  For Index As Integer = 0 To Self.mDinoLevels.LastRowIndex
 		    Dim XP As UInt64 = Self.mDinoLevels(Index)
-		    Chunks.Append("ExperiencePointsForLevel[" + Index.ToText + "]=" + XP.ToText)
+		    Chunks.AddRow("ExperiencePointsForLevel[" + Index.ToString + "]=" + XP.ToString)
 		  Next
 		  
-		  Values.Append(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "LevelExperienceRampOverrides", "(" + Chunks.Join(",") + ")"))
-		  Values.Append(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "OverrideMaxExperiencePointsDino", MaxXP.ToText))
+		  Values.AddRow(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "LevelExperienceRampOverrides", "(" + Chunks.Join(",") + ")"))
+		  Values.AddRow(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "OverrideMaxExperiencePointsDino", MaxXP.ToString))
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub ReadDictionary(Dict As Xojo.Core.Dictionary, Identity As Beacon.Identity)
+		Sub ReadDictionary(Dict As Dictionary, Identity As Beacon.Identity, Document As Beacon.Document)
 		  #Pragma Unused Identity
+		  #Pragma Unused Document
 		  
 		  If Dict.HasKey("Player Levels") Then
-		    Dim List() As Auto = Dict.Value("Player Levels")
+		    Dim List() As Variant = Dict.Value("Player Levels")
 		    For Each LevelXP As UInt64 In List
-		      Self.mPlayerLevels.Append(LevelXP)
+		      Self.mPlayerLevels.AddRow(LevelXP)
 		    Next
 		  ElseIf Dict.HasAllKeys("Player Curve", "Player Level Cap", "Player Max Experience") Then
 		    Dim Curve As Beacon.Curve = Beacon.Curve.Import(Dict.Value("Player Curve"))
@@ -59,9 +99,9 @@ Inherits Beacon.ConfigGroup
 		  End If
 		  
 		  If Dict.HasKey("Dino Levels") Then
-		    Dim List() As Auto = Dict.Value("Dino Levels")
+		    Dim List() As Variant = Dict.Value("Dino Levels")
 		    For Each LevelXP As UInt64 In List
-		      Self.mDinoLevels.Append(LevelXP)
+		      Self.mDinoLevels.AddRow(LevelXP)
 		    Next
 		  ElseIf Dict.HasAllKeys("Dino Curve", "Dino Level Cap", "Dino Max Experience") Then
 		    Dim Curve As Beacon.Curve = Beacon.Curve.Import(Dict.Value("Dino Curve"))
@@ -73,8 +113,8 @@ Inherits Beacon.ConfigGroup
 	#tag EndEvent
 
 	#tag Event
-		Sub WriteDictionary(Dict As Xojo.Core.DIctionary, Identity As Beacon.Identity)
-		  #Pragma Unused Identity
+		Sub WriteDictionary(Dict As Dictionary, Document As Beacon.Document)
+		  #Pragma Unused Document
 		  
 		  Dict.Value("Player Levels") = Self.mPlayerLevels
 		  Dict.Value("Dino Levels") = Self.mDinoLevels
@@ -84,22 +124,22 @@ Inherits Beacon.ConfigGroup
 
 	#tag Method, Flags = &h0
 		Sub AppendDinoExperience(XP As UInt64)
-		  If Self.mDinoLevels.Ubound > -1 And XP < Self.mDinoLevels(Self.mDinoLevels.Ubound) Then
+		  If Self.mDinoLevels.LastRowIndex > -1 And XP < Self.mDinoLevels(Self.mDinoLevels.LastRowIndex) Then
 		    Return
 		  End If
 		  
-		  Self.mDinoLevels.Append(XP)
+		  Self.mDinoLevels.AddRow(XP)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub AppendPlayerExperience(XP As UInt64)
-		  If Self.mPlayerLevels.Ubound > -1 And XP < Self.mPlayerLevels(Self.mPlayerLevels.Ubound) Then
+		  If Self.mPlayerLevels.LastRowIndex > -1 And XP < Self.mPlayerLevels(Self.mPlayerLevels.LastRowIndex) Then
 		    Return
 		  End If
 		  
-		  Self.mPlayerLevels.Append(XP)
+		  Self.mPlayerLevels.AddRow(XP)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
@@ -111,8 +151,8 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function ConfigName() As Text
-		  Return "ExperienceCurves"
+		Shared Function ConfigName() As String
+		  Return ConfigKey
 		End Function
 	#tag EndMethod
 
@@ -120,19 +160,19 @@ Inherits Beacon.ConfigGroup
 		Sub Constructor()
 		  Super.Constructor()
 		  
-		  Dim List As Text = Beacon.Data.GetTextVariable("Player Levels")
+		  Dim List As String = Beacon.Data.GetStringVariable("Player Levels")
 		  If List <> "" Then
-		    Dim Values() As Text = List.Split(",")
-		    For Each Value As Text In Values
-		      Self.mPlayerLevels.Append(UInt64.FromText(Value))
+		    Dim Values() As String = List.Split(",")
+		    For Each Value As String In Values
+		      Self.mPlayerLevels.AddRow(UInt64.FromString(Value))
 		    Next
 		  End If
 		  
-		  List = Beacon.Data.GetTextVariable("Dino Levels")
+		  List = Beacon.Data.GetStringVariable("Dino Levels")
 		  If List <> "" Then
-		    Dim Values() As Text = List.Split(",")
-		    For Each Value As Text In Values
-		      Self.mDinoLevels.Append(UInt64.FromText(Value))
+		    Dim Values() As String = List.Split(",")
+		    For Each Value As String In Values
+		      Self.mDinoLevels.AddRow(UInt64.FromString(Value))
 		    Next
 		  End If
 		End Sub
@@ -163,8 +203,8 @@ Inherits Beacon.ConfigGroup
 	#tag Method, Flags = &h0
 		Function DinoLevels() As UInt64()
 		  Dim Levels() As UInt64
-		  Redim Levels(Self.mDinoLevels.Ubound)
-		  For I As Integer = 0 To Self.mDinoLevels.Ubound
+		  Redim Levels(Self.mDinoLevels.LastRowIndex)
+		  For I As Integer = 0 To Self.mDinoLevels.LastRowIndex
 		    Levels(I) = Self.mDinoLevels(I)
 		  Next
 		  Return Levels
@@ -173,12 +213,12 @@ Inherits Beacon.ConfigGroup
 
 	#tag Method, Flags = &h21
 		Private Shared Function FindHighValue(Values() As UInt64, StartingIndex As Integer, ByRef EndingIndex As Integer) As UInt64
-		  If StartingIndex >= Values.Ubound Then
+		  If StartingIndex >= Values.LastRowIndex Then
 		    EndingIndex = -1
 		    Return 0
 		  End If
 		  
-		  For I As Integer = StartingIndex + 1 To Values.Ubound
+		  For I As Integer = StartingIndex + 1 To Values.LastRowIndex
 		    If Values(I) > 0 Then
 		      EndingIndex = I
 		      Return Values(I)
@@ -210,33 +250,33 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function FromImport(ParsedData As Xojo.Core.Dictionary, CommandLineOptions As Xojo.Core.Dictionary, MapCompatibility As UInt64, QualityMultiplier As Double) As BeaconConfigs.ExperienceCurves
+		Shared Function FromImport(ParsedData As Dictionary, CommandLineOptions As Dictionary, MapCompatibility As UInt64, Difficulty As BeaconConfigs.Difficulty) As BeaconConfigs.ExperienceCurves
 		  #Pragma Unused CommandLineOptions
 		  #Pragma Unused MapCompatibility
-		  #Pragma Unused QualityMultiplier
+		  #Pragma Unused Difficulty
 		  
 		  If Not ParsedData.HasKey("LevelExperienceRampOverrides") Then
 		    Return Nil
 		  End If
 		  
 		  Dim PlayerExperience As Boolean = True
-		  Dim Values As Auto = ParsedData.Value("LevelExperienceRampOverrides")
-		  Dim ValuesInfo As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Values)
-		  Dim Overrides() As Auto
-		  If ValuesInfo.FullName = "Auto()" Then
+		  Dim Values As Variant = ParsedData.Value("LevelExperienceRampOverrides")
+		  Dim ValuesInfo As Introspection.TypeInfo = Introspection.GetType(Values)
+		  Dim Overrides() As Variant
+		  If ValuesInfo.FullName = "Object()" Then
 		    Overrides = Values
-		  ElseIf ValuesInfo.FullName = "Xojo.Core.Dictionary" Then
-		    Overrides.Append(Values)
+		  ElseIf ValuesInfo.FullName = "Dictionary" Then
+		    Overrides.AddRow(Values)
 		  Else
 		    Return Nil
 		  End If
 		  
 		  Dim Config As New BeaconConfigs.ExperienceCurves
 		  Config.mWasPerfectImport = True
-		  For Each Dict As Xojo.Core.Dictionary In Overrides
+		  For Each Dict As Dictionary In Overrides
 		    Dim Levels() As UInt64
-		    For Each Entry As Xojo.Core.DictionaryEntry In Dict
-		      Dim Key As Text = Entry.Key
+		    For Each Entry As DictionaryEntry In Dict
+		      Dim Key As String = Entry.Key
 		      If Key.BeginsWith("ExperiencePointsForLevel") Then
 		        Dim OpenTagPosition As Integer = Key.IndexOf("[")
 		        Dim CloseTagPosition As Integer = Key.IndexOf(OpenTagPosition, "]")
@@ -244,9 +284,9 @@ Inherits Beacon.ConfigGroup
 		          Continue
 		        End If
 		        OpenTagPosition = OpenTagPosition + 1
-		        Dim IndexTxt As Text = Key.Mid(OpenTagPosition, CloseTagPosition - OpenTagPosition)
-		        Dim Index As Integer = Integer.FromText(IndexTxt)
-		        If Levels.Ubound < Index Then
+		        Dim IndexTxt As String = Key.Middle(OpenTagPosition, CloseTagPosition - OpenTagPosition)
+		        Dim Index As Integer = Integer.FromString(IndexTxt)
+		        If Levels.LastRowIndex < Index Then
 		          Redim Levels(Index)
 		        End If
 		        Levels(Index) = Entry.Value
@@ -255,7 +295,7 @@ Inherits Beacon.ConfigGroup
 		    
 		    // Now make sure there are no gaps. If there are, fill in
 		    // the gap with the average of the surrounding values
-		    For I As Integer = 0 To Levels.Ubound
+		    For I As Integer = 0 To Levels.LastRowIndex
 		      If Levels(I) <> 0 Then
 		        Continue
 		      End If
@@ -288,55 +328,13 @@ Inherits Beacon.ConfigGroup
 		End Function
 	#tag EndMethod
 
-	#tag Method, Flags = &h0
-		Function Issues(Document As Beacon.Document) As Beacon.Issue()
-		  #Pragma Unused Document
-		  
-		  Dim Issues() As Beacon.Issue
-		  Dim ConfigName As Text = "ExperienceCurves"
-		  Dim Locale As Xojo.Core.Locale = Xojo.Core.Locale.Current
-		  
-		  If Self.mPlayerLevels.Ubound = -1 And Self.mDinoLevels.Ubound > -1 Then
-		    Issues.Append(New Beacon.Issue(ConfigName, "Ark requires player experience to be defined if editing dino experience."))
-		  ElseIf Self.PlayerLevelCap <= Self.AscensionLevels Then
-		    Issues.Append(New Beacon.Issue(ConfigName, "Must define at least " + Self.AscensionLevels.ToText(Locale) + " player levels to handle ascension correctly."))
-		  End If
-		  
-		  For I As Integer = 0 To Self.mPlayerLevels.Ubound
-		    Dim Level As Integer = I + 2
-		    Dim XP As Integer = Self.mPlayerLevels(I)
-		    Dim LastXP As UInt64 = If(I > 0, Self.mPlayerLevels(I - 1), 0)
-		    If XP < LastXP Then
-		      Issues.Append(New Beacon.Issue(ConfigName, "Player level " + Level.ToText(Locale) + " required experience is lower than the previous level.", "Player:" + Level.ToText))
-		    End If
-		    If XP > Self.MaxSupportedXP Then
-		      Issues.Append(New Beacon.Issue(ConfigName, "Player level " + Level.ToText(Locale) + " required experience is greater than Ark's limit of " + Format(Self.MaxSupportedXP, "0,").ToText + ".", "Player:" + Level.ToText))
-		    End If
-		  Next
-		  
-		  For I As Integer = 0 To Self.mDinoLevels.Ubound
-		    Dim Level As Integer = I + 2
-		    Dim XP As Integer = Self.mDinoLevels(I)
-		    Dim LastXP As UInt64 = If(I > 0, Self.mDinoLevels(I - 1), 0)
-		    If XP < LastXP Then
-		      Issues.Append(New Beacon.Issue(ConfigName, "Dino level " + Level.ToText(Locale) + " required experience is lower than the previous level.", "Dino:" + Level.ToText))
-		    End If
-		    If XP > Self.MaxSupportedXP Then
-		      Issues.Append(New Beacon.Issue(ConfigName, "Dino level " + Level.ToText(Locale) + " required experience is greater than Ark's limit of " + Format(Self.MaxSupportedXP, "0,").ToText + ".", "Dino:" + Level.ToText))
-		    End If
-		  Next
-		  
-		  Return Issues
-		End Function
-	#tag EndMethod
-
 	#tag Method, Flags = &h21
 		Private Shared Function LegacyCurveImport(Curve As Beacon.Curve, MaxLevel As UInt64, MaxXP As UInt64) As UInt64()
 		  Dim Levels() As UInt64
 		  For Index As Integer = 0 To MaxLevel - 2
 		    Dim Level As Integer = Index + 2
 		    Dim XP As UInt64 = Round(Curve.Evaluate((Level - 1) / (MaxLevel - 1), 0, MaxXP))
-		    Levels.Append(XP)
+		    Levels.AddRow(XP)
 		  Next
 		  Return Levels
 		End Function
@@ -367,8 +365,8 @@ Inherits Beacon.ConfigGroup
 	#tag Method, Flags = &h0
 		Function PlayerLevels() As UInt64()
 		  Dim Levels() As UInt64
-		  Redim Levels(Self.mPlayerLevels.Ubound)
-		  For I As Integer = 0 To Self.mPlayerLevels.Ubound
+		  Redim Levels(Self.mPlayerLevels.LastRowIndex)
+		  For I As Integer = 0 To Self.mPlayerLevels.LastRowIndex
 		    Levels(I) = Self.mPlayerLevels(I)
 		  Next
 		  Return Levels
@@ -377,14 +375,14 @@ Inherits Beacon.ConfigGroup
 
 	#tag Method, Flags = &h0
 		Sub RemoveDinoExperience(Index As Integer)
-		  Self.mDinoLevels.Remove(Index)
+		  Self.mDinoLevels.RemoveRowAt(Index)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub RemovePlayerExperience(Index As Integer)
-		  Self.mPlayerLevels.Remove(Index)
+		  Self.mPlayerLevels.RemoveRowAt(Index)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
@@ -399,7 +397,7 @@ Inherits Beacon.ConfigGroup
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  Return Self.mDinoLevels.Ubound + 1
+			  Return Self.mDinoLevels.LastRowIndex + 1
 			End Get
 		#tag EndGetter
 		#tag Setter
@@ -418,8 +416,8 @@ Inherits Beacon.ConfigGroup
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  If Self.mDinoLevels.Ubound > -1 Then
-			    Return Self.mDinoLevels(Self.mDinoLevels.Ubound)
+			  If Self.mDinoLevels.LastRowIndex > -1 Then
+			    Return Self.mDinoLevels(Self.mDinoLevels.LastRowIndex)
 			  End If
 			End Get
 		#tag EndGetter
@@ -441,7 +439,7 @@ Inherits Beacon.ConfigGroup
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  Return Self.mPlayerLevels.Ubound + 2
+			  Return Self.mPlayerLevels.LastRowIndex + 2
 			End Get
 		#tag EndGetter
 		#tag Setter
@@ -460,8 +458,8 @@ Inherits Beacon.ConfigGroup
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  If Self.mPlayerLevels.Ubound > -1 Then
-			    Return Self.mPlayerLevels(Self.mPlayerLevels.Ubound)
+			  If Self.mPlayerLevels.LastRowIndex > -1 Then
+			    Return Self.mPlayerLevels(Self.mPlayerLevels.LastRowIndex)
 			  End If
 			End Get
 		#tag EndGetter
@@ -478,6 +476,9 @@ Inherits Beacon.ConfigGroup
 	#tag EndComputedProperty
 
 
+	#tag Constant, Name = ConfigKey, Type = Text, Dynamic = False, Default = \"ExperienceCurves", Scope = Private
+	#tag EndConstant
+
 	#tag Constant, Name = MaxSupportedXP, Type = Double, Dynamic = False, Default = \"2147483647", Scope = Public
 	#tag EndConstant
 
@@ -487,7 +488,9 @@ Inherits Beacon.ConfigGroup
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -495,12 +498,15 @@ Inherits Beacon.ConfigGroup
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -508,6 +514,7 @@ Inherits Beacon.ConfigGroup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -515,36 +522,55 @@ Inherits Beacon.ConfigGroup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="IsImplicit"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="DinoLevelCap"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="UInteger"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="DinoMaxExperience"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="UInt64"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="PlayerLevelCap"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="UInteger"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="PlayerMaxExperience"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="UInt64"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="PlayerSoftLevelCap"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

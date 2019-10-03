@@ -10,10 +10,9 @@ Inherits Thread
 		  End If
 		  
 		  Try
-		    Dim TextContent As Text = Xojo.Core.TextEncoding.UTF8.ConvertDataToText(Self.mResponse.Content)
-		    Dim List() As Auto = Xojo.Data.ParseJSON(TextContent)
+		    Dim List() As Variant = Beacon.ParseJSON(Self.mResponse.Content)
 		    Dim SyncedPaths As New Dictionary
-		    For Each Dict As Xojo.Core.Dictionary In List
+		    For Each Dict As Dictionary In List
 		      Dim RemotePath As String = Dict.Value("path")
 		      SyncedPaths.Value(RemotePath) = True
 		      
@@ -26,11 +25,11 @@ Inherits Thread
 		        LocalFile = LocalFile(RemotePath, True)
 		      End If
 		      
-		      Dim ServerModifiedText As Text = Dict.Value("modified")
-		      Dim ServerModified As Date = NewDateFromSQLDateTime(ServerModifiedText).LocalTime
+		      Dim ServerModifiedText As String = Dict.Value("modified")
+		      Dim ServerModified As DateTime = NewDateFromSQLDateTime(ServerModifiedText).LocalTime
 		      
 		      If LocalFile.Exists And LocalFile.ModificationDate <> Nil Then
-		        Dim LocalModified As Date = LocalFile.ModificationDate
+		        Dim LocalModified As DateTime = LocalFile.ModificationDateTime
 		        Dim FilesAreDifferent As Boolean = LocalModified <> ServerModified
 		        Dim LocalIsNewer As Boolean = LocalModified > ServerModified
 		        If LocalIsNewer Then
@@ -38,11 +37,11 @@ Inherits Thread
 		          UploadFileTo(LocalFile, RemotePath)
 		        ElseIf LocalIsNewer = False And IsDeleted = True Then
 		          // Delete the file
-		          LocalFile.Delete
+		          LocalFile.Remove
 		          Dim ActionDict As New Dictionary
 		          ActionDict.Value("Action") = "DELETE"
 		          ActionDict.Value("Path") = RemotePath
-		          SyncActions.Append(ActionDict)
+		          SyncActions.AddRow(ActionDict)
 		        ElseIf FilesAreDifferent = True And LocalIsNewer = False Then
 		          // Retrieve the file
 		          RequestFileFrom(LocalFile, RemotePath, ServerModified)
@@ -96,22 +95,25 @@ Inherits Thread
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="Integer"
-			EditorType="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Priority"
@@ -119,6 +121,7 @@ Inherits Thread
 			Group="Behavior"
 			InitialValue="5"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="StackSize"
@@ -126,6 +129,7 @@ Inherits Thread
 			Group="Behavior"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

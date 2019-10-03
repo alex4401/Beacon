@@ -2,33 +2,33 @@
 Protected Class BeaconWindow
 Inherits Window
 	#tag Event
-		Sub Close()
-		  RaiseEvent Close
+		Sub Closing()
+		  RaiseEvent Closing
 		  
 		  If Self.mWindowMenuItem <> Nil Then
 		    Dim WindowMenu As MenuItem = MainMenuBar.Child("WindowMenu")
 		    For I As Integer = WindowMenu.Count - 1 DownTo 0
-		      If WindowMenu.Item(I) = Self.mWindowMenuItem Then
-		        WindowMenu.Remove(I)
-		        If WindowMenu.Item(WindowMenu.Count - 1) = MainMenuBar.Child("WindowMenu").Child("UntitledSeparator4") Then
+		      If WindowMenu.MenuAt(I) = Self.mWindowMenuItem Then
+		        WindowMenu.RemoveMenuAt(I)
+		        If WindowMenu.MenuAt(WindowMenu.Count - 1) = MainMenuBar.Child("WindowMenu").Child("UntitledSeparator4") Then
 		          MainMenuBar.Child("WindowMenu").Child("UntitledSeparator4").Visible = False
 		        End If
 		        Exit For I
 		      End If
 		    Next
 		    
-		    RemoveHandler Self.mWindowMenuItem.Action, WeakAddressOf Self.mWindowMenuItem_Action
+		    RemoveHandler Self.mWindowMenuItem.MenuItemSelected, WeakAddressOf Self.mWindowMenuItem_Action
 		    Self.mWindowMenuItem = Nil
 		  End If
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub EnableMenuItems()
-		  If Self.CloseButton Then
+		Sub MenuSelected()
+		  If Self.HasCloseButton Then
 		    FileClose.Enable
 		  End If
-		  If Self.MinimizeButton Then
+		  If Self.HasMinimizeButton Then
 		    WindowMinimize.Enable
 		  End If
 		  If Self.Resizeable Then
@@ -38,7 +38,7 @@ Inherits Window
 		    Self.mWindowMenuItem.Enable
 		  End If
 		  
-		  RaiseEvent EnableMenuItems
+		  RaiseEvent MenuSelected
 		End Sub
 	#tag EndEvent
 
@@ -51,7 +51,7 @@ Inherits Window
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Dim InitialWidth As Integer = Self.Width
 		  // Dumb workaround because contents are sizing 1 pixels too short.
 		  // A resize causes them to find their correct positions.
@@ -59,16 +59,16 @@ Inherits Window
 		  Self.Width = InitialWidth
 		  
 		  Dim MenuItem As New MenuItem(Self.Title)
-		  AddHandler MenuItem.Action, WeakAddressOf Self.mWindowMenuItem_Action
+		  AddHandler MenuItem.MenuItemSelected, WeakAddressOf Self.mWindowMenuItem_Action
 		  
 		  If MenuItem <> Nil Then
 		    Self.mWindowMenuItem = MenuItem
 		    
 		    MainMenuBar.Child("WindowMenu").Child("UntitledSeparator3").Visible = True
-		    MainMenuBar.Child("WindowMenu").Append(MenuItem)
+		    MainMenuBar.Child("WindowMenu").AddMenu(MenuItem)
 		  End If
 		  
-		  RaiseEvent Open
+		  RaiseEvent Opening
 		  
 		  Self.mOpened = True
 		  Self.Invalidate
@@ -119,7 +119,7 @@ Inherits Window
 		    Declare Function BringWindowToTop Lib "User32" (Target As Int32) As Boolean
 		    Call BringWindowToTop(Self.Handle)
 		  #else
-		    #Pragma Error "No code to bring a window to foreground on this platform."
+		    #Pragma Warning "No code to bring a window to foreground on this platform."
 		  #endif
 		  
 		  Self.Show()
@@ -144,7 +144,7 @@ Inherits Window
 	#tag Method, Flags = &h0
 		Sub UpdateWindowMenu()
 		  If Self.mWindowMenuItem <> Nil Then
-		    Self.mWindowMenuItem.Text = Self.Title
+		    Self.mWindowMenuItem.Value = Self.Title
 		    Self.mWindowMenuItem.Enable
 		  End If
 		End Sub
@@ -152,11 +152,11 @@ Inherits Window
 
 
 	#tag Hook, Flags = &h0
-		Event Close()
+		Event Closing()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event EnableMenuItems()
+		Event MenuSelected()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -164,7 +164,7 @@ Inherits Window
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event Opening()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -183,39 +183,59 @@ Inherits Window
 
 	#tag ViewBehavior
 		#tag ViewProperty
-			Name="BackColor"
-			Visible=true
-			Group="Background"
-			InitialValue="&hFFFFFF"
-			Type="Color"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Backdrop"
-			Visible=true
-			Group="Background"
-			Type="Picture"
-			EditorType="Picture"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="CloseButton"
-			Visible=true
+			Name="Resizeable"
+			Visible=false
 			Group="Frame"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Composite"
-			Group="OS X (Carbon)"
-			InitialValue="False"
+			Name="MenuBarVisible"
+			Visible=true
+			Group="Deprecated"
+			InitialValue="True"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Frame"
+			Name="MinimumWidth"
+			Visible=true
+			Group="Size"
+			InitialValue="64"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MinimumHeight"
+			Visible=true
+			Group="Size"
+			InitialValue="64"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MaximumWidth"
+			Visible=true
+			Group="Size"
+			InitialValue="32000"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MaximumHeight"
+			Visible=true
+			Group="Size"
+			InitialValue="32000"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Type"
 			Visible=true
 			Group="Frame"
 			InitialValue="0"
-			Type="Integer"
+			Type="Types"
 			EditorType="Enum"
 			#tag EnumValues
 				"0 - Document"
@@ -232,134 +252,43 @@ Inherits Window
 			#tag EndEnumValues
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="FullScreen"
-			Group="Behavior"
-			InitialValue="False"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="FullScreenButton"
-			Visible=true
-			Group="Frame"
-			InitialValue="False"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="HasBackColor"
-			Visible=true
-			Group="Background"
-			InitialValue="False"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Height"
-			Visible=true
-			Group="Size"
-			InitialValue="400"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="ImplicitInstance"
-			Visible=true
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Interfaces"
-			Visible=true
-			Group="ID"
-			Type="String"
-			EditorType="String"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="LiveResize"
-			Visible=true
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MacProcID"
-			Group="OS X (Carbon)"
-			InitialValue="0"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MaxHeight"
-			Visible=true
-			Group="Size"
-			InitialValue="32000"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MaximizeButton"
+			Name="HasCloseButton"
 			Visible=true
 			Group="Frame"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="MaxWidth"
-			Visible=true
-			Group="Size"
-			InitialValue="32000"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MenuBar"
-			Visible=true
-			Group="Menus"
-			Type="MenuBar"
-			EditorType="MenuBar"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MenuBarVisible"
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MinHeight"
-			Visible=true
-			Group="Size"
-			InitialValue="64"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MinimizeButton"
+			Name="HasMaximizeButton"
 			Visible=true
 			Group="Frame"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="MinWidth"
+			Name="HasMinimizeButton"
 			Visible=true
-			Group="Size"
-			InitialValue="64"
-			Type="Integer"
+			Group="Frame"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Name"
+			Name="HasFullScreenButton"
 			Visible=true
-			Group="ID"
-			Type="String"
-			EditorType="String"
+			Group="Frame"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Placement"
+			Name="DefaultLocation"
 			Visible=true
 			Group="Behavior"
 			InitialValue="0"
-			Type="Integer"
+			Type="Locations"
 			EditorType="Enum"
 			#tag EnumValues
 				"0 - Default"
@@ -370,19 +299,100 @@ Inherits Window
 			#tag EndEnumValues
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Resizeable"
+			Name="HasBackgroundColor"
 			Visible=true
-			Group="Frame"
+			Group="Background"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="BackgroundColor"
+			Visible=true
+			Group="Background"
+			InitialValue="&hFFFFFF"
+			Type="Color"
+			EditorType="Color"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Backdrop"
+			Visible=true
+			Group="Background"
+			InitialValue=""
+			Type="Picture"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Composite"
+			Visible=false
+			Group="OS X (Carbon)"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="FullScreen"
+			Visible=false
+			Group="Behavior"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Height"
+			Visible=true
+			Group="Size"
+			InitialValue="400"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="ImplicitInstance"
+			Visible=true
+			Group="Behavior"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Interfaces"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MacProcID"
+			Visible=false
+			Group="OS X (Carbon)"
+			InitialValue="0"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MenuBar"
+			Visible=true
+			Group="Menus"
+			InitialValue=""
+			Type="MenuBar"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Name"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Title"
@@ -390,6 +400,7 @@ Inherits Window
 			Group="Frame"
 			InitialValue="Untitled"
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Visible"
@@ -397,7 +408,7 @@ Inherits Window
 			Group="Behavior"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Width"
@@ -405,6 +416,7 @@ Inherits Window
 			Group="Size"
 			InitialValue="600"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

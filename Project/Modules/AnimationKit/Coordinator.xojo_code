@@ -3,26 +3,26 @@ Protected Class Coordinator
 	#tag CompatibilityFlags = ( not TargetHasGUI and not TargetWeb and not TargetIOS ) or ( TargetWeb ) or ( TargetHasGUI ) or ( TargetIOS )
 	#tag Method, Flags = &h0
 		Sub AddTask(Task As AnimationKit.Task)
-		  Self.Tasks.Append(Task)
+		  Self.Tasks.AddRow(Task)
 		  RaiseEvent TaskAdded(Task)
 		  
-		  If Self.Animator.Mode = Xojo.Core.Timer.Modes.Off Then
-		    Self.Animator.Mode = Xojo.Core.Timer.Modes.Multiple
+		  If Self.Animator.RunMode = Timer.RunModes.Off Then
+		    Self.Animator.RunMode = Timer.RunModes.Multiple
 		  End If
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Animator_Action(Sender As Xojo.Core.Timer)
+		Private Sub Animator_Run(Sender As Timer)
 		  Dim AddedTasks(), RemovedTasks() As AnimationKit.Task
-		  For I As Integer = UBound(Self.Tasks) DownTo 0
+		  For I As Integer = Self.Tasks.LastRowIndex DownTo 0
 		    If Self.Tasks(I).Cancelled Then
-		      RemovedTasks.Append(Self.Tasks(I))
-		      Self.Tasks.Remove(I)
+		      RemovedTasks.AddRow(Self.Tasks(I))
+		      Self.Tasks.RemoveRowAt(I)
 		    End If
 		  Next
 		  
-		  Dim Now As Double = Microseconds
+		  Dim Now As Double = System.Microseconds
 		  
 		  For Each Task As AnimationKit.Task In Self.Tasks
 		    If Task.Completed(Now) Or Now - Task.LastFrameTime >= Self.FramePeriod Then
@@ -30,21 +30,21 @@ Protected Class Coordinator
 		    End If
 		  Next
 		  
-		  For I As Integer = UBound(Self.Tasks) DownTo 0
+		  For I As Integer = Self.Tasks.LastRowIndex DownTo 0
 		    Dim Task As AnimationKit.Task = Self.Tasks(I)
 		    If Task.Completed(Now) Then
-		      RemovedTasks.Append(Task)
-		      Self.Tasks.Remove(I)
+		      RemovedTasks.AddRow(Task)
+		      Self.Tasks.RemoveRowAt(I)
 		      
 		      If Task.NextTask <> Nil Then
 		        Self.AddTask(Task.NextTask)
-		        AddedTasks.Append(Task.NextTask)
+		        AddedTasks.AddRow(Task.NextTask)
 		      End If
 		    End If
 		  Next
 		  
-		  If UBound(Self.Tasks) = -1 Then
-		    Sender.Mode = Xojo.Core.Timer.Modes.Off
+		  If Self.Tasks.LastRowIndex = -1 Then
+		    Sender.RunMode = Timer.RunModes.Off
 		  End If
 		  
 		  For Each Task As AnimationKit.Task In RemovedTasks
@@ -58,10 +58,10 @@ Protected Class Coordinator
 
 	#tag Method, Flags = &h0
 		Sub Constructor()
-		  Self.Animator = New Xojo.Core.Timer
-		  Self.Animator.Mode = Xojo.Core.Timer.Modes.Off
+		  Self.Animator = New Timer
+		  Self.Animator.RunMode = Timer.RunModes.Off
 		  Self.Animator.Period = 10
-		  AddHandler Self.Animator.Action, WeakAddressOf Self.Animator_Action
+		  AddHandler Self.Animator.Run, WeakAddressOf Self.Animator_Run
 		End Sub
 	#tag EndMethod
 
@@ -82,7 +82,7 @@ Protected Class Coordinator
 
 
 	#tag Property, Flags = &h21
-		Private Animator As Xojo.Core.Timer
+		Private Animator As Timer
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
@@ -97,9 +97,11 @@ Protected Class Coordinator
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="FramesPerSecond"
+			Visible=false
 			Group="Behavior"
 			InitialValue="60"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -107,6 +109,7 @@ Protected Class Coordinator
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -114,18 +117,23 @@ Protected Class Coordinator
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -133,6 +141,7 @@ Protected Class Coordinator
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

@@ -35,44 +35,44 @@ Protected Module BeaconUI
 		      #if DebugBuild
 		        System.DebugLog("Unable to get class reference to NSFont.")
 		      #endif
-		      Return G.TextAscent * 0.8
+		      Return G.FontAscent * 0.8
 		    End If
 		    
 		    Dim FontObject As Ptr
-		    If G.TextFont = "SmallSystem" And G.TextSize = 0 Then
+		    If G.FontName = "SmallSystem" And G.FontSize = 0 Then
 		      If G.Bold Then
 		        Declare Function SystemFontOfSize Lib "Cocoa.framework" Selector "boldSystemFontOfSize:" (Target As Ptr, Size As CGFloat) As Ptr
-		        FontObject = SystemFontOfSize(NSFont,11)
+		        FontObject = SystemFontOfSize(NSFont, 11)
 		      Else
 		        Declare Function SystemFontOfSize Lib "Cocoa.framework" Selector "systemFontOfSize:" (Target As Ptr, Size As CGFloat) As Ptr
-		        FontObject = SystemFontOfSize(NSFont,11)
+		        FontObject = SystemFontOfSize(NSFont, 11)
 		      End If
-		    ElseIf G.TextFont = "System" Or G.TextFont = "SmallSystem" Then
+		    ElseIf G.FontName = "System" Or G.FontName = "SmallSystem" Then
 		      If G.Bold Then
 		        Declare Function SystemFontOfSize Lib "Cocoa.framework" Selector "boldSystemFontOfSize:" (Target As Ptr, Size As CGFloat) As Ptr
-		        FontObject = SystemFontOfSize(NSFont,G.TextSize)
+		        FontObject = SystemFontOfSize(NSFont, G.FontSize)
 		      Else
 		        Declare Function SystemFontOfSize Lib "Cocoa.framework" Selector "systemFontOfSize:" (Target As Ptr, Size As CGFloat) As Ptr
-		        FontObject = SystemFontOfSize(NSFont,G.TextSize)
+		        FontObject = SystemFontOfSize(NSFont, G.FontSize)
 		      End If
 		    Else
 		      Declare Function FontWithName Lib "Cocoa.framework" Selector "fontWithName:size:" (Target As Ptr, FontName As CFStringRef, Size As CGFloat) As Ptr
-		      FontObject = FontWithName(NSFont,G.TextFont,G.TextSize)
+		      FontObject = FontWithName(NSFont,G.FontName, G.FontSize)
 		    End If
 		    
 		    If FontObject = Nil Then
 		      #if DebugBuild
 		        System.DebugLog("Unable to get font object.")
 		      #endif
-		      Return G.TextAscent * 0.8
+		      Return G.FontAscent * 0.8
 		    End If
 		    
 		    Declare Function GetCapHeight Lib "Cocoa.framework" Selector "capHeight" (Target As Ptr) As CGFloat
 		    Return GetCapHeight(FontObject)
 		  #elseif TargetWin32
-		    Return G.TextAscent * 0.75
+		    Return G.FontAscent * 0.75
 		  #else
-		    Return G.TextAscent
+		    Return G.FontAscent
 		  #endif
 		End Function
 	#tag EndMethod
@@ -128,7 +128,7 @@ Protected Module BeaconUI
 		    Dim Pics() As Picture
 		    For Scale As Double = 1.0 To 3.0
 		      If Scale = HorizontalScale And Scale = VerticalScale Then
-		        Pics.Append(WindowPic)
+		        Pics.AddRow(WindowPic)
 		        Continue
 		      End If
 		      
@@ -136,7 +136,7 @@ Protected Module BeaconUI
 		      Pic.HorizontalResolution = 72 * Scale
 		      Pic.VerticalResolution = 72 * Scale
 		      Pic.Graphics.DrawPicture(WindowPic, 0, 0, Pic.Width, Pic.Height, 0, 0, WindowPic.Width, WindowPic.Height)
-		      Pics.Append(Pic)
+		      Pics.AddRow(Pic)
 		    Next
 		    
 		    Return New Picture(Win.Width, Win.Height, Pics)
@@ -167,13 +167,13 @@ Protected Module BeaconUI
 		  ' Pic.HorizontalResolution = 72 * Scale
 		  ' Pic.VerticalResolution = 72 * Scale
 		  
-		  Pic.Graphics.ForeColor = &c000000
-		  Pic.Graphics.FillRect(0, 0, Pic.Width, Pic.Height)
+		  Pic.Graphics.DrawingColor = &c000000
+		  Pic.Graphics.FillRectangle(0, 0, Pic.Width, Pic.Height)
 		  
-		  Pic.Graphics.ForeColor = &cFFFFFF
+		  Pic.Graphics.DrawingColor = &cFFFFFF
 		  Pic.Graphics.FillOval(2 * Scale, 2 * Scale, Pic.Width - (4 * Scale) , Pic.Height - (4 * Scale))
 		  
-		  Dim CenterPoint As New REALbasic.Point(Pic.Width / 2, Pic.Height / 2)
+		  Dim CenterPoint As New Xojo.Point(Pic.Width / 2, Pic.Height / 2)
 		  
 		  Dim Angles(1) As Double
 		  Angles(0) = (360 * OffsetPercent) - 90
@@ -191,15 +191,15 @@ Protected Module BeaconUI
 		    Dim Rads As Double = Angle * 0.01745329252
 		    Dim LegX As Double = CenterPoint.X + (Distance * Cos(Rads))
 		    Dim LegY As Double = CenterPoint.Y + (Distance * Sin(Rads))
-		    Points.Append(Round(LegX))
-		    Points.Append(Round(LegY))
+		    Points.AddRow(Round(LegX))
+		    Points.AddRow(Round(LegY))
 		  Next
 		  
-		  Pic.Graphics.ForeColor = &c000000
+		  Pic.Graphics.DrawingColor = &c000000
 		  Pic.Graphics.FillPolygon(Points)
 		  
 		  Dim Mask As New Picture(Pic.Width, Pic.Height, 32)
-		  Mask.Graphics.ForeColor = &c000000
+		  Mask.Graphics.DrawingColor = &c000000
 		  Mask.Graphics.FillOval(0, 0, Mask.Width, Mask.Height)
 		  Pic.ApplyMask(Mask)
 		  
@@ -252,48 +252,11 @@ Protected Module BeaconUI
 		    
 		    Declare Function GetPointSize Lib "Cocoa.framework" Selector "pointSize" (Target As Ptr) As CGFloat
 		    
-		    Panel.TextUnit = FontUnits.Point
-		    Panel.TextFont = "System"
-		    Panel.TextSize = GetPointSize(FontObject)
+		    Panel.FontUnit = FontUnits.Point
+		    Panel.FontName = "System"
+		    Panel.FontSize = GetPointSize(FontObject)
 		  #endif
 		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Function Handler_WillPositionSheet(id as Ptr, s as Ptr, WindowHandle As Integer, SheetHandle As Integer, DefaultPosition As NSRect) As NSRect
-		  #Pragma Unused id
-		  #Pragma Unused s
-		  
-		  Dim Bound As Integer = WindowCount - 1
-		  Dim Sheet As Window
-		  
-		  For I As Integer = 0 To Bound
-		    If Window(I).Handle = SheetHandle Then
-		      Sheet = Window(I)
-		      Exit For I
-		    End If
-		  Next
-		  
-		  Dim InitialPosition As New REALbasic.Rect(DefaultPosition.Left, DefaultPosition.Top, DefaultPosition.Width, DefaultPosition.Height)
-		  
-		  For I As Integer = 0 To Bound
-		    If Window(I) IsA BeaconUI.SheetPositionHandler And Window(I).Handle = WindowHandle Then
-		      Dim NewPosition As REALbasic.Rect = BeaconUI.SheetPositionHandler(Window(I)).PositionSheet(Sheet, InitialPosition)
-		      If NewPosition = Nil Then
-		        Return DefaultPosition
-		      Else
-		        Dim ReturnRect As NSRect
-		        ReturnRect.Left = InitialPosition.Left
-		        ReturnRect.Top = InitialPosition.Top
-		        ReturnRect.Width = InitialPosition.Width
-		        ReturnRect.Height = InitialPosition.Height
-		        Return ReturnRect
-		      End If
-		    End If
-		  Next
-		  
-		  Return DefaultPosition
-		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
@@ -303,25 +266,33 @@ Protected Module BeaconUI
 		  
 		  Dim Bitmaps() As Picture
 		  For Factor As Integer = 1 To 3
-		    Dim Mask As Picture = Icon.BestRepresentation(Width, Height, Factor)
+		    Dim ScaledIcon As Picture = Icon.BestRepresentation(Width, Height, Factor)
 		    
-		    Dim Pic As New Picture(Width * Factor, Height * Factor, 32)
+		    Dim Pic As New Picture(Width * Factor, Height * Factor)
 		    Pic.VerticalResolution = 72 * Factor
 		    Pic.HorizontalResolution = 72 * Factor
-		    Pic.Graphics.ForeColor = RGB(FillColor.Red, FillColor.Green, FillColor.Blue)
-		    Pic.Graphics.FillRect(0, 0, Pic.Width, Pic.Height)
-		    Pic.Mask.Graphics.ClearRect(0, 0, Pic.Width, Pic.Height)
-		    Pic.Mask.Graphics.DrawPicture(Mask, 0, 0, Mask.Width, Mask.Height, 0, 0, Mask.Width, Mask.Height)
+		    Pic.Graphics.DrawingColor = RGB(FillColor.Red, FillColor.Green, FillColor.Blue)
+		    Pic.Graphics.FillRectangle(0, 0, Pic.Width, Pic.Height)
+		    
+		    Dim Mask As New Picture(Width * Factor, Height * Factor)
+		    Mask.VerticalResolution = 72 * Factor
+		    Mask.HorizontalResolution = 72 * Factor
+		    Mask.Graphics.DrawingColor = &cFFFFFF
+		    Mask.Graphics.FillRectangle(0, 0, Pic.Width, Pic.Height)
+		    Mask.Graphics.DrawPicture(ScaledIcon, 0, 0, Pic.Width, Pic.Height, 0, 0, ScaledIcon.Width, ScaledIcon.Height)
 		    
 		    If Overlay <> Nil Then
-		      Dim OverlayMask As Picture = Overlay.BestRepresentation(Width, Height, Factor)
-		      Pic.Mask.Graphics.DrawPicture(OverlayMask, 0, 0, Mask.Width, Mask.Height, 0, 0, OverlayMask.Width, OverlayMask.Height)
+		      Dim OverlayIcon As Picture = Overlay.BestRepresentation(Width, Height, Factor)
+		      Mask.Graphics.DrawPicture(OverlayIcon, 0, 0, Mask.Width, Mask.Height, 0, 0, OverlayIcon.Width, OverlayIcon.Height)
 		    End If
 		    
-		    Pic.Mask.Graphics.ForeColor = RGB(255, 255, 255, 255 - FillColor.Alpha)
-		    Pic.Mask.Graphics.FillRect(0, 0, Pic.Width, Pic.Height)
+		    If FillColor.Alpha <> 0 Then
+		      Mask.Graphics.DrawingColor = RGB(255, 255, 255, 255 - FillColor.Alpha)
+		      Mask.Graphics.FillRectangle(0, 0, Pic.Width, Pic.Height)
+		    End If
 		    
-		    Bitmaps.Append(Pic)
+		    Pic.ApplyMask(Mask)
+		    Bitmaps.AddRow(Pic)
 		  Next
 		  Return New Picture(Width, Height, Bitmaps)
 		End Function
@@ -361,38 +332,20 @@ Protected Module BeaconUI
 		End Function
 	#tag EndMethod
 
-	#tag Method, Flags = &h1
-		Protected Sub RegisterSheetPositionHandler()
-		  #if TargetCocoa
-		    If DelegateClass = Nil Then
-		      Declare Function NSSelectorFromString Lib "Cocoa" (SelectorName As CFStringRef) As Ptr
-		      Declare Function NSClassFromString Lib "Cocoa" (ClassName As CFStringRef) As Ptr
-		      Declare Function class_addMethod Lib "Cocoa" (Ref As Ptr, Name As Ptr, Imp As Ptr, Types As CString) As Boolean
-		      
-		      DelegateClass = NSClassFromString("XOJWindowController")
-		      If Not class_addMethod(DelegateClass, NSSelectorFromString("window:willPositionSheet:usingRect:"), AddressOf Handler_WillPositionSheet, "{NSRect=ffff}@:@@{NSRect=ffff}") Then
-		        Break
-		        Return
-		      End If
-		    End If
-		  #endif
-		End Sub
-	#tag EndMethod
-
 	#tag Method, Flags = &h0
-		Sub ResizeCells(Extends Target As SegmentedControl)
-		  Dim CellCount As Integer = Target.Items.UBound + 1
+		Sub ResizeCells(Extends Target As SegmentedButton)
+		  Dim CellCount As Integer = Target.SegmentCount
 		  Dim AvailableWidth As Integer = Target.Width - (CellCount * 2)
 		  Dim BaseCellWidth As Integer = Floor(AvailableWidth / CellCount)
 		  Dim Remainder As Integer = AvailableWidth - (BaseCellWidth * CellCount)
 		  
-		  For I As Integer = 0 To Target.Items.UBound
+		  For I As Integer = 0 To CellCount - 1
 		    Dim CellWidth As Integer = BaseCellWidth
 		    If I < Remainder Then
 		      CellWidth = CellWidth + 1
 		    End If
 		    
-		    Dim Cell As SegmentedControlItem = Target.Items(I)
+		    Dim Cell As Segment = Target.SegmentAt(I)
 		    Cell.Width = CellWidth
 		  Next
 		End Sub
@@ -418,10 +371,13 @@ Protected Module BeaconUI
 		  Dialog.Explanation = Explanation
 		  
 		  Try
-		    If Win = Nil Or Win.Frame = Window.FrameTypeSheet Then
+		    If Win = Nil Or Win.Type = Window.Types.Sheet Then
 		      Call Dialog.ShowModal()
 		    Else
+		      Dim FocusControl As RectControl = Win.Focus
+		      Win.Focus = Nil
 		      Call Dialog.ShowModalWithin(Win)
+		      Win.Focus = FocusControl
 		    End If
 		  Catch Err As RuntimeException
 		    Call Dialog.ShowModal()
@@ -452,10 +408,14 @@ Protected Module BeaconUI
 		  Dialog.CancelButton.Visible = True
 		  
 		  Try
-		    If Win = Nil Or Win.Frame = Window.FrameTypeSheet Then
+		    If Win = Nil Or Win.Type = Window.Types.Sheet Then
 		      Return Dialog.ShowModal() = Dialog.ActionButton
 		    Else
-		      Return Dialog.ShowModalWithin(Win) = Dialog.ActionButton
+		      Dim FocusControl As RectControl = Win.Focus
+		      Win.Focus = Nil
+		      Dim Result As Boolean = Dialog.ShowModalWithin(Win) = Dialog.ActionButton
+		      Win.Focus = FocusControl
+		      Return Result
 		    End If
 		  Catch Err As RuntimeException
 		    Return Dialog.ShowModal() = Dialog.ActionButton
@@ -469,10 +429,6 @@ Protected Module BeaconUI
 		End Function
 	#tag EndMethod
 
-
-	#tag Property, Flags = &h21
-		Private DelegateClass As Ptr
-	#tag EndProperty
 
 	#tag Property, Flags = &h21
 		Private mColorProfile As BeaconUI.ColorProfile
@@ -500,14 +456,6 @@ Protected Module BeaconUI
 	#tag EndConstant
 
 
-	#tag Structure, Name = NSRect, Flags = &h21
-		Left As CGFloat
-		  Top As CGFloat
-		  Width As CGFloat
-		Height As CGFloat
-	#tag EndStructure
-
-
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="Index"
@@ -515,6 +463,7 @@ Protected Module BeaconUI
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -522,18 +471,23 @@ Protected Module BeaconUI
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -541,6 +495,7 @@ Protected Module BeaconUI
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Module

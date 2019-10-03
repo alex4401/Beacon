@@ -9,29 +9,23 @@ Protected Class Curve
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(P1X As Single, P1Y As Single, P2X As Single, P2Y As Single)
-		  Self.Constructor(New Xojo.Core.Point(P1X, P1Y), New Xojo.Core.Point(P2X, P2Y))
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Constructor(P1 As Xojo.Core.Point, P2 As Xojo.Core.Point)
-		  Self.C0 = New Xojo.Core.Point(0, 0)
-		  Self.C1 = New Xojo.Core.Point(Max(Min(P1.X, 1), 0), Max(Min(P1.Y, 1), 0))
-		  Self.C2 = New Xojo.Core.Point(Max(Min(P2.X, 1), 0), Max(Min(P2.Y, 1), 0))
-		  Self.C3 = New Xojo.Core.Point(1, 1)
+		Sub Constructor(P1 As Point, P2 As Point)
+		  Self.C0 = New Point(0, 0)
+		  Self.C1 = New Point(Max(Min(P1.X, 1), 0), Max(Min(P1.Y, 1), 0))
+		  Self.C2 = New Point(Max(Min(P2.X, 1), 0), Max(Min(P2.Y, 1), 0))
+		  Self.C3 = New Point(1, 1)
 		  
 		  Const NumFigures = 1000
 		  
 		  #if DebugBuild
-		    Dim Start As Double = Microseconds
+		    Dim Start As Double = System.Microseconds
 		  #endif
 		  #if TargetiOS
 		  #else
 		    Self.Database = New SQLiteDatabase
 		    Call Self.Database.Connect
-		    Self.Database.SQLExecute("BEGIN TRANSACTION")
-		    Self.Database.SQLExecute("CREATE TABLE precomputed (time REAL, x REAL, y REAL)")
+		    Self.Database.ExecuteSQL("BEGIN TRANSACTION")
+		    Self.Database.ExecuteSQL("CREATE TABLE precomputed (time REAL, x REAL, y REAL)")
 		    Dim Statement As SQLitePreparedStatement = Self.Database.Prepare("INSERT INTO precomputed (time, x, y) VALUES (?1, ?2, ?3)")
 		    Statement.BindType(0, SQLitePreparedStatement.SQLITE_DOUBLE)
 		    Statement.BindType(1, SQLitePreparedStatement.SQLITE_DOUBLE)
@@ -42,12 +36,18 @@ Protected Class Curve
 		      Dim Y As Double = Self.YForT(Time)
 		      Statement.SQLExecute(Time, X, Y)
 		    Next
-		    Self.Database.SQLExecute("COMMIT")
+		    Self.Database.ExecuteSQL("COMMIT")
 		  #endif
 		  #if DebugBuild
-		    Dim Elapsed As Double = Microseconds - Start
+		    Dim Elapsed As Double = System.Microseconds - Start
 		    System.DebugLog("Precomputed curve values in " + Str(Elapsed * 0.001, "-0") + "ms")
 		  #endif
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub Constructor(P1X As Single, P1Y As Single, P2X As Single, P2Y As Single)
+		  Self.Constructor(New Point(P1X, P1Y), New Point(P2X, P2Y))
 		End Sub
 	#tag EndMethod
 
@@ -63,20 +63,20 @@ Protected Class Curve
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Evaluate(Time As Double, Rect As Xojo.Core.Rect) As Xojo.Core.Point
+		Function Evaluate(Time As Double, Rect As Rect) As Point
 		  Dim X As Double = Self.XForT(Time)
 		  Dim Y As Double = Self.YForT(Time)
 		  
 		  X = Rect.Left + (Rect.Width * X)
 		  Y = Rect.Top + (Rect.Height * Y)
 		  
-		  Return New Xojo.Core.Point(X, Y)
+		  Return New Point(X, Y)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Export() As Xojo.Core.Dictionary
-		  Dim Dict As New Xojo.Core.Dictionary
+		Function Export() As Dictionary
+		  Dim Dict As New Dictionary
 		  Dict.Value("C1X") = Self.C1.X
 		  Dict.Value("C1Y") = Self.C1.Y
 		  Dict.Value("C2X") = Self.C2.X
@@ -86,7 +86,7 @@ Protected Class Curve
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Import(Dict As Xojo.Core.Dictionary) As Beacon.Curve
+		Shared Function Import(Dict As Dictionary) As Beacon.Curve
 		  If Not Dict.HasAllKeys("C1X", "C1Y", "C2X", "C2Y") Then
 		    Return Nil
 		  End If
@@ -115,7 +115,7 @@ Protected Class Curve
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Point(Index As Integer) As Xojo.Core.Point
+		Function Point(Index As Integer) As Point
 		  Select Case Index
 		  Case 0
 		    Return Self.C0
@@ -152,12 +152,9 @@ Protected Class Curve
 		  #if TargetiOS
 		    
 		  #else
-		    Dim Statement As SQLitePreparedStatement = Self.Database.Prepare("SELECT y FROM precomputed ORDER BY ABS(x - ?1) LIMIT 1")
-		    Statement.BindType(0, SQLitePreparedStatement.SQLITE_DOUBLE)
-		    
-		    Dim Results As RecordSet = Statement.SQLSelect(X)
+		    Dim Results As RowSet = Self.Database.SelectSQL("SELECT y FROM precomputed ORDER BY ABS(x - ?1) LIMIT 1;", X)
 		    If Results <> Nil Then
-		      Return Results.Field("y").DoubleValue
+		      Return Results.Column("y").DoubleValue
 		    Else
 		      Return 0
 		    End If
@@ -167,19 +164,19 @@ Protected Class Curve
 
 
 	#tag Property, Flags = &h21
-		Private C0 As Xojo.Core.Point
+		Private C0 As Point
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private C1 As Xojo.Core.Point
+		Private C1 As Point
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private C2 As Xojo.Core.Point
+		Private C2 As Point
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private C3 As Xojo.Core.Point
+		Private C3 As Point
 	#tag EndProperty
 
 	#tag Property, Flags = &h21, CompatibilityFlags = (TargetConsole and (Target32Bit or Target64Bit)) or  (TargetWeb and (Target32Bit or Target64Bit)) or  (TargetDesktop and (Target32Bit or Target64Bit))
@@ -194,6 +191,7 @@ Protected Class Curve
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -201,18 +199,23 @@ Protected Class Curve
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -220,6 +223,7 @@ Protected Class Curve
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

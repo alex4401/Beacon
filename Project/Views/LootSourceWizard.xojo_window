@@ -3,7 +3,6 @@ Begin BeaconDialog LootSourceWizard
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   8
    FullScreen      =   False
@@ -11,7 +10,7 @@ Begin BeaconDialog LootSourceWizard
    HasBackColor    =   False
    Height          =   400
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
    MaxHeight       =   32000
    MaximizeButton  =   True
@@ -22,7 +21,9 @@ Begin BeaconDialog LootSourceWizard
    MinimizeButton  =   False
    MinWidth        =   450
    Placement       =   1
+   Resizable       =   "True"
    Resizeable      =   True
+   SystemUIVisible =   "True"
    Title           =   "Add Loot Source"
    Visible         =   True
    Width           =   550
@@ -44,6 +45,7 @@ Begin BeaconDialog LootSourceWizard
       Scope           =   2
       TabIndex        =   0
       TabPanelIndex   =   0
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   2
@@ -52,7 +54,7 @@ Begin BeaconDialog LootSourceWizard
       Begin UITweaks.ResizedPushButton SelectionActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Next"
          Default         =   True
@@ -84,7 +86,7 @@ Begin BeaconDialog LootSourceWizard
       Begin UITweaks.ResizedPushButton SelectionCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -180,7 +182,6 @@ Begin BeaconDialog LootSourceWizard
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -205,7 +206,7 @@ Begin BeaconDialog LootSourceWizard
       Begin UITweaks.ResizedPushButton SelectionCustomButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Custom Loot Source…"
          Default         =   False
@@ -272,7 +273,7 @@ Begin BeaconDialog LootSourceWizard
       Begin UITweaks.ResizedPushButton DefineActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Next"
          Default         =   True
@@ -304,7 +305,7 @@ Begin BeaconDialog LootSourceWizard
       Begin UITweaks.ResizedPushButton DefineCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Back"
          Default         =   False
@@ -336,7 +337,7 @@ Begin BeaconDialog LootSourceWizard
       Begin UITweaks.ResizedPushButton CustomizeActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Done"
          Default         =   True
@@ -368,7 +369,7 @@ Begin BeaconDialog LootSourceWizard
       Begin UITweaks.ResizedPushButton CustomizeCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Back"
          Default         =   False
@@ -935,7 +936,7 @@ Begin BeaconDialog LootSourceWizard
          Top             =   122
          Transparent     =   False
          Underline       =   False
-         Value           =   False
+         Value           =   "False"
          Visible         =   True
          Width           =   394
       End
@@ -971,7 +972,6 @@ Begin BeaconDialog LootSourceWizard
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -1031,7 +1031,7 @@ Begin BeaconDialog LootSourceWizard
       Begin CheckBox CustomizeReconfigureCheckbox
          AutoDeactivate  =   True
          Bold            =   False
-         Caption         =   "Rebuild Exiting Presets"
+         Caption         =   "Rebuild Existing Presets"
          DataField       =   ""
          DataSource      =   ""
          Enabled         =   True
@@ -1057,7 +1057,7 @@ Begin BeaconDialog LootSourceWizard
          Top             =   328
          Transparent     =   False
          Underline       =   False
-         Value           =   False
+         Value           =   "False"
          Visible         =   True
          Width           =   394
       End
@@ -1090,9 +1090,75 @@ Begin BeaconDialog LootSourceWizard
          Top             =   328
          Transparent     =   False
          Underline       =   False
-         Value           =   False
+         Value           =   "False"
          Visible         =   True
          Width           =   510
+      End
+      Begin UITweaks.ResizedLabel DefineMapsLabel
+         AutoDeactivate  =   True
+         Bold            =   False
+         DataField       =   ""
+         DataSource      =   ""
+         Enabled         =   True
+         Height          =   22
+         HelpTag         =   ""
+         Index           =   -2147483648
+         InitialParent   =   "Panel"
+         Italic          =   False
+         Left            =   20
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         Multiline       =   False
+         Scope           =   2
+         Selectable      =   False
+         TabIndex        =   13
+         TabPanelIndex   =   2
+         TabStop         =   True
+         TextAlign       =   2
+         TextColor       =   &c00000000
+         TextFont        =   "System"
+         TextSize        =   0.0
+         TextUnit        =   0
+         Top             =   190
+         Transparent     =   True
+         Underline       =   False
+         Value           =   "Maps:"
+         Visible         =   True
+         Width           =   104
+      End
+      Begin MapSelectionGrid DefineMapsSelector
+         AcceptFocus     =   False
+         AcceptTabs      =   True
+         AutoDeactivate  =   True
+         BackColor       =   &cFFFFFF00
+         Backdrop        =   0
+         DoubleBuffer    =   False
+         Enabled         =   True
+         EraseBackground =   True
+         HasBackColor    =   False
+         Height          =   118
+         HelpTag         =   ""
+         Index           =   -2147483648
+         InitialParent   =   "Panel"
+         Left            =   130
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         Mask            =   ""
+         Scope           =   2
+         TabIndex        =   14
+         TabPanelIndex   =   2
+         TabStop         =   True
+         Top             =   184
+         Transparent     =   True
+         UseFocusRing    =   False
+         Visible         =   True
+         Width           =   400
       End
    End
 End
@@ -1100,8 +1166,8 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
-		  Dim HasExperimentalSources As Boolean = LocalData.SharedInstance.HasExperimentalLootSources(Self.mDocument.Mods)
+		Sub Opening()
+		  Dim HasExperimentalSources As Boolean = LocalData.SharedInstance.HasExperimentalLootSources(Self.mMods)
 		  If HasExperimentalSources Then
 		    Self.SelectionExperimentalCheck.Value = Preferences.ShowExperimentalLootSources
 		  Else
@@ -1110,6 +1176,7 @@ End
 		  End If
 		  Self.BuildSourceList()
 		  
+		  Dim Mask As UInt64 = Self.mMask
 		  If Self.mSource <> Nil Then
 		    If Self.mDuplicateSource Then
 		      Self.ShowSelect()
@@ -1121,10 +1188,16 @@ End
 		        Self.ShowCustomize()
 		      Else
 		        Self.DefineCancelButton.Caption = "Cancel"
+		        Mask = Self.mSource.Availability
 		        Self.ShowDefine(Self.mSource)
 		      End If
 		    End If
 		  End If
+		  
+		  Self.DefineMapsSelector.Mask = Mask
+		  Dim DesiredWinHeight As Integer = Self.DefineMapsSelector.Top + Self.DefineMapsSelector.Height + 6 + Self.DefineActionButton.Height + 20
+		  Dim Diff As Integer = DesiredWinHeight - Self.Height
+		  Self.Height = Self.Height + Diff
 		  
 		  Self.SwapButtons()
 		End Sub
@@ -1133,37 +1206,36 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub BuildSourceList()
-		  Dim CurrentSources() As Beacon.LootSource = Self.mDocument.LootSources
-		  Dim AllowedLootSources() As Beacon.LootSource = Beacon.Data.SearchForLootSources("", Self.mDocument.Mods, Preferences.ShowExperimentalLootSources)
-		  Dim Mask As UInt64 = Self.mDocument.MapCompatibility
-		  For X As Integer = AllowedLootSources.Ubound DownTo 0
-		    If Not AllowedLootSources(X).ValidForMask(Mask) Then
-		      AllowedLootSources.Remove(X)
+		  Dim CurrentSources() As Beacon.LootSource = Self.mConfig.DefinedSources
+		  Dim AllowedLootSources() As Beacon.LootSource = Beacon.Data.SearchForLootSources("", Self.mMods, Preferences.ShowExperimentalLootSources)
+		  For X As Integer = AllowedLootSources.LastRowIndex DownTo 0
+		    If Not AllowedLootSources(X).ValidForMask(Self.mMask) Then
+		      AllowedLootSources.RemoveRowAt(X)
 		    End If
 		  Next
 		  
-		  For X As Integer = 0 To CurrentSources.Ubound
-		    For Y As Integer = AllowedLootSources.Ubound DownTo 0
+		  For X As Integer = 0 To CurrentSources.LastRowIndex
+		    For Y As Integer = AllowedLootSources.LastRowIndex DownTo 0
 		      If AllowedLootSources(Y).ClassString = CurrentSources(X).ClassString Then
-		        AllowedLootSources.Remove(Y)
+		        AllowedLootSources.RemoveRowAt(Y)
 		        Exit For Y
 		      End If
 		    Next
 		  Next
 		  Beacon.Sort(AllowedLootSources)
 		  
-		  Dim Selections() As Text
-		  For I As Integer = 0 To Self.SourceList.ListCount - 1
+		  Dim Selections() As String
+		  For I As Integer = 0 To Self.SourceList.RowCount - 1
 		    If Not Self.SourceList.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Source As Beacon.LootSource = Self.SourceList.RowTag(I)
-		    Selections.Append(Source.ClassString)
+		    Dim Source As Beacon.LootSource = Self.SourceList.RowTagAt(I)
+		    Selections.AddRow(Source.ClassString)
 		  Next
 		  
 		  Dim ScrollPosition As Integer = Self.SourceList.ScrollPosition
-		  Self.SourceList.DeleteAllRows
+		  Self.SourceList.RemoveAllRows
 		  
 		  Dim MapLabels As New Dictionary
 		  For Each Source As Beacon.LootSource In AllowedLootSources
@@ -1171,15 +1243,15 @@ End
 		    If Source.Notes <> "" Then
 		      RowText = RowText + EndOfLine + Source.Notes
 		    Else
-		      Dim ComboMask As UInt64 = Source.Availability And Mask
+		      Dim ComboMask As UInt64 = Source.Availability And Self.mMask
 		      If Not MapLabels.HasKey(ComboMask) Then
 		        MapLabels.Value(ComboMask) = Beacon.Maps.ForMask(ComboMask).Label
 		      End If
-		      RowText = RowText + EndOfLine + "Used by " + MapLabels.Value(ComboMask)
+		      RowText = RowText + EndOfLine + "Spawns on " + MapLabels.Value(ComboMask)
 		    End If
 		    Self.SourceList.AddRow("", RowText)
-		    Self.SourceList.RowTag(Self.SourceList.LastIndex) = Source
-		    Self.SourceList.Selected(Self.SourceList.LastIndex) = Selections.IndexOf(Source.ClassString) > -1
+		    Self.SourceList.RowTagAt(Self.SourceList.LastAddedRowIndex) = Source
+		    Self.SourceList.Selected(Self.SourceList.LastAddedRowIndex) = Selections.IndexOf(Source.ClassString) > -1
 		  Next
 		  Self.SourceList.Sort
 		  Self.SourceList.ScrollPosition = ScrollPosition
@@ -1188,18 +1260,18 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub ChooseSelectedLootSources()
-		  If Self.SourceList.SelCount = 0 Then
+		  If Self.SourceList.SelectedRowCount = 0 Then
 		    Return
 		  End If
 		  
 		  Redim Self.mDestinations(-1)
 		  
-		  For I As Integer = 0 To Self.SourceList.ListCount - 1
+		  For I As Integer = 0 To Self.SourceList.RowCount - 1
 		    If Not Self.SourceList.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Source As Beacon.LootSource = SourceList.RowTag(I)
+		    Dim Source As Beacon.LootSource = SourceList.RowTagAt(I)
 		    
 		    If Source.Experimental And Not Preferences.HasShownExperimentalWarning Then
 		      If Self.ShowConfirm(Language.ExperimentalWarningMessage, Language.ReplacePlaceholders(Language.ExperimentalWarningExplanation, Source.Label), Language.ExperimentalWarningActionCaption, Language.ExperimentalWarningCancelCaption) Then
@@ -1209,7 +1281,7 @@ End
 		      End If
 		    End If
 		    
-		    Self.mDestinations.Append(New Beacon.MutableLootSource(Source))
+		    Self.mDestinations.AddRow(New Beacon.MutableLootSource(Source))
 		  Next
 		  
 		  Self.ShowCustomize()
@@ -1217,9 +1289,11 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Constructor(Document As Beacon.Document, Source As Beacon.LootSource, Duplicate As Boolean)
+		Private Sub Constructor(Config As BeaconConfigs.LootDrops, Mask As UInt64, Mods As Beacon.StringList, Source As Beacon.LootSource, Duplicate As Boolean)
 		  // Calling the overridden superclass constructor.
-		  Self.mDocument = Document
+		  Self.mConfig = Config
+		  Self.mMask = Mask
+		  Self.mMods = Mods
 		  Self.mSource = Source
 		  Self.mDuplicateSource = Duplicate
 		  Super.Constructor
@@ -1227,13 +1301,19 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Preset(Parent As Window, Document As Beacon.Document, Source As Beacon.LootSource = Nil, Duplicate As Boolean = False) As Boolean
-		  If Parent = Nil Or Document = Nil Then
+		Shared Function Present(Parent As Window, Config As BeaconConfigs.LootDrops, Mask As UInt64, Mods As Beacon.StringList, Source As Beacon.LootSource = Nil, Duplicate As Boolean = False) As Boolean
+		  If Parent = Nil Or Config = Nil Then
 		    Return False
 		  End If
 		  Parent = Parent.TrueWindow
 		  
-		  Dim Win As New LootSourceWizard(Document, Source, Source <> Nil And Duplicate = True)
+		  Dim Maps() As Beacon.Map = Beacon.Maps.ForMask(Mask)
+		  If Maps.LastRowIndex = -1 Then
+		    Parent.ShowAlert("Beacon does not know which loot sources to show because no maps have been selected.", "Use the menu currently labelled """ + Language.LabelForConfig(BeaconConfigs.LootDrops.ConfigName) + """ to select ""Maps"" and choose tha maps for this file.")
+		    Return False
+		  End If
+		  
+		  Dim Win As New LootSourceWizard(Config, Mask, Mods, Source, Source <> Nil And Duplicate = True)
 		  Win.ShowModalWithin(Parent)
 		  
 		  Dim Cancelled As Boolean = Win.mCancelled
@@ -1252,31 +1332,30 @@ End
 		    BasedOn = New Beacon.MutableLootSource("Template", False)
 		  End If
 		  
-		  Self.CustomizeMinSetsField.Text = Format(BasedOn.MinItemSets, "-0")
-		  Self.CustomizeMaxSetsField.Text = Format(BasedOn.MaxItemSets, "-0")
+		  Self.CustomizeMinSetsField.Value = Format(BasedOn.MinItemSets, "-0")
+		  Self.CustomizeMaxSetsField.Value = Format(BasedOn.MaxItemSets, "-0")
 		  Self.CustomizePreventDuplicatesCheck.Value = BasedOn.SetsRandomWithoutReplacement
 		  
 		  Dim Presets() As Beacon.Preset = Beacon.Data.Presets()
-		  Dim Mask As UInt64 = Self.mDocument.MapCompatibility
 		  
-		  Self.CustomizePresetsList.DeleteAllRows()
+		  Self.CustomizePresetsList.RemoveAllRows()
 		  For Each Preset As Beacon.Preset In Presets
-		    If Preset.ValidForMask(Mask) Then
+		    If Preset.ValidForMask(Self.mMask) Then
 		      Self.CustomizePresetsList.AddRow("", Preset.Label)
-		      Self.CustomizePresetsList.RowTag(Self.CustomizePresetsList.LastIndex) = Preset
+		      Self.CustomizePresetsList.RowTagAt(Self.CustomizePresetsList.LastAddedRowIndex) = Preset
 		    End If
 		  Next
 		  Self.CustomizePresetsList.Sort
 		  
 		  Dim Scrolled, HasUsedPresets As Boolean
-		  For I As Integer = 0 To Self.CustomizePresetsList.ListCount - 1
-		    Dim Preset As Beacon.Preset = Self.CustomizePresetsList.RowTag(I)
+		  For I As Integer = 0 To Self.CustomizePresetsList.RowCount - 1
+		    Dim Preset As Beacon.Preset = Self.CustomizePresetsList.RowTagAt(I)
 		    For Each Set As Beacon.ItemSet In BasedOn
 		      If Set.SourcePresetID = Preset.PresetID Then
 		        HasUsedPresets = True
-		        Self.CustomizePresetsList.CellCheck(I, 0) = True
+		        Self.CustomizePresetsList.CellCheckBoxValueAt(I, 0) = True
 		        If Set.Label <> Preset.Label Then
-		          Self.CustomizePresetsList.Cell(I, 1) = Set.Label + " (" + Preset.Label + ")"
+		          Self.CustomizePresetsList.CellValueAt(I, 1) = Set.Label + " (" + Preset.Label + ")"
 		        End If
 		        If Not Scrolled Then
 		          Self.CustomizePresetsList.ScrollPosition = I
@@ -1286,7 +1365,7 @@ End
 		      End If
 		    Next
 		    
-		    Self.CustomizePresetsList.CellCheck(I, 0) = False
+		    Self.CustomizePresetsList.CellCheckBoxValueAt(I, 0) = False
 		  Next
 		  
 		  If HasUsedPresets = False Then
@@ -1294,26 +1373,26 @@ End
 		    Self.CustomizePresetsList.Height = (Self.CustomizeReconfigureCheckbox.Top + Self.CustomizeReconfigureCheckbox.Height) - Self.CustomizePresetsList.Top
 		  End If
 		  
-		  Self.Panel.Value = Self.PaneCustomize
+		  Self.Panel.SelectedPanelIndex = Self.PaneCustomize
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub ShowDefine(FieldSource As Beacon.LootSource)
 		  If FieldSource <> Nil Then
-		    Self.DefineClassField.Text = FieldSource.ClassString
-		    Self.DefineNameField.Text = FieldSource.Label
-		    Self.DefineMinMultiplierField.Text = Format(FieldSource.Multipliers.Min, "0.0000")
-		    Self.DefineMaxMultiplierField.Text = Format(FieldSource.Multipliers.Max, "0.0000")
+		    Self.DefineClassField.Value = FieldSource.ClassString
+		    Self.DefineNameField.Value = FieldSource.Label
+		    Self.DefineMinMultiplierField.Value = Format(FieldSource.Multipliers.Min, "0.0000")
+		    Self.DefineMaxMultiplierField.Value = Format(FieldSource.Multipliers.Max, "0.0000")
 		  End If
 		  
-		  Self.Panel.Value = Self.PaneDefine
+		  Self.Panel.SelectedPanelIndex = Self.PaneDefine
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub ShowSelect()
-		  Self.Panel.Value = Self.PaneSelection
+		  Self.Panel.SelectedPanelIndex = Self.PaneSelection
 		End Sub
 	#tag EndMethod
 
@@ -1323,15 +1402,23 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
+		Private mConfig As BeaconConfigs.LootDrops
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
 		Private mDestinations() As Beacon.MutableLootSource
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mDocument As Beacon.Document
+		Private mDuplicateSource As Boolean
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mDuplicateSource As Boolean
+		Private mMask As UInt64
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mMods As Beacon.StringList
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -1353,14 +1440,14 @@ End
 
 #tag Events SelectionActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.ChooseSelectedLootSources()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events SelectionCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.mCancelled = True
 		  Self.Hide
 		End Sub
@@ -1368,8 +1455,8 @@ End
 #tag EndEvents
 #tag Events SourceList
 	#tag Event
-		Sub Change()
-		  SelectionActionButton.Enabled = Me.ListIndex > -1
+		Sub SelectionChanged()
+		  SelectionActionButton.Enabled = Me.SelectedRowIndex > -1
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -1378,29 +1465,34 @@ End
 		  #Pragma Unused IsHighlighted
 		  #Pragma Unused TextColor
 		  
-		  If Column <> 0 Or Row >= Me.ListCount Then
+		  If Column <> 0 Or Row >= Me.RowCount Then
 		    Return
 		  End If
 		  
 		  Dim PrecisionX As Double = 1 / G.ScaleX
 		  Dim PrecisionY As Double = 1 / G.ScaleY
 		  
-		  Dim Source As Beacon.LootSource = Me.RowTag(Row)
+		  Dim Source As Beacon.LootSource = Me.RowTagAt(Row)
 		  Dim Icon As Picture = LocalData.SharedInstance.IconForLootSource(Source, BackgroundColor)
-		  Dim SpaceWidth As Integer = Me.Column(Column).WidthActual
+		  Dim SpaceWidth As Integer = Me.ColumnAt(Column).WidthActual
 		  Dim SpaceHeight As Integer = Me.DefaultRowHeight
 		  
 		  G.DrawPicture(Icon, NearestMultiple((SpaceWidth - Icon.Width) / 2, PrecisionX), NearestMultiple((SpaceHeight - Icon.Height) / 2, PrecisionY))
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Function CompareRows(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
+		Sub DoubleClicked()
+		  Self.ChooseSelectedLootSources()
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Function RowComparison(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
 		  If Column <> 0 Then
 		    Return False
 		  End If
 		  
-		  Dim Source1 As Beacon.LootSource = Me.RowTag(Row1)
-		  Dim Source2 As Beacon.LootSource = Me.RowTag(Row2)
+		  Dim Source1 As Beacon.LootSource = Me.RowTagAt(Row1)
+		  Dim Source2 As Beacon.LootSource = Me.RowTagAt(Row2)
 		  
 		  If Source1.SortValue > Source2.SortValue Then
 		    Result = 1
@@ -1411,23 +1503,18 @@ End
 		  Return True
 		End Function
 	#tag EndEvent
-	#tag Event
-		Sub DoubleClick()
-		  Self.ChooseSelectedLootSources()
-		End Sub
-	#tag EndEvent
 #tag EndEvents
 #tag Events SelectionCustomButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.ShowDefine(Nil)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events DefineActionButton
 	#tag Event
-		Sub Action()
-		  Dim ClassString As Text = Self.DefineClassField.Text.ToText.Trim
+		Sub Pressed()
+		  Dim ClassString As String = Self.DefineClassField.Value.Trim
 		  If Not ClassString.EndsWith("_C") Then
 		    Self.ShowAlert("Invalid class string", "Ark class strings always end in _C. Check your class string and try again.")
 		    Return
@@ -1438,22 +1525,28 @@ End
 		  If Source <> Nil Then
 		    Destination = New Beacon.MutableLootSource(Source)
 		  Else
-		    Dim Label As Text = Self.DefineNameField.Text.ToText.Trim
+		    Dim Label As String = Self.DefineNameField.Value.Trim
 		    If Label = "" Then
 		      Self.ShowAlert("No label provided", "A loot source without a name isn't very useful is it? Enter a name and try again.")
 		      Return
 		    End If
 		    
-		    Dim MinMultiplier As Double = CDbl(Self.DefineMinMultiplierField.Text)
-		    Dim MaxMultiplier As Double = CDbl(Self.DefineMaxMultiplierField.Text)
+		    Dim MinMultiplier As Double = CDbl(Self.DefineMinMultiplierField.Value)
+		    Dim MaxMultiplier As Double = CDbl(Self.DefineMaxMultiplierField.Value)
 		    If MinMultiplier <= 0 Or MaxMultiplier <= 0 Then
 		      Self.ShowAlert("Invalid multipliers", "The loot source multipliers must be greater than 0. If you do not know these values - which is common - set them to 1.0 to be safe.")
 		      Return
 		    End If
 		    
+		    Dim Mask As UInt64 = Self.DefineMapsSelector.Mask
+		    If Mask = 0 Then
+		      Self.ShowAlert("Please select a map", "Your loot source should be available to at least one map.")
+		      Return
+		    End If
+		    
 		    Destination = New Beacon.MutableLootSource(ClassString, False)
 		    Destination.Label = Label
-		    Destination.Availability = Self.mDocument.MapCompatibility
+		    Destination.Availability = Mask
 		    Destination.Multipliers = New Beacon.Range(MinMultiplier, MaxMultiplier)
 		    Destination.IsOfficial = False
 		    Destination.UseBlueprints = False
@@ -1468,7 +1561,7 @@ End
 #tag EndEvents
 #tag Events DefineCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  If Me.Caption = "Cancel" Then
 		    Self.mCancelled = True
 		    Self.Hide
@@ -1481,36 +1574,34 @@ End
 #tag EndEvents
 #tag Events CustomizeActionButton
 	#tag Event
-		Sub Action()
-		  Dim MinItemSets As Integer = Floor(CDbl(Self.CustomizeMinSetsField.Text))
-		  Dim MaxItemSets As Integer = Floor(CDbl(Self.CustomizeMaxSetsField.Text))
+		Sub Pressed()
+		  Dim MinItemSets As Integer = Floor(CDbl(Self.CustomizeMinSetsField.Value))
+		  Dim MaxItemSets As Integer = Floor(CDbl(Self.CustomizeMaxSetsField.Value))
 		  Dim PreventDuplicates As Boolean = Self.CustomizePreventDuplicatesCheck.Value
 		  Dim AppendMode As Boolean = If(Self.mSource <> Nil, Self.mSource.AppendMode, False)
 		  Dim ReconfigurePresets As Boolean = Self.CustomizeReconfigureCheckbox.Value
-		  Dim Mask As UInt64 = Self.mDocument.MapCompatibility
-		  Dim Mods As Beacon.TextList = Self.mDocument.Mods
 		  
-		  Dim AllowedPresets(), AdditionalPresets() As Text
-		  For I As Integer = 0 To Self.CustomizePresetsList.ListCount - 1
-		    If Not Self.CustomizePresetsList.CellCheck(I, 0) Then
+		  Dim AllowedPresets(), AdditionalPresets() As String
+		  For I As Integer = 0 To Self.CustomizePresetsList.RowCount - 1
+		    If Not Self.CustomizePresetsList.CellCheckBoxValueAt(I, 0) Then
 		      Continue
 		    End If
 		    
-		    Dim Preset As Beacon.Preset = Self.CustomizePresetsList.RowTag(I)
-		    AllowedPresets.Append(Preset.PresetID)
-		    AdditionalPresets.Append(Preset.PresetID)
+		    Dim Preset As Beacon.Preset = Self.CustomizePresetsList.RowTagAt(I)
+		    AllowedPresets.AddRow(Preset.PresetID)
+		    AdditionalPresets.AddRow(Preset.PresetID)
 		  Next
 		  
 		  Dim SourceSets() As Beacon.ItemSet
 		  If Self.mSource <> Nil Then
 		    For Each Set As Beacon.ItemSet In Self.mSource
 		      If Set.SourcePresetID = "" Or AllowedPresets.IndexOf(Set.SourcePresetID) > -1 Or LocalData.SharedInstance.GetPreset(Set.SourcePresetID) = Nil Then
-		        SourceSets.Append(Set)
+		        SourceSets.AddRow(Set)
 		      End If
 		      
 		      Dim Idx As Integer = AdditionalPresets.IndexOf(Set.SourcePresetID)
 		      If Idx > -1 Then
-		        AdditionalPresets.Remove(Idx)
+		        AdditionalPresets.RemoveRowAt(Idx)
 		      End If
 		    Next
 		  End If
@@ -1525,19 +1616,19 @@ End
 		    Next
 		    
 		    // Add newly selected presets
-		    For Each PresetID As Text In AdditionalPresets
+		    For Each PresetID As String In AdditionalPresets
 		      Dim Preset As Beacon.Preset = LocalData.SharedInstance.GetPreset(PresetID)
 		      If Preset = Nil Then
 		        Continue
 		      End If
 		      
-		      Dim Set As Beacon.ItemSet = Beacon.ItemSet.FromPreset(Preset, Destination, Mask, Mods)
+		      Dim Set As Beacon.ItemSet = Beacon.ItemSet.FromPreset(Preset, Destination, Self.mMask, Self.mMods)
 		      Destination.Append(Set)
 		    Next
 		    
 		    // Rebuild if necessary
 		    If ReconfigurePresets Then
-		      Call Destination.ReconfigurePresets(Mask, Mods)
+		      Call Destination.ReconfigurePresets(Self.mMask, Self.mMods)
 		    End If
 		    
 		    // Apply basic settings
@@ -1546,7 +1637,12 @@ End
 		    Destination.SetsRandomWithoutReplacement = PreventDuplicates
 		    Destination.AppendMode = AppendMode
 		    
-		    Self.mDocument.Add(Destination)
+		    Dim Idx As Integer = Self.mConfig.IndexOf(Destination)
+		    If Idx = -1 Then
+		      Self.mConfig.Append(Destination)
+		    Else
+		      Self.mConfig(Idx) = Destination
+		    End If
 		  Next
 		  
 		  Self.mCancelled = False
@@ -1556,14 +1652,14 @@ End
 #tag EndEvents
 #tag Events CustomizeCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  If Me.Caption = "Cancel" Then
 		    Self.mCancelled = True
 		    Self.Hide
 		    Return
 		  End If
 		  
-		  If Self.mDestinations.Ubound > -1 And Self.mDestinations(0).IsOfficial = False Then
+		  If Self.mDestinations.LastRowIndex > -1 And Self.mDestinations(0).IsOfficial = False Then
 		    Self.ShowDefine(Self.mDestinations(0))
 		  Else
 		    Self.ShowSelect()
@@ -1573,14 +1669,14 @@ End
 #tag EndEvents
 #tag Events CustomizePresetsList
 	#tag Event
-		Sub Open()
-		  Me.ColumnType(0) = ListBox.TypeCheckbox
+		Sub Opening()
+		  Me.ColumnTypeAt(0) = Listbox.CellTypes.CheckBox
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events SelectionExperimentalCheck
 	#tag Event
-		Sub Action()
+		Sub ValueChanged()
 		  If Preferences.ShowExperimentalLootSources = Me.Value Then
 		    Return
 		  End If
@@ -1592,39 +1688,59 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Backdrop"
-		Visible=true
-		Group="Background"
-		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="Resizeable"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
+		Name="MenuBarVisible"
+		Visible=true
+		Group="Deprecated"
+		InitialValue="True"
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="MinimumWidth"
+		Visible=true
+		Group="Size"
+		InitialValue="64"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MinimumHeight"
+		Visible=true
+		Group="Size"
+		InitialValue="64"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MaximumWidth"
+		Visible=true
+		Group="Size"
+		InitialValue="32000"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MaximumHeight"
+		Visible=true
+		Group="Size"
+		InitialValue="32000"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -1641,134 +1757,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="FullScreen"
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Interfaces"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MaxHeight"
-		Visible=true
-		Group="Size"
-		InitialValue="32000"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
-		Visible=true
-		Group="Size"
-		InitialValue="32000"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBar"
-		Visible=true
-		Group="Menus"
-		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinHeight"
-		Visible=true
-		Group="Size"
-		InitialValue="64"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinimizeButton"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinWidth"
+		Name="HasMinimizeButton"
 		Visible=true
-		Group="Size"
-		InitialValue="64"
-		Type="Integer"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Name"
+		Name="HasFullScreenButton"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -1779,19 +1804,100 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasBackgroundColor"
 		Visible=true
-		Group="Frame"
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Backdrop"
+		Visible=true
+		Group="Background"
+		InitialValue=""
+		Type="Picture"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="FullScreen"
+		Visible=false
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MenuBar"
+		Visible=true
+		Group="Menus"
+		InitialValue=""
+		Type="MenuBar"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Title"
@@ -1799,6 +1905,7 @@ End
 		Group="Frame"
 		InitialValue="Untitled"
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1806,7 +1913,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1814,5 +1921,6 @@ End
 		Group="Size"
 		InitialValue="600"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

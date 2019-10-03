@@ -5,7 +5,6 @@ Begin BeaconSubview PresetEditorView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,6 @@ Begin BeaconSubview PresetEditorView
       Caption         =   ""
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -65,7 +63,6 @@ Begin BeaconSubview PresetEditorView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -95,7 +92,6 @@ Begin BeaconSubview PresetEditorView
       DoubleBuffer    =   False
       DrawCaptions    =   True
       Enabled         =   True
-      EraseBackground =   False
       Height          =   60
       HelpTag         =   ""
       Index           =   -2147483648
@@ -137,12 +133,13 @@ Begin BeaconSubview PresetEditorView
       Scope           =   2
       TabIndex        =   3
       TabPanelIndex   =   0
+      TabStop         =   "True"
       Top             =   61
       Transparent     =   False
-      Value           =   2
+      Value           =   1
       Visible         =   True
       Width           =   740
-      BeginSegmented SegmentedControl MapSelector
+      BeginSegmentedButton SegmentedButton MapSelector
          Enabled         =   True
          Height          =   24
          Index           =   -2147483648
@@ -153,12 +150,13 @@ Begin BeaconSubview PresetEditorView
          LockLeft        =   True
          LockRight       =   False
          LockTop         =   True
-         MacControlStyle =   0
+         MacButtonStyle  =   "0"
          Scope           =   2
-         Segments        =   "The Island\n\nFalse\rScorched Earth\n\nFalse\rAberration\n\nFalse\rExtinction\n\nFalse\rThe Center\n\nFalse\rRagnarok\n\nFalse\rValguero\n\nFalse"
-         SelectionType   =   1
+         Segments        =   "The Island\n\nFalse\rScorched Earth\n\nFalse\rAberration\n\nFalse\rExtinction\n\nFalse\rGenesis\n\nFalse\rThe Center\n\nFalse\rRagnarok\n\nFalse\rValguero\n\nFalse"
+         SelectionStyle  =   "0"
          TabIndex        =   0
          TabPanelIndex   =   2
+         TabStop         =   "True"
          Top             =   81
          Transparent     =   False
          Visible         =   True
@@ -196,7 +194,6 @@ Begin BeaconSubview PresetEditorView
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -647,7 +644,6 @@ Begin BeaconSubview PresetEditorView
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -672,7 +668,7 @@ Begin BeaconSubview PresetEditorView
       Begin UITweaks.ResizedPushButton AddModifierButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Add Modifier"
          Default         =   False
@@ -704,7 +700,7 @@ Begin BeaconSubview PresetEditorView
       Begin UITweaks.ResizedPushButton EditModifierButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Edit"
          Default         =   False
@@ -736,7 +732,7 @@ Begin BeaconSubview PresetEditorView
       Begin UITweaks.ResizedPushButton DeleteModifierButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Delete"
          Default         =   False
@@ -771,8 +767,8 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub EnableMenuItems()
-		  If Self.ContentsChanged Then
+		Sub MenuSelected()
+		  If Self.Changed Then
 		    FileSave.Enable
 		    If Self.mSaveFile <> Nil Then
 		      FileSaveAs.Enable
@@ -785,7 +781,7 @@ End
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.UpdateUI()
 		End Sub
 	#tag EndEvent
@@ -808,14 +804,14 @@ End
 
 	#tag MenuHandler
 		Function FileExport() As Boolean Handles FileExport.Action
-			Dim Dialog As New SaveAsDialog
+			Dim Dialog As New SaveFileDialog
 			Dialog.Filter = BeaconFileTypes.BeaconPreset
 			Dialog.SuggestedFileName = Self.mPreset.Label + BeaconFileTypes.BeaconPreset.PrimaryExtension
 			
 			Dim File As FolderItem = Dialog.ShowModalWithin(Self.TrueWindow)
 			If File <> Nil Then
 			Dim Writer As New Beacon.JSONWriter(Self.mPreset.ToDictionary, File)
-			Writer.Run
+			Writer.Start
 			End If
 			Return True
 		End Function
@@ -830,7 +826,7 @@ End
 
 	#tag MenuHandler
 		Function FileSaveAs() As Boolean Handles FileSaveAs.Action
-			Dim Dialog As New SaveAsDialog
+			Dim Dialog As New SaveFileDialog
 			Dialog.Filter = BeaconFileTypes.BeaconPreset
 			Dialog.SuggestedFileName = Self.mPreset.Label + BeaconFileTypes.BeaconPreset.PrimaryExtension
 			
@@ -849,7 +845,7 @@ End
 		  Dim Maps() As Beacon.Map = Self.FilteredMaps()
 		  For Each Entry As Beacon.PresetEntry In Entries
 		    Self.ContentsList.AddRow("")
-		    Self.PutEntryInRow(Entry, Self.ContentsList.LastIndex, Maps)
+		    Self.PutEntryInRow(Entry, Self.ContentsList.LastAddedRowIndex, Maps)
 		  Next
 		  Self.ContentsList.Sort
 		  Self.UpdateMinAndMaxFields
@@ -865,25 +861,25 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub DeleteSelectedEntries(Warn As Boolean)
-		  If Self.ContentsList.SelCount = 0 Then
+		  If Self.ContentsList.SelectedRowCount = 0 Then
 		    Return
 		  End If
 		  
-		  If Warn And Not Self.ShowConfirm(if(Self.ContentsList.SelCount = 1, "Are you sure you want to delete this entry?", "Are you sure you want to delete these " + Str(Self.ContentsList.SelCount, "-0") + " entries?"), "This action cannot be undone.", "Delete", "Cancel") Then
+		  If Warn And Not Self.ShowConfirm(if(Self.ContentsList.SelectedRowCount = 1, "Are you sure you want to delete this entry?", "Are you sure you want to delete these " + Str(Self.ContentsList.SelectedRowCount, "-0") + " entries?"), "This action cannot be undone.", "Delete", "Cancel") Then
 		    Return
 		  End If
 		  
-		  For I As Integer = Self.ContentsList.ListCount - 1 DownTo 0
+		  For I As Integer = Self.ContentsList.RowCount - 1 DownTo 0
 		    If Not Self.ContentsList.Selected(I) Then
 		      Continue
 		    End If
-		    Dim Entry As Beacon.PresetEntry = Self.ContentsList.RowTag(I)
+		    Dim Entry As Beacon.PresetEntry = Self.ContentsList.RowTagAt(I)
 		    Dim Idx As Integer = Self.mPreset.IndexOf(Entry)
 		    If Idx > -1 Then
 		      Self.mPreset.Remove(Idx)  
-		      Self.ContentsChanged = True
+		      Self.Changed = True
 		    End If
-		    Self.ContentsList.RemoveRow(I)
+		    Self.ContentsList.RemoveRowAt(I)
 		  Next
 		  Self.UpdateMinAndMaxFields
 		End Sub
@@ -892,21 +888,21 @@ End
 	#tag Method, Flags = &h21
 		Private Sub EditSelectedEntries()
 		  Dim Entries() As Beacon.PresetEntry
-		  For I As Integer = 0 To ContentsList.ListCount - 1
+		  For I As Integer = 0 To ContentsList.RowCount - 1
 		    If Not ContentsList.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Entry As Beacon.PresetEntry = ContentsList.RowTag(I)
+		    Dim Entry As Beacon.PresetEntry = ContentsList.RowTagAt(I)
 		    Call Entry.UniqueID // Triggers generation if necessary so we can compare when done
-		    Entries.Append(Entry)
+		    Entries.AddRow(Entry)
 		  Next
 		  
-		  If Entries.Ubound = -1 Then
+		  If Entries.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
-		  Dim NewEntries() As Beacon.SetEntry = EntryEditor.Present(Self.TrueWindow, New Beacon.TextList, Entries)
+		  Dim NewEntries() As Beacon.SetEntry = EntryEditor.Present(Self.TrueWindow, New Beacon.StringList, Entries)
 		  If NewEntries = Nil Then
 		    Return
 		  End If
@@ -915,7 +911,7 @@ End
 		  For Each NewEntry As Beacon.SetEntry In NewEntries
 		    Dim OriginalEntry As Beacon.PresetEntry
 		    Dim OriginalIndex As Integer = -1
-		    For I As Integer = 0 To UBound(Self.mPreset)
+		    For I As Integer = 0 To Self.mPreset.LastRowIndex
 		      If Self.mPreset(I).UniqueID = NewEntry.UniqueID Then
 		        OriginalEntry = Self.mPreset(I)
 		        OriginalIndex = I
@@ -934,8 +930,8 @@ End
 		    Item.RespectQuantityMultiplier = OriginalEntry.RespectQuantityMultiplier
 		    Self.mPreset(OriginalIndex) = Item
 		    
-		    For I As Integer = 0 To ContentsList.ListCount - 1
-		      If Beacon.PresetEntry(ContentsList.RowTag(I)).UniqueID = OriginalEntry.UniqueID Then
+		    For I As Integer = 0 To ContentsList.RowCount - 1
+		      If Beacon.PresetEntry(ContentsList.RowTagAt(I)).UniqueID = OriginalEntry.UniqueID Then
 		        Self.PutEntryInRow(Item, I, Maps)
 		        Exit For I
 		      End If
@@ -943,33 +939,35 @@ End
 		  Next
 		  
 		  ContentsList.Sort
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Function FilteredMaps() As Beacon.Map()
 		  Dim Maps() As Beacon.Map
-		  For I As Integer = 0 To Self.MapSelector.Items.UBound
-		    Dim Cell As SegmentedControlItem = Self.MapSelector.Items(I)
+		  For I As Integer = 0 To Self.MapSelector.SegmentCount - 1
+		    Dim Cell As Segment = Self.MapSelector.SegmentAt(I)
 		    If Not Cell.Selected Then
 		      Continue
 		    End If
 		    Select Case I
 		    Case 0
-		      Maps.Append(Beacon.Maps.TheIsland)
+		      Maps.AddRow(Beacon.Maps.TheIsland)
 		    Case 1
-		      Maps.Append(Beacon.Maps.ScorchedEarth)
+		      Maps.AddRow(Beacon.Maps.ScorchedEarth)
 		    Case 2
-		      Maps.Append(Beacon.Maps.Aberration)
+		      Maps.AddRow(Beacon.Maps.Aberration)
 		    Case 3
-		      Maps.Append(Beacon.Maps.Extinction)
+		      Maps.AddRow(Beacon.Maps.Extinction)
 		    Case 4
-		      Maps.Append(Beacon.Maps.TheCenter)
+		      Maps.AddRow(Beacon.Maps.Genesis)
 		    Case 5
-		      Maps.Append(Beacon.Maps.Ragnarok)
+		      Maps.AddRow(Beacon.Maps.TheCenter)
 		    Case 6
-		      Maps.Append(Beacon.Maps.Valguero)
+		      Maps.AddRow(Beacon.Maps.Ragnarok)
+		    Case 7
+		      Maps.AddRow(Beacon.Maps.Valguero)
 		    End Select
 		  Next
 		  Return Maps
@@ -992,7 +990,7 @@ End
 		Private Sub PutEntryInRow(Entry As Beacon.PresetEntry, Index As Integer, Maps() As Beacon.Map, SelectIt As Boolean = False)
 		  If Index = -1 Then
 		    Self.ContentsList.AddRow("")
-		    Index = Self.ContentsList.LastIndex
+		    Index = Self.ContentsList.LastAddedRowIndex
 		  End If
 		  
 		  Dim MapsValid, MapsInvalid As Integer
@@ -1005,21 +1003,21 @@ End
 		  Next
 		  
 		  If MapsValid = 0 Then
-		    Self.ContentsList.CellState(Index, Self.ColumnIncluded) = Checkbox.CheckedStates.Unchecked
+		    Self.ContentsList.CellCheckBoxStateAt(Index, Self.ColumnIncluded) = Checkbox.CheckedStates.Unchecked
 		  ElseIf MapsInvalid = 0 Then
-		    Self.ContentsList.CellState(Index, Self.ColumnIncluded) = Checkbox.CheckedStates.Checked
+		    Self.ContentsList.CellCheckBoxStateAt(Index, Self.ColumnIncluded) = Checkbox.CheckedStates.Checked
 		  Else
-		    Self.ContentsList.CellState(Index, Self.ColumnIncluded) = Checkbox.CheckedStates.Indeterminate
+		    Self.ContentsList.CellCheckBoxStateAt(Index, Self.ColumnIncluded) = Checkbox.CheckedStates.Indeterminate
 		  End If
 		  
-		  Self.ContentsList.RowTag(Index) = Entry
-		  Self.ContentsList.Cell(Index, Self.ColumnDescription) = Entry.Label
-		  Self.ContentsList.Cell(Index, Self.ColumnQuantity) = if(Entry.MinQuantity = Entry.MaxQuantity, Format(Entry.MinQuantity, "0"), Format(Entry.MinQuantity, "0") + "-" + Format(Entry.MaxQuantity, "0"))
-		  Self.ContentsList.Cell(Index, Self.ColumnQuality) = if(Entry.MinQuality = Entry.MaxQuality, Language.LabelForQuality(Entry.MinQuality), Language.LabelForQuality(Entry.MinQuality, True) + "-" + Language.LabelForQuality(Entry.MaxQuality, True))
-		  Self.ContentsList.Cell(Index, Self.ColumnBlueprint) = if(Entry.CanBeBlueprint, Str(Entry.ChanceToBeBlueprint, "0%"), "N/A")
-		  Self.ContentsList.CellCheck(Index, Self.ColumnQuantity) = Entry.RespectQuantityMultiplier
-		  Self.ContentsList.CellCheck(Index, Self.ColumnQuality) = Entry.RespectQualityModifier
-		  Self.ContentsList.CellCheck(Index, Self.ColumnBlueprint) = Entry.RespectBlueprintMultiplier
+		  Self.ContentsList.RowTagAt(Index) = Entry
+		  Self.ContentsList.CellValueAt(Index, Self.ColumnDescription) = Entry.Label
+		  Self.ContentsList.CellValueAt(Index, Self.ColumnQuantity) = if(Entry.MinQuantity = Entry.MaxQuantity, Format(Entry.MinQuantity, "0"), Format(Entry.MinQuantity, "0") + "-" + Format(Entry.MaxQuantity, "0"))
+		  Self.ContentsList.CellValueAt(Index, Self.ColumnQuality) = if(Entry.MinQuality = Entry.MaxQuality, Language.LabelForQuality(Entry.MinQuality), Language.LabelForQuality(Entry.MinQuality, True) + "-" + Language.LabelForQuality(Entry.MaxQuality, True))
+		  Self.ContentsList.CellValueAt(Index, Self.ColumnBlueprint) = if(Entry.CanBeBlueprint, Str(Entry.ChanceToBeBlueprint, "0%"), "N/A")
+		  Self.ContentsList.CellCheckBoxValueAt(Index, Self.ColumnQuantity) = Entry.RespectQuantityMultiplier
+		  Self.ContentsList.CellCheckBoxValueAt(Index, Self.ColumnQuality) = Entry.RespectQualityModifier
+		  Self.ContentsList.CellCheckBoxValueAt(Index, Self.ColumnBlueprint) = Entry.RespectBlueprintMultiplier
 		  
 		  If SelectIt Then
 		    Self.ContentsList.Selected(Index) = True
@@ -1033,9 +1031,9 @@ End
 		    Beacon.Data.SavePreset(Self.mPreset)
 		  Else
 		    Dim Writer As New Beacon.JSONWriter(Self.mPreset.ToDictionary, Self.mSaveFile)
-		    Writer.Run
+		    Writer.Start
 		  End If
-		  Self.ContentsChanged = False
+		  Self.Changed = False
 		  NotificationKit.Post("Preset Saved", Self.mPreset)
 		End Sub
 	#tag EndMethod
@@ -1043,9 +1041,9 @@ End
 	#tag Method, Flags = &h21
 		Private Function SelectedEntries() As Beacon.PresetEntry()
 		  Dim Entries() As Beacon.PresetEntry
-		  For I As Integer = Self.ContentsList.ListCount - 1 DownTo 0
+		  For I As Integer = Self.ContentsList.RowCount - 1 DownTo 0
 		    If Self.ContentsList.Selected(I) Then
-		      Entries.Append(Self.ContentsList.RowTag(I))
+		      Entries.AddRow(Self.ContentsList.RowTagAt(I))
 		    End If
 		  Next
 		  Return Entries
@@ -1054,17 +1052,17 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub ShowAddDialog()
-		  Dim Entries() As Beacon.SetEntry = EntryEditor.Present(Self.TrueWindow, New Beacon.TextList)
-		  If Entries = Nil Or Entries.Ubound = -1 Then
+		  Dim Entries() As Beacon.SetEntry = EntryEditor.Present(Self.TrueWindow, New Beacon.StringList)
+		  If Entries = Nil Or Entries.LastRowIndex = -1 Then
 		    Return
 		  End If
-		  Self.ContentsList.ListIndex = -1
+		  Self.ContentsList.SelectedRowIndex = -1
 		  Dim Maps() As Beacon.Map = Self.FilteredMaps
 		  For Each Entry As Beacon.SetEntry In Entries
 		    Dim Item As New Beacon.PresetEntry(Entry)
 		    Self.PutEntryInRow(Item, -1, Maps, True)
 		    Self.mPreset.Append(Item)
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  Next
 		  Self.ContentsList.Sort
 		  Self.ContentsList.EnsureSelectionIsVisible
@@ -1074,13 +1072,13 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub ShowModifierEditor(Edit As Boolean)
-		  Dim EditID As Text
-		  If Edit And Self.ModifiersList.SelCount = 1 Then
-		    EditID = Self.ModifiersList.RowTag(Self.ModifiersList.ListIndex)
+		  Dim EditID As String
+		  If Edit And Self.ModifiersList.SelectedRowCount = 1 Then
+		    EditID = Self.ModifiersList.RowTagAt(Self.ModifiersList.SelectedRowIndex)
 		  End If
 		  If PresetModifierEditor.Present(Self, Self.mPreset, EditID) Then
 		    Self.UpdateUI
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  End If
 		End Sub
 	#tag EndMethod
@@ -1090,10 +1088,10 @@ End
 		  Dim Focus As RectControl = Self.Window.Focus
 		  
 		  If Focus <> Self.MinItemsField Then
-		    Self.MinItemsField.Text = Str(Self.mPreset.MinItems)
+		    Self.MinItemsField.Value = Str(Self.mPreset.MinItems)
 		  End If
 		  If Focus <> Self.MaxItemsField Then
-		    Self.MaxItemsField.Text = Str(Self.mPreset.MaxItems)
+		    Self.MaxItemsField.Value = Str(Self.mPreset.MaxItems)
 		  End If
 		End Sub
 	#tag EndMethod
@@ -1107,38 +1105,39 @@ End
 		  End If
 		  Self.ToolbarCaption = Self.Title
 		  Self.mUpdating = True
-		  Self.ContentsChanged = False
+		  Self.Changed = False
 		  
 		  Dim Mask As UInt64 = Preferences.LastPresetMapFilter
-		  Self.MapSelector.Items(0).Selected = (Mask And Beacon.Maps.TheIsland.Mask) = Beacon.Maps.TheIsland.Mask
-		  Self.MapSelector.Items(1).Selected = (Mask And Beacon.Maps.ScorchedEarth.Mask) = Beacon.Maps.ScorchedEarth.Mask
-		  Self.MapSelector.Items(2).Selected = (Mask And Beacon.Maps.Aberration.Mask) = Beacon.Maps.Aberration.Mask
-		  Self.MapSelector.Items(3).Selected = (Mask And Beacon.Maps.Extinction.Mask) = Beacon.Maps.Extinction.Mask
-		  Self.MapSelector.Items(4).Selected = (Mask And Beacon.Maps.TheCenter.Mask) = Beacon.Maps.TheCenter.Mask
-		  Self.MapSelector.Items(5).Selected = (Mask And Beacon.Maps.Ragnarok.Mask) = Beacon.Maps.Ragnarok.Mask
-		  Self.MapSelector.Items(6).Selected = (Mask And Beacon.Maps.Valguero.Mask) = Beacon.Maps.Valguero.Mask
+		  Self.MapSelector.SegmentAt(0).Selected = (Mask And Beacon.Maps.TheIsland.Mask) = Beacon.Maps.TheIsland.Mask
+		  Self.MapSelector.SegmentAt(1).Selected = (Mask And Beacon.Maps.ScorchedEarth.Mask) = Beacon.Maps.ScorchedEarth.Mask
+		  Self.MapSelector.SegmentAt(2).Selected = (Mask And Beacon.Maps.Aberration.Mask) = Beacon.Maps.Aberration.Mask
+		  Self.MapSelector.SegmentAt(3).Selected = (Mask And Beacon.Maps.Extinction.Mask) = Beacon.Maps.Extinction.Mask
+		  Self.MapSelector.SegmentAt(4).Selected = (Mask And Beacon.Maps.Genesis.Mask) = Beacon.Maps.Genesis.Mask
+		  Self.MapSelector.SegmentAt(5).Selected = (Mask And Beacon.Maps.TheCenter.Mask) = Beacon.Maps.TheCenter.Mask
+		  Self.MapSelector.SegmentAt(6).Selected = (Mask And Beacon.Maps.Ragnarok.Mask) = Beacon.Maps.Ragnarok.Mask
+		  Self.MapSelector.SegmentAt(7).Selected = (Mask And Beacon.Maps.Valguero.Mask) = Beacon.Maps.Valguero.Mask
 		  
 		  Dim Maps() As Beacon.Map = Self.FilteredMaps()
-		  Dim SelectedEntries() As Text
+		  Dim SelectedEntries() As String
 		  For I As Integer = 0 To Self.ContentsList.RowCount - 1
 		    If Self.ContentsList.Selected(I) Then
-		      Dim Entry As Beacon.PresetEntry = Self.ContentsList.RowTag(I)
-		      SelectedEntries.Append(Entry.UniqueID)
+		      Dim Entry As Beacon.PresetEntry = Self.ContentsList.RowTagAt(I)
+		      SelectedEntries.AddRow(Entry.UniqueID)
 		    End If
 		  Next
-		  Self.ContentsList.DeleteAllRows()
+		  Self.ContentsList.RemoveAllRows()
 		  For Each Entry As Beacon.PresetEntry In Self.mPreset
 		    Self.PutEntryInRow(Entry, -1, Maps, SelectedEntries.IndexOf(Entry.UniqueID) > -1)
 		  Next
 		  Self.ContentsList.Sort
 		  
-		  Self.NameField.Text = Self.mPreset.Label
-		  Self.GroupingField.Text = Self.mPreset.Grouping
+		  Self.NameField.Value = Self.mPreset.Label
+		  Self.GroupingField.Value = Self.mPreset.Grouping
 		  Self.UpdateMinAndMaxFields
 		  
-		  Dim AppliedModifiers() As Text = Self.mPreset.ActiveModifierIDs
+		  Dim AppliedModifiers() As String = Self.mPreset.ActiveModifierIDs
 		  Dim Modifiers() As Beacon.PresetModifier = LocalData.SharedInstance.AllPresetModifiers
-		  Self.ModifiersList.DeleteAllRows()
+		  Self.ModifiersList.RemoveAllRows()
 		  For Each Modifier As Beacon.PresetModifier In Modifiers
 		    If AppliedModifiers.IndexOf(Modifier.ModifierID) = -1 Then
 		      Continue
@@ -1149,22 +1148,22 @@ End
 		    Dim MaxQualityModifier As Integer = Self.mPreset.MaxQualityModifier(Modifier)
 		    Dim BlueprintMultiplier As Double = Self.mPreset.BlueprintMultiplier(Modifier)
 		    
-		    Dim QuantityLabel As Text = "x " + QuantityMultiplier.ToText(Xojo.Core.Locale.Current)
-		    Dim BlueprintLabel As Text = "x " + BlueprintMultiplier.ToText(Xojo.Core.Locale.Current)
-		    Dim MinQualityLabel, MaxQualityLabel As Text
+		    Dim QuantityLabel As String = "x " + QuantityMultiplier.ToString(Locale.Current)
+		    Dim BlueprintLabel As String = "x " + BlueprintMultiplier.ToString(Locale.Current)
+		    Dim MinQualityLabel, MaxQualityLabel As String
 		    If MinQualityModifier = 0 Then
 		      MinQualityLabel = "No Change"
 		    Else
-		      MinQualityLabel = MinQualityModifier.ToText(Xojo.Core.Locale.Current, "+0;-0") + " Tier" + If(Xojo.Math.Abs(MinQualityModifier) <> 1, "s", "")
+		      MinQualityLabel = MinQualityModifier.ToString(Locale.Current, "+0;-0") + " Tier" + If(Abs(MinQualityModifier) <> 1, "s", "")
 		    End If
 		    If MaxQualityModifier = 0 Then
 		      MaxQualityLabel = "No Change"
 		    Else
-		      MaxQualityLabel = MaxQualityModifier.ToText(Xojo.Core.Locale.Current, "+0;-0") + " Tier" + If(Xojo.Math.Abs(MaxQualityModifier) <> 1, "s", "")
+		      MaxQualityLabel = MaxQualityModifier.ToString(Locale.Current, "+0;-0") + " Tier" + If(Abs(MaxQualityModifier) <> 1, "s", "")
 		    End If
 		    
 		    Self.ModifiersList.AddRow(Modifier.Label, MinQualityLabel, MaxQualityLabel, QuantityLabel, BlueprintLabel)
-		    Self.ModifiersList.RowTag(Self.ModifiersList.LastIndex) = Modifier.ModifierID
+		    Self.ModifiersList.RowTagAt(Self.ModifiersList.LastAddedRowIndex) = Modifier.ModifierID
 		  Next
 		  
 		  Self.mUpdating = False
@@ -1172,9 +1171,9 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ViewID() As Text
+		Function ViewID() As String
 		  If Self.mSaveFile <> Nil Then
-		    Return EncodeHex(Crypto.MD5(Self.mSaveFile.NativePath)).ToText
+		    Return EncodeHex(Crypto.MD5(Self.mSaveFile.NativePath))
 		  Else
 		    Return Self.mPreset.PresetID
 		  End If
@@ -1224,7 +1223,7 @@ End
 
 #tag Events Header
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddEntries"
 		    Self.ShowAddDialog()
@@ -1236,8 +1235,8 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
-		  Me.LeftItems.Append(New BeaconToolbarItem("AddEntries", IconAdd))
+		Sub Opening()
+		  Me.LeftItems.Append(New BeaconToolbarItem("AddEntries", IconToolbarAdd))
 		  Me.LeftItems.Append(New BeaconToolbarItem("EditEntries", IconToolbarEdit, False))
 		  Me.LeftItems.Append(New BeaconToolbarItem("DeleteEntries", IconRemove, False))
 		End Sub
@@ -1245,7 +1244,7 @@ End
 #tag EndEvents
 #tag Events ViewSelector
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.Add(ShelfItem.NewFlexibleSpacer)
 		  Me.Add(IconPresetSettings, "General", "settings")
 		  Me.Add(IconPresetContents, "Contents", "contents")
@@ -1255,21 +1254,15 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
-		  Self.Pages.Value = Me.SelectedIndex - 1
+		Sub Pressed()
+		  Self.Pages.SelectedPanelIndex = Me.SelectedIndex - 1
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events MapSelector
 	#tag Event
-		Sub Open()
-		  Me.Width = (Me.Items.UBound + 1) * 110 // Because the design-time size is not being respected
-		  Me.ResizeCells
-		End Sub
-	#tag EndEvent
-	#tag Event
-		Sub Action(itemIndex as integer)
-		  #Pragma Unused itemIndex
+		Sub Pressed(segmentIndex as integer)
+		  #Pragma Unused segmentIndex
 		  
 		  If Self.mUpdating = True Then
 		    Return
@@ -1280,22 +1273,28 @@ End
 		  Dim Maps() As Beacon.Map = Self.FilteredMaps
 		  Preferences.LastPresetMapFilter = Maps.Mask
 		  
-		  For I As Integer = ContentsList.ListCount - 1 DownTo 0
-		    Dim Entry As Beacon.PresetEntry = ContentsList.RowTag(I)
+		  For I As Integer = ContentsList.RowCount - 1 DownTo 0
+		    Dim Entry As Beacon.PresetEntry = ContentsList.RowTagAt(I)
 		    Self.PutEntryInRow(Entry, I, Maps, ContentsList.Selected(I))
 		  Next
 		  
 		  Self.mUpdating = False
 		End Sub
 	#tag EndEvent
+	#tag Event
+		Sub Opening()
+		  Me.Width = Me.SegmentCount * 110 // Because the design-time size is not being respected
+		  Me.ResizeCells
+		End Sub
+	#tag EndEvent
 #tag EndEvents
 #tag Events ContentsList
 	#tag Event
-		Sub Open()
-		  Me.ColumnType(Self.ColumnIncluded) = Listbox.TypeCheckbox
-		  Me.ColumnType(Self.ColumnQuantity) = Listbox.TypeCheckbox
-		  Me.ColumnType(Self.ColumnQuality) = Listbox.TypeCheckbox
-		  Me.ColumnType(Self.ColumnBlueprint) = Listbox.TypeCheckbox
+		Sub Opening()
+		  Me.ColumnTypeAt(Self.ColumnIncluded) = Listbox.CellTypes.CheckBox
+		  Me.ColumnTypeAt(Self.ColumnQuantity) = Listbox.CellTypes.CheckBox
+		  Me.ColumnTypeAt(Self.ColumnQuality) = Listbox.CellTypes.CheckBox
+		  Me.ColumnTypeAt(Self.ColumnBlueprint) = Listbox.CellTypes.CheckBox
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -1308,88 +1307,88 @@ End
 		  
 		  Select Case Column
 		  Case Self.ColumnIncluded
-		    Dim State As CheckBox.CheckedStates = Me.CellState(Row, Column)
+		    Dim State As CheckBox.CheckedStates = Me.CellCheckBoxStateAt(Row, Column)
 		    If State = Checkbox.CheckedStates.Indeterminate Then
 		      Return
 		    End If
 		    
 		    Dim Maps() As Beacon.Map = Self.FilteredMaps
 		    If ChangeAll Then
-		      For I As Integer = Me.ListCount - 1 DownTo 0
-		        Dim Entry As Beacon.PresetEntry = Me.RowTag(I)
+		      For I As Integer = Me.RowCount - 1 DownTo 0
+		        Dim Entry As Beacon.PresetEntry = Me.RowTagAt(I)
 		        For Each Map As Beacon.Map In Maps
 		          If Entry.ValidForMap(Map) <> (State = Checkbox.CheckedStates.Checked) Then
 		            Entry.ValidForMap(Map) = (State = Checkbox.CheckedStates.Checked)
-		            Me.CellState(I, Column) = State
-		            Self.ContentsChanged = True
+		            Me.CellCheckBoxStateAt(I, Column) = State
+		            Self.Changed = True
 		          End If
 		        Next
 		      Next
 		    Else
-		      Dim Entry As Beacon.PresetEntry = Me.RowTag(Row)
+		      Dim Entry As Beacon.PresetEntry = Me.RowTagAt(Row)
 		      For Each Map As Beacon.Map In Maps
 		        If Entry.ValidForMap(Map) <> (State = Checkbox.CheckedStates.Checked) Then
 		          Entry.ValidForMap(Map) = (State = Checkbox.CheckedStates.Checked)
-		          Self.ContentsChanged = True
+		          Self.Changed = True
 		        End If
 		      Next
 		    End If
 		    Return
 		  Case Self.ColumnQuantity
-		    Dim Checked As Boolean = Me.CellCheck(Row, Column)
+		    Dim Checked As Boolean = Me.CellCheckBoxValueAt(Row, Column)
 		    
 		    If ChangeAll Then
-		      For I As Integer = Me.ListCount - 1 DownTo 0
-		        Dim Entry As Beacon.PresetEntry = Me.RowTag(I)
+		      For I As Integer = Me.RowCount - 1 DownTo 0
+		        Dim Entry As Beacon.PresetEntry = Me.RowTagAt(I)
 		        If Entry.RespectQuantityMultiplier <> Checked Then
 		          Entry.RespectQuantityMultiplier = Checked
-		          Me.CellCheck(I, Column) = Checked
-		          Self.ContentsChanged = True
+		          Me.CellCheckBoxValueAt(I, Column) = Checked
+		          Self.Changed = True
 		        End If
 		      Next
 		    Else
-		      Dim Entry As Beacon.PresetEntry = Me.RowTag(Row)
+		      Dim Entry As Beacon.PresetEntry = Me.RowTagAt(Row)
 		      If Entry.RespectQuantityMultiplier <> Checked Then
 		        Entry.RespectQuantityMultiplier = Checked
-		        Self.ContentsChanged = True
+		        Self.Changed = True
 		      End If
 		    End If
 		  Case Self.ColumnQuality
-		    Dim Checked As Boolean = Me.CellCheck(Row, Column)
+		    Dim Checked As Boolean = Me.CellCheckBoxValueAt(Row, Column)
 		    
 		    If ChangeAll Then
-		      For I As Integer = Me.ListCount - 1 DownTo 0
-		        Dim Entry As Beacon.PresetEntry = Me.RowTag(I)
+		      For I As Integer = Me.RowCount - 1 DownTo 0
+		        Dim Entry As Beacon.PresetEntry = Me.RowTagAt(I)
 		        If Entry.RespectQualityModifier <> Checked Then
 		          Entry.RespectQualityModifier = Checked
-		          Me.CellCheck(I, Column) = Checked
-		          Self.ContentsChanged = True
+		          Me.CellCheckBoxValueAt(I, Column) = Checked
+		          Self.Changed = True
 		        End If
 		      Next
 		    Else
-		      Dim Entry As Beacon.PresetEntry = Me.RowTag(Row)
+		      Dim Entry As Beacon.PresetEntry = Me.RowTagAt(Row)
 		      If Entry.RespectQualityModifier <> Checked Then
 		        Entry.RespectQualityModifier = Checked
-		        Self.ContentsChanged = True
+		        Self.Changed = True
 		      End If
 		    End If
 		  Case Self.ColumnBlueprint
-		    Dim Checked As Boolean = Me.CellCheck(Row, Column)
+		    Dim Checked As Boolean = Me.CellCheckBoxValueAt(Row, Column)
 		    
 		    If ChangeAll Then
-		      For I As Integer = Me.ListCount - 1 DownTo 0
-		        Dim Entry As Beacon.PresetEntry = Me.RowTag(I)
+		      For I As Integer = Me.RowCount - 1 DownTo 0
+		        Dim Entry As Beacon.PresetEntry = Me.RowTagAt(I)
 		        If Entry.RespectBlueprintMultiplier <> Checked Then
 		          Entry.RespectBlueprintMultiplier = Checked
-		          Me.CellCheck(I, Column) = Checked
-		          Self.ContentsChanged = True
+		          Me.CellCheckBoxValueAt(I, Column) = Checked
+		          Self.Changed = True
 		        End If
 		      Next
 		    Else
-		      Dim Entry As Beacon.PresetEntry = Me.RowTag(Row)
+		      Dim Entry As Beacon.PresetEntry = Me.RowTagAt(Row)
 		      If Entry.RespectBlueprintMultiplier <> Checked Then
 		        Entry.RespectBlueprintMultiplier = Checked
-		        Self.ContentsChanged = True
+		        Self.Changed = True
 		      End If
 		    End If
 		  End Select
@@ -1403,11 +1402,11 @@ End
 		  Dim Item As MenuItem
 		  
 		  Item = New MenuItem
-		  Item.Text = "Create Blueprint Entry"
-		  Item.Enabled = Me.SelCount > 0
+		  Item.Value = "Create Blueprint Entry"
+		  Item.Enabled = Me.SelectedRowCount > 0
 		  Item.Tag = "createblueprintentry"
 		  
-		  Base.Append(Item)
+		  Base.AddMenu(Item)
 		  Return True
 		End Function
 	#tag EndEvent
@@ -1416,23 +1415,23 @@ End
 		  Select Case hitItem.Tag
 		  Case "createblueprintentry"
 		    Dim Maps() As Beacon.Map = Beacon.Maps.All
-		    Dim NewEntries As New Xojo.Core.Dictionary
+		    Dim NewEntries As New Dictionary
 		    For Each Map As Beacon.Map In Maps
 		      Dim Entries() As Beacon.PresetEntry
-		      For I As Integer = 0 To Me.ListCount - 1
+		      For I As Integer = 0 To Me.RowCount - 1
 		        If Not Me.Selected(I) Then
 		          Continue
 		        End If
 		        
-		        Dim Entry As Beacon.PresetEntry = Me.RowTag(I)
+		        Dim Entry As Beacon.PresetEntry = Me.RowTagAt(I)
 		        If Entry.ValidForMap(Map) Then
-		          Entries.Append(Entry)
+		          Entries.AddRow(Entry)
 		        End If
 		      Next
 		      
 		      Dim BlueprintEntry As Beacon.SetEntry = Beacon.SetEntry.CreateBlueprintEntry(Entries)
 		      If BlueprintEntry <> Nil Then
-		        Dim Hash As Text = BlueprintEntry.Hash
+		        Dim Hash As String = BlueprintEntry.Hash
 		        If NewEntries.HasKey(Hash) Then
 		          Dim Entry As Beacon.PresetEntry = NewEntries.Value(Hash)
 		          Entry.ValidForMap(Map) = True
@@ -1446,20 +1445,20 @@ End
 		      End If
 		    Next
 		    
-		    If NewEntries.Count = 0 Then
-		      Beep
+		    If NewEntries.KeyCount = 0 Then
+		      System.Beep
 		      Return True
 		    End If
 		    
-		    For I As Integer = 0 To Me.ListCount - 1
+		    For I As Integer = 0 To Me.RowCount - 1
 		      If Me.Selected(I) Then
-		        Beacon.PresetEntry(Me.RowTag(I)).ChanceToBeBlueprint = 0.0
+		        Beacon.PresetEntry(Me.RowTagAt(I)).ChanceToBeBlueprint = 0.0
 		      End If
 		    Next
-		    Me.ListIndex = -1
+		    Me.SelectedRowIndex = -1
 		    
 		    Dim SelectedMaps() As Beacon.Map = Self.FilteredMaps()
-		    For Each Entry As Xojo.Core.DictionaryEntry In NewEntries
+		    For Each Entry As DictionaryEntry In NewEntries
 		      Dim Item As Beacon.PresetEntry = Entry.Value
 		      Item.RespectQualityModifier = False
 		      Item.RespectQuantityMultiplier = False
@@ -1469,13 +1468,13 @@ End
 		    
 		    Me.Sort
 		    Me.EnsureSelectionIsVisible()
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  End Select
 		End Function
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Me.SelCount > -1
+		  Return Me.SelectedRowCount > -1
 		End Function
 	#tag EndEvent
 	#tag Event
@@ -1484,144 +1483,144 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub DoubleClick()
-		  Self.EditSelectedEntries()
-		End Sub
-	#tag EndEvent
-	#tag Event
 		Function CanCopy() As Boolean
 		  Return False
 		End Function
 	#tag EndEvent
 	#tag Event
-		Sub Change()
-		  Header.EditEntries.Enabled = Me.SelCount > 0
-		  Header.DeleteEntries.Enabled = Me.SelCount > 0
+		Sub SelectionChanged()
+		  Header.EditEntries.Enabled = Me.SelectedRowCount > 0
+		  Header.DeleteEntries.Enabled = Me.SelectedRowCount > 0
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub DoubleClicked()
+		  Self.EditSelectedEntries()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events MaxItemsStepper
 	#tag Event
-		Sub Down()
-		  Self.MaxItemsField.Text = Str(CDbl(Self.MaxItemsField.Text) - 1, "-0")
+		Sub DownPressed()
+		  Self.MaxItemsField.Value = Str(CDbl(Self.MaxItemsField.Value) - 1, "-0")
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Up()
-		  Self.MaxItemsField.Text = Str(CDbl(Self.MaxItemsField.Text) + 1, "-0")
+		Sub UpPressed()
+		  Self.MaxItemsField.Value = Str(CDbl(Self.MaxItemsField.Value) + 1, "-0")
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events MinItemsStepper
 	#tag Event
-		Sub Down()
-		  Self.MinItemsField.Text = Str(CDbl(Self.MinItemsField.Text) - 1, "-0")
+		Sub DownPressed()
+		  Self.MinItemsField.Value = Str(CDbl(Self.MinItemsField.Value) - 1, "-0")
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Up()
-		  Self.MinItemsField.Text = Str(CDbl(Self.MinItemsField.Text) + 1, "-0")
+		Sub UpPressed()
+		  Self.MinItemsField.Value = Str(CDbl(Self.MinItemsField.Value) + 1, "-0")
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events MaxItemsField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.mUpdating Then
 		    Return
 		  End If
 		  
-		  Dim Value As Integer = Max(CDbl(Me.Text), 1)
+		  Dim Value As Integer = Max(CDbl(Me.Value), 1)
 		  If Self.mPreset.MaxItems <> Value Then
 		    Self.mPreset.MaxItems = Value
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  End If
 		  
 		  If Self.Window.Focus <> Me Then
-		    Me.Text = Str(Self.mPreset.MaxItems, "-0")
+		    Me.Value = Str(Self.mPreset.MaxItems, "-0")
 		  End If
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub LostFocus()
-		  Me.Text = Str(Self.mPreset.MaxItems, "-0")
+		  Me.Value = Str(Self.mPreset.MaxItems, "-0")
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events MinItemsField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.mUpdating Then
 		    Return
 		  End If
 		  
-		  Dim Value As Integer = Max(CDbl(Me.Text), 1)
+		  Dim Value As Integer = Max(CDbl(Me.Value), 1)
 		  If Self.mPreset.MinItems <> Value Then
 		    Self.mPreset.MinItems = Value
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  End If
 		  
 		  If Self.Window.Focus <> Me Then
-		    Me.Text = Str(Self.mPreset.MinItems, "-0")
+		    Me.Value = Str(Self.mPreset.MinItems, "-0")
 		  End If
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub LostFocus()
-		  Me.Text = Str(Self.mPreset.MinItems, "-0")
+		  Me.Value = Str(Self.mPreset.MinItems, "-0")
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events GroupingField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.mUpdating Then
 		    Return
 		  End If
 		  
-		  Dim Value As String = Trim(Me.Text)
+		  Dim Value As String = Me.Value.Trim
 		  If Value <> "" And StrComp(Self.mPreset.Grouping, Value, 0) <> 0 Then
-		    Self.mPreset.Grouping = Value.ToText
-		    Self.ContentsChanged = True
+		    Self.mPreset.Grouping = Value
+		    Self.Changed = True
 		  End If
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events NameField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.mUpdating Then
 		    Return
 		  End If
 		  
-		  Dim Value As String = Trim(Me.Text)
+		  Dim Value As String = Me.Value.Trim
 		  If Value <> "" And StrComp(Self.mPreset.Label, Value, 0) <> 0 Then
-		    Self.mPreset.Label = Value.ToText
-		    Self.ContentsChanged = True
+		    Self.mPreset.Label = Value
+		    Self.Changed = True
 		  End If
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ModifiersList
 	#tag Event
-		Sub Change()
-		  EditModifierButton.Enabled = Me.SelCount = 1
-		  DeleteModifierButton.Enabled = Me.SelCount > 0
+		Sub SelectionChanged()
+		  EditModifierButton.Enabled = Me.SelectedRowCount = 1
+		  DeleteModifierButton.Enabled = Me.SelectedRowCount > 0
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub DoubleClick()
+		Sub DoubleClicked()
 		  Self.ShowModifierEditor(True)
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function CanCopy() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
@@ -1631,32 +1630,32 @@ End
 	#tag EndEvent
 	#tag Event
 		Sub PerformClear(Warn As Boolean)
-		  If Warn And Not Self.ShowConfirm(if(Self.ModifiersList.SelCount = 1, "Are you sure you want to delete this modifier?", "Are you sure you want to delete these " + Str(Self.ModifiersList.SelCount, "-0") + " modifiers?"), "This action cannot be undone.", "Delete", "Cancel") Then
+		  If Warn And Not Self.ShowConfirm(if(Self.ModifiersList.SelectedRowCount = 1, "Are you sure you want to delete this modifier?", "Are you sure you want to delete these " + Str(Self.ModifiersList.SelectedRowCount, "-0") + " modifiers?"), "This action cannot be undone.", "Delete", "Cancel") Then
 		    Return
 		  End If
 		  
-		  For I As Integer = Self.ModifiersList.ListCount - 1 DownTo 0
+		  For I As Integer = Self.ModifiersList.RowCount - 1 DownTo 0
 		    If Not Self.ModifiersList.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim ModifierID As Text = Self.ModifiersList.RowTag(I)
+		    Dim ModifierID As String = Self.ModifiersList.RowTagAt(I)
 		    Self.mPreset.ClearModifier(ModifierID)
-		    Self.ModifiersList.RemoveRow(I)
-		    Self.ContentsChanged = True
+		    Self.ModifiersList.RemoveRowAt(I)
+		    Self.Changed = True
 		  Next
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub PerformCopy(Board As Clipboard)
-		  Dim Modifiers As New Xojo.Core.Dictionary
-		  For I As Integer = 0 To Me.ListCount - 1
+		  Dim Modifiers As New Dictionary
+		  For I As Integer = 0 To Me.RowCount - 1
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim ModifierID As Text = Me.RowTag(I)
-		    Dim Dict As New Xojo.Core.Dictionary
+		    Dim ModifierID As String = Me.RowTagAt(I)
+		    Dim Dict As New Dictionary
 		    Dict.Value("Quantity") = Self.mPreset.QuantityMultiplier(ModifierID)
 		    Dict.Value("MinQuality") = Self.mPreset.MinQualityModifier(ModifierID)
 		    Dict.Value("MaxQuality") = Self.mPreset.MaxQualityModifier(ModifierID)
@@ -1664,7 +1663,7 @@ End
 		    Modifiers.Value(ModifierID) = Dict
 		  Next
 		  
-		  Board.AddRawData(Xojo.Data.GenerateJSON(Modifiers), Self.ModifierClipboardType)
+		  Board.AddRawData(Beacon.GenerateJSON(Modifiers, False), Self.ModifierClipboardType)
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -1674,12 +1673,12 @@ End
 		  End If
 		  
 		  Try
-		    Dim Data As Text = Board.RawData(Self.ModifierClipboardType).DefineEncoding(Encodings.UTF8).ToText
-		    Dim Modifiers As Xojo.Core.Dictionary = Xojo.Data.ParseJSON(Data)
+		    Dim Data As String = Board.RawData(Self.ModifierClipboardType).DefineEncoding(Encodings.UTF8)
+		    Dim Modifiers As Dictionary = Beacon.ParseJSON(Data)
 		    
-		    For Each Entry As Xojo.Core.DictionaryEntry In Modifiers
-		      Dim ModifierID As Text = Entry.Key
-		      Dim Dict As Xojo.Core.Dictionary = Entry.Value
+		    For Each Entry As DictionaryEntry In Modifiers
+		      Dim ModifierID As String = Entry.Key
+		      Dim Dict As Dictionary = Entry.Value
 		      
 		      If Dict.HasKey("Quantity") Then
 		        Self.mPreset.QuantityMultiplier(ModifierID) = Dict.Value("Quantity")
@@ -1697,7 +1696,7 @@ End
 		    Next
 		    
 		    Self.UpdateUI()
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  Catch Err As RuntimeException
 		    Return
 		  End Try
@@ -1706,31 +1705,97 @@ End
 #tag EndEvents
 #tag Events AddModifierButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.ShowModifierEditor(False)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events EditModifierButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.ShowModifierEditor(True)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events DeleteModifierButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.ModifiersList.DoClear()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -1738,6 +1803,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -1745,6 +1811,7 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -1752,44 +1819,15 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -1797,22 +1835,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -1820,61 +1843,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -1882,12 +1915,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -1895,11 +1931,13 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -1907,7 +1945,9 @@ End
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -1915,15 +1955,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1931,7 +1963,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1939,5 +1971,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

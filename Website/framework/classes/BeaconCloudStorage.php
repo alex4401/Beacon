@@ -37,7 +37,7 @@ abstract class BeaconCloudStorage {
 			$local_path = static::LocalPath($remote_path);
 			
 			if (file_exists($local_path)) {
-				unlink($local_path);
+				static::DeleteLocalPath($local_path);
 				$database->Query('DELETE FROM usercloud_cache WHERE cache_id = $1;', $cache_id);
 			}
 			
@@ -59,7 +59,7 @@ abstract class BeaconCloudStorage {
 			$size_in_bytes = $results->Field('size_in_bytes');
 			
 			if (file_exists($local_path)) {
-				unlink($local_path);
+				static::DeleteLocalPath($local_path);
 				$database->Query('DELETE FROM usercloud_cache WHERE cache_id = $1;', $cache_id);
 				$consumed_bytes = max($consumed_bytes - $size_in_bytes, 0);
 			}
@@ -67,6 +67,34 @@ abstract class BeaconCloudStorage {
 			$results->MoveNext();
 		}
 		$database->Commit();
+	}
+	
+	private static function DeleteLocalPath(string $local_path, bool $is_dir = false, string $root = '') {
+		if (empty($root)) {
+			$root = static::LocalPath('/');
+		}
+		
+		$parent_path = dirname($local_path);
+		if ($is_dir) {
+			rmdir($local_path);
+		} else {
+			unlink($local_path);
+		}
+		if (substr($parent_path, 0, strlen($root)) !== $root) {
+			return;
+		}
+		
+		// if the parent is not empty, this block will end the function early
+		$handle = opendir($parent_path);
+		while (($entry = readdir($handle)) !== false) {
+			if ($entry == '.' || $entry == '..') {
+				continue;
+			}
+			closedir($handle);
+			return;
+		}
+		
+		static::DeleteLocalPath($parent_path, true, $root);
 	}
 	
 	private static function MimeForPath(string $local_path) {
@@ -106,23 +134,29 @@ abstract class BeaconCloudStorage {
 		if ($results->RecordCount() == 0) {
 			return static::FILE_NOT_FOUND;
 		}
+		$local_path = static::LocalPath($remote_path);
+		$file_id = crc32($remote_path);
+		$database = BeaconCommon::Database();
+		$database->BeginTransaction();
+		$database->Query('SELECT pg_advisory_xact_lock($1);', $file_id);
+		$local_exists = file_exists($local_path);
 		$correct_hash = $results->Field('hash');
-		$filesize = $results->Field('size_in_bytes');
+		$correct_filesize = $results->Field('size_in_bytes');
 		$hostname = gethostname();
-		$results = $database->Query('SELECT cache_id, hash FROM usercloud_cache WHERE remote_path = $1 AND hostname = $2;', $remote_path, $hostname);
+		$results = $database->Query('SELECT cache_id, hash, size_in_bytes FROM usercloud_cache WHERE remote_path = $1 AND hostname = $2;', $remote_path, $hostname);
 		$is_cached = false;
 		$cache_id = null;
 		if ($results->RecordCount() == 1) {
 			$cache_id = $results->Field('cache_id');
 			$cached_hash = $results->Field('hash');
-			if ($cached_hash === $correct_hash) {
+			$cached_size = $results->Field('size_in_bytes');
+			if ($cached_hash === $correct_hash && $cached_size === $correct_filesize) {
 				$is_cached = true;
 			}
 		}
 		
-		$local_path = static::LocalPath($remote_path);
-		if (file_exists($local_path) === false || $is_cached === false) {
-			static::CleanupLocalCache($filesize);
+		if ($local_exists === false || $is_cached === false) {
+			static::CleanupLocalCache($correct_filesize);
 			
 			$parent = dirname($local_path);
 			if (file_exists($parent) == false) {
@@ -135,6 +169,7 @@ abstract class BeaconCloudStorage {
 			$url = static::BuildSignedURL($remote_path, 'GET');
 			$remote_handle = @fopen($url, 'rb');
 			if (!$remote_handle) {
+				$database->Rollback();
 				return static::FAILED_TO_WARM_CACHE;
 			}
 			$local_handle = fopen($local_path, 'wb');
@@ -146,15 +181,24 @@ abstract class BeaconCloudStorage {
 			fclose($remote_handle);
 			
 			chmod($local_path, 0660);
+			
+			$cached_size = filesize($local_path);
+			$cached_hash = hash_file('sha256', $local_path);
+			
+			if ($cached_size != $correct_filesize || $cached_hash != $correct_hash) {
+				static::DeleteLocalPath($local_path);
+				if (is_null($cache_id) == false) {
+					$database->Query('DELETE FROM usercloud_cache WHERE cache_id = $1;', $cache_id);
+				}
+				$database->Commit();
+				return static::FAILED_TO_WARM_CACHE;
+			}
 		}
 		
-		$filesize = filesize($local_path);
-		$database = BeaconCommon::Database();
-		$database->BeginTransaction();
 		if (!is_null($cache_id)) {
-			$database->Query('UPDATE usercloud_cache SET size_in_bytes = $2, hash = $3, last_accessed = CURRENT_TIMESTAMP WHERE cache_id = $1;', $cache_id, $filesize, $correct_hash);
+			$database->Query('UPDATE usercloud_cache SET size_in_bytes = $2, hash = $3, last_accessed = CURRENT_TIMESTAMP WHERE cache_id = $1;', $cache_id, $cached_size, $cached_hash);
 		} else {
-			$database->Query('INSERT INTO usercloud_cache (hostname, remote_path, size_in_bytes, hash) VALUES ($1, $2, $3, $4)', $hostname, $remote_path, $filesize, $correct_hash);
+			$database->Query('INSERT INTO usercloud_cache (hostname, remote_path, size_in_bytes, hash) VALUES ($1, $2, $3, $4)', $hostname, $remote_path, $cached_size, $cached_hash);
 		}
 		$database->Commit();
 		
@@ -187,9 +231,16 @@ abstract class BeaconCloudStorage {
 		if ($curl === false) {
 			throw new Exception('Unable to get curl handle');
 		}
+		
+		$results = $database->Query('SELECT COUNT(attempts) AS objects_delayed FROM usercloud_queue WHERE attempts = 3;');
+		$objects_delayed = intval($results->Field('objects_delayed'));
+		
+		$database->BeginTransaction();
+		$database->Query('UPDATE usercloud_queue SET http_status = NULL WHERE http_status IS NOT NULL AND attempts < 3;');
+		$database->Commit();
 		while (true) {
 			$database->BeginTransaction();
-			$results = $database->Query('SELECT usercloud_queue.remote_path, usercloud_queue.request_method, usercloud.content_type FROM usercloud_queue LEFT JOIN usercloud ON (usercloud_queue.remote_path = usercloud.remote_path) WHERE usercloud_queue.hostname = $1 AND usercloud_queue.http_status IS NULL ORDER BY usercloud_queue.queue_time ASC LIMIT 1 FOR UPDATE OF usercloud_queue SKIP LOCKED;', $hostname);
+			$results = $database->Query('SELECT usercloud_queue.remote_path, usercloud_queue.request_method, usercloud.content_type FROM usercloud_queue LEFT JOIN usercloud ON (usercloud_queue.remote_path = usercloud.remote_path) WHERE usercloud_queue.hostname = $1 AND usercloud_queue.http_status IS NULL AND usercloud_queue.attempts < 3 ORDER BY usercloud_queue.queue_time ASC LIMIT 1 FOR UPDATE OF usercloud_queue SKIP LOCKED;', $hostname);
 			if ($results->RecordCount() == 0) {
 				$database->Rollback();
 				break;
@@ -238,19 +289,20 @@ abstract class BeaconCloudStorage {
 			if ($success) {
 				$database->Query('DELETE FROM usercloud_queue WHERE remote_path = $1 AND hostname = $2;', $remote_path, $hostname);
 			} else {
-				$database->Query('UPDATE usercloud_queue SET http_status = $3 WHERE remote_path = $1 AND hostname = $2;', $remote_path, $hostname, $http_status);
-				if ($http_status != 403) {
-					BeaconCommon::PostSlackMessage('Unable to ' . $request_method . ' ' . $remote_path . ', http status ' . $http_status);
-				}
+				$database->Query('UPDATE usercloud_queue SET http_status = $3, attempts = attempts + 1 WHERE remote_path = $1 AND hostname = $2;', $remote_path, $hostname, $http_status);
 			}
 			
 			$database->Commit();
+			
+			usleep(10000);
 		}
 		curl_close($curl);
 		
-		$database->BeginTransaction();
-		$database->Query('UPDATE usercloud_queue SET http_status = NULL WHERE http_status = 403;');
-		$database->Commit();
+		$results = $database->Query('SELECT COUNT(attempts) AS objects_delayed FROM usercloud_queue WHERE attempts = 3;');
+		$new_objects_delayed = intval($results->Field('objects_delayed')) - $objects_delayed;
+		if ($new_objects_delayed > 0) {
+			BeaconCommon::PostSlackMessage('There ' . ($new_objects_delayed == 1 ? 'is 1 new object' : 'are ' . $new_objects_delayed . ' new objects') . ' in the usercloud queue that failed to upload after multiple attempts.');
+		}
 		
 		static::CleanupLocalCache(0);
 	}
@@ -403,7 +455,7 @@ abstract class BeaconCloudStorage {
 		$remote_path = static::CleanupRemotePath($remote_path);
 		$local_path = static::LocalPath($remote_path);
 		if (file_exists($local_path)) {
-			unlink($local_path);
+			static::DeleteLocalPath($local_path);
 		}
 		
 		$hostname = gethostname();

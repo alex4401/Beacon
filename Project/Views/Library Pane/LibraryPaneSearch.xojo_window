@@ -5,7 +5,6 @@ Begin LibrarySubview LibraryPaneSearch
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,7 @@ Begin LibrarySubview LibraryPaneSearch
       Caption         =   "Search"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -110,13 +109,15 @@ Begin LibrarySubview LibraryPaneSearch
       Scope           =   2
       TabPanelIndex   =   0
    End
-   Begin Xojo.Net.HTTPSocket SearchSocket
+   Begin URLConnection SearchSocket
+      AllowCertificateValidation=   False
       Enabled         =   True
+      HTTPStatusCode  =   0
       Index           =   -2147483648
       LockedInPosition=   False
       Scope           =   2
       TabPanelIndex   =   0
-      ValidateCertificates=   False
+      ValidateCertificates=   "False"
    End
    Begin ControlCanvas Area
       AcceptFocus     =   False
@@ -125,7 +126,7 @@ Begin LibrarySubview LibraryPaneSearch
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   218
       HelpTag         =   ""
       Index           =   -2147483648
@@ -152,13 +153,13 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.ToolbarCaption = "Search"
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Shown(UserData As Auto = Nil)
+		Sub Shown(UserData As Variant = Nil)
 		  #Pragma Unused UserData
 		  
 		  Self.SearchField.SetFocus()
@@ -168,31 +169,31 @@ End
 
 
 	#tag Method, Flags = &h21
-		Private Function DrawResult(G As Graphics, Top As Integer, Dict As Xojo.Core.Dictionary, Selected As Boolean) As REALbasic.Rect
+		Private Function DrawResult(G As Graphics, Top As Integer, Dict As Dictionary, Selected As Boolean) As Xojo.Rect
 		  Const FontSizePoints = 14.0
 		  Dim SmallFontSizePoints As Double = FontSizePoints * 0.8
 		  
-		  Dim Type As Text = Dict.Lookup("type", "")
-		  Dim Title As Text = Dict.Lookup("title", "")
-		  Dim Summary As Text = Dict.Lookup("summary", "")
+		  Dim Type As String = Dict.Lookup("type", "")
+		  Dim Title As String = Dict.Lookup("title", "")
+		  Dim Summary As String = Dict.Lookup("summary", "")
 		  
-		  G.TextFont = "System"
-		  G.TextSize = FontSizePoints
+		  G.FontName = "System"
+		  G.FontSize = FontSizePoints
 		  Dim TitleCapHeight As Double = G.CapHeight
-		  Dim TitleWidth As Integer = Ceil(G.StringWidth(Title))
+		  Dim TitleWidth As Integer = Ceil(G.TextWidth(Title))
 		  
-		  G.TextSize = SmallFontSizePoints
+		  G.FontSize = SmallFontSizePoints
 		  Dim TypeCapHeight As Double = G.CapHeight
 		  
 		  Dim RectHeight As Integer = ((Self.ResultPadding + 1) * 2) + Max(TitleCapHeight, TypeCapHeight)
 		  Dim MaxTextWidth As Integer = G.Width - ((Self.ResultSpacing + Self.ResultPadding + 1) * 2)
 		  If Summary <> "" Then
-		    RectHeight = RectHeight + Self.ResultPadding + G.StringHeight(Summary, MaxTextWidth)
+		    RectHeight = RectHeight + Self.ResultPadding + G.TextHeight(Summary, MaxTextWidth)
 		  End If
 		  
-		  Dim Rect As New REALbasic.Rect(Self.ResultSpacing, Top, G.Width - (Self.ResultSpacing * 2), RectHeight)
+		  Dim Rect As New Xojo.Rect(Self.ResultSpacing, Top, G.Width - (Self.ResultSpacing * 2), RectHeight)
 		  Dim TitleLeft As Integer = Rect.Left + 1 + Self.ResultPadding
-		  Dim TypeWidth As Integer = Ceil(G.StringWidth(Type)) + 8
+		  Dim TypeWidth As Integer = Ceil(G.TextWidth(Type)) + 8
 		  Dim TypeLeft As Integer = Min(TitleLeft + TitleWidth + Self.ResultPadding, (TitleLeft + MaxTextWidth) - TypeWidth)
 		  Dim TitleBaseline As Integer = Rect.Top + 1 + Self.ResultPadding + TitleCapHeight
 		  Dim TypeTop As Integer = TitleBaseline - (TypeCapHeight + 5)
@@ -219,22 +220,22 @@ End
 		    SummaryColor = SystemColors.LabelColor
 		  End If
 		  
-		  G.ForeColor = BackgroundColor
-		  G.FillRoundRect(Rect.Left, Rect.Top, Rect.Width, Rect.Height, 12, 12)
-		  G.ForeColor = TypeFrameColor
-		  G.FillRoundRect(TypeLeft, TypeTop, TypeWidth, TypeHeight, 6, 6)
-		  G.TextSize = FontSizePoints
-		  G.ForeColor = LinkColor
+		  G.DrawingColor = BackgroundColor
+		  G.FillRoundRectangle(Rect.Left, Rect.Top, Rect.Width, Rect.Height, 12, 12)
+		  G.DrawingColor = TypeFrameColor
+		  G.FillRoundRectangle(TypeLeft, TypeTop, TypeWidth, TypeHeight, 6, 6)
+		  G.FontSize = FontSizePoints
+		  G.DrawingColor = LinkColor
 		  G.Underline = True
-		  G.DrawString(Title, Rect.Left + 1 + Self.ResultPadding, TitleBaseline, TitleMaxWidth, True)
-		  G.TextSize = SmallFontSizePoints
+		  G.DrawText(Title, Rect.Left + 1 + Self.ResultPadding, TitleBaseline, TitleMaxWidth, True)
+		  G.FontSize = SmallFontSizePoints
 		  G.Underline = False
 		  If Summary <> "" Then
-		    G.ForeColor = SummaryColor
-		    G.DrawString(Summary, Rect.Left + 1 + Self.ResultPadding, TitlebaseLine + 4 + Self.ResultPadding + TypeCapHeight, MaxTextWidth, False)
+		    G.DrawingColor = SummaryColor
+		    G.DrawText(Summary, Rect.Left + 1 + Self.ResultPadding, TitlebaseLine + 4 + Self.ResultPadding + TypeCapHeight, MaxTextWidth, False)
 		  End If
-		  G.ForeColor = TypeTextColor
-		  G.DrawString(Type, TypeLeft + 4, TitleBaseline)
+		  G.DrawingColor = TypeTextColor
+		  G.DrawText(Type, TypeLeft + 4, TitleBaseline)
 		  
 		  Return Rect
 		End Function
@@ -251,8 +252,8 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub SelectDict(Dict As Xojo.Core.Dictionary)
-		  Dim URL As Text = Dict.Lookup("url", "")
+		Private Sub SelectDict(Dict As Dictionary)
+		  Dim URL As String = Dict.Lookup("url", "")
 		  If URL = "" Then
 		    Self.ShowAlert("Unable to show search result", "Something is wrong, the result has no url.")
 		    Return
@@ -284,11 +285,11 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mResultDicts() As Xojo.Core.Dictionary
+		Private mResultDicts() As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mResultRects() As REALbasic.Rect
+		Private mResultRects() As Xojo.Rect
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -296,11 +297,11 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mSearchTerms As Text
+		Private mSearchTerms As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mSelectedURL As Text
+		Private mSelectedURL As String
 	#tag EndProperty
 
 
@@ -328,15 +329,15 @@ End
 #tag EndEvents
 #tag Events SearchField
 	#tag Event
-		Sub TextChange()
-		  Self.SearchTimer.Mode = Timer.ModeSingle
+		Sub TextChanged()
+		  Self.SearchTimer.RunMode = Timer.RunModes.Single
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events SearchTimer
 	#tag Event
-		Sub Action()
-		  Dim Terms As Text = Trim(Self.SearchField.Text).ToText
+		Sub Run()
+		  Dim Terms As String = Self.SearchField.Value.Trim
 		  
 		  If Terms = "" Then
 		    Self.Reset()
@@ -347,13 +348,13 @@ End
 		  Self.SearchSocket.ClearRequestHeaders
 		  
 		  Self.SearchSocket.RequestHeader("Accept") = "application/json"
-		  Self.SearchSocket.Send("GET", Beacon.WebURL("/search/?query=" + Beacon.EncodeURLComponent(Terms)))
+		  Self.SearchSocket.Send("GET", Beacon.WebURL("/search/?query=" + EncodeURLComponent(Terms)))
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events SearchSocket
 	#tag Event
-		Sub PageReceived(URL as Text, HTTPStatus as Integer, Content as xojo.Core.MemoryBlock)
+		Sub ContentReceived(URL As String, HTTPStatus As Integer, content As String)
 		  #Pragma Unused URL
 		  
 		  Self.Reset()
@@ -362,21 +363,14 @@ End
 		    Return
 		  End If
 		  
-		  Dim TextContent As Text
+		  Dim Details As Dictionary
 		  Try
-		    TextContent = Xojo.Core.TextEncoding.UTF8.ConvertDataToText(Content, False)
+		    Details = Beacon.ParseJSON(Content)
 		  Catch Err As RuntimeException
 		    Return
 		  End Try
 		  
-		  Dim Details As Xojo.Core.Dictionary
-		  Try
-		    Details = Xojo.Data.ParseJSON(TextContent)
-		  Catch Err As Xojo.Data.InvalidJSONException
-		    Return
-		  End Try
-		  
-		  Dim Results() As Auto
+		  Dim Results() As Variant
 		  Try
 		    Results = Details.Value("results")
 		    Self.mSearchTerms = Details.Value("terms")
@@ -384,9 +378,9 @@ End
 		    Return
 		  End Try
 		  
-		  For Each ResultDict As Xojo.Core.Dictionary In Results
-		    Self.mResultDicts.Append(ResultDict)
-		    Self.mResultRects.Append(Nil)
+		  For Each ResultDict As Dictionary In Results
+		    Self.mResultDicts.AddRow(ResultDict)
+		    Self.mResultRects.AddRow(Nil)
 		  Next
 		End Sub
 	#tag EndEvent
@@ -396,28 +390,28 @@ End
 		Sub Paint(g As Graphics, areas() As REALbasic.Rect)
 		  #Pragma Unused Areas
 		  
-		  G.ForeColor = SystemColors.LabelColor
+		  G.DrawingColor = SystemColors.LabelColor
 		  
-		  If Self.mResultDicts.Ubound = -1 Then
+		  If Self.mResultDicts.LastRowIndex = -1 Then
 		    If Self.mSearchTerms = "" Then
-		      G.TextFont = "System"
-		      G.TextSize = 0
-		      G.DrawString(Self.StringSearchHelp, 10, 20 + G.CapHeight, G.Width - 20, False)
+		      G.FontName = "System"
+		      G.FontSize = 0
+		      G.DrawText(Self.StringSearchHelp, 10, 20 + G.CapHeight, G.Width - 20, False)
 		    Else
 		      G.Bold = True
-		      Dim CaptionWidth As Integer = Ceil(G.StringWidth(Self.StringNoResults))
+		      Dim CaptionWidth As Integer = Ceil(G.TextWidth(Self.StringNoResults))
 		      Dim CaptionLeft As Integer = (G.Width - CaptionWidth) / 2
 		      Dim CaptionBaseline As Integer = (G.Height / 2) + (G.CapHeight / 2)
-		      G.DrawString(Self.StringNoResults, CaptionLeft, CaptionBaseline, G.Width - 20, True)
+		      G.DrawText(Self.StringNoResults, CaptionLeft, CaptionBaseline, G.Width - 20, True)
 		    End If
 		    Return
 		  End If
 		  
 		  Self.mContentHeight = Self.ResultSpacing
 		  Dim NextTop As Integer = Self.ResultSpacing - Self.mScrollPosition
-		  For I As Integer = 0 To Self.mResultDicts.Ubound
-		    Dim Dict As Xojo.Core.Dictionary = Self.mResultDicts(I)
-		    Dim Rect As REALbasic.Rect = Self.DrawResult(G, NextTop, Dict, Self.mMousePressIndex = I)
+		  For I As Integer = 0 To Self.mResultDicts.LastRowIndex
+		    Dim Dict As Dictionary = Self.mResultDicts(I)
+		    Dim Rect As Xojo.Rect = Self.DrawResult(G, NextTop, Dict, Self.mMousePressIndex = I)
 		    If Rect <> Nil Then
 		      Self.mResultRects(I) = Rect
 		      NextTop = Rect.Bottom + Self.ResultSpacing
@@ -441,10 +435,10 @@ End
 	#tag EndEvent
 	#tag Event
 		Function MouseDown(X As Integer, Y As Integer) As Boolean
-		  Dim Point As New REALbasic.Point(X, Y)
+		  Dim Point As New Xojo.Point(X, Y)
 		  
 		  Self.mMouseDownIndex = -1
-		  For I As Integer = 0 To Self.mResultRects.Ubound
+		  For I As Integer = 0 To Self.mResultRects.LastRowIndex
 		    If Self.mResultRects(I) <> Nil And Self.mResultRects(I).Contains(Point) Then
 		      Self.mMouseDownIndex = I
 		      Exit For I
@@ -463,8 +457,8 @@ End
 		    Return
 		  End If
 		  
-		  Dim Point As New REALbasic.Point(X, Y)
-		  Dim Rect As REALbasic.Rect = Self.mResultRects(Self.mMouseDownIndex)
+		  Dim Point As New Xojo.Point(X, Y)
+		  Dim Rect As Xojo.Rect = Self.mResultRects(Self.mMouseDownIndex)
 		  If Rect.Contains(Point) Then
 		    If Self.mMousePressIndex <> Self.mMouseDownIndex Then
 		      Self.mMousePressIndex = Self.mMouseDownIndex
@@ -484,8 +478,8 @@ End
 		    Return
 		  End If
 		  
-		  Dim Point As New REALbasic.Point(X, Y)
-		  Dim Rect As REALbasic.Rect = Self.mResultRects(Self.mMouseDownIndex)
+		  Dim Point As New Xojo.Point(X, Y)
+		  Dim Rect As Xojo.Rect = Self.mResultRects(Self.mMouseDownIndex)
 		  If Rect.Contains(Point) Then
 		    Self.SelectDict(Self.mResultDicts(Self.mMouseDownIndex))
 		  End If
@@ -497,11 +491,84 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Progress"
+		Visible=false
+		Group="Behavior"
+		InitialValue="ProgressNone"
+		Type="Double"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="MinimumWidth"
 		Visible=true
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -509,6 +576,7 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -516,44 +584,15 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -561,21 +600,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -583,61 +608,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -645,12 +680,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -658,11 +696,13 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -670,7 +710,9 @@ End
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -678,15 +720,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -694,7 +728,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -702,5 +736,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

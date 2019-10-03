@@ -11,14 +11,14 @@ Protected Module UserCloud
 	#tag Method, Flags = &h21
 		Private Sub Callback_GetFile(Request As BeaconAPI.Request, Response As BeaconAPI.Response)
 		  Dim Th As New GetThread(Request, Response)
-		  Th.Run
+		  Th.Start
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub Callback_ListFiles(Request As BeaconAPI.Request, Response As BeaconAPI.Response)
 		  Dim Th As New ListThread(Request, Response)
-		  Th.Run
+		  Th.Start
 		End Sub
 	#tag EndMethod
 
@@ -26,25 +26,38 @@ Protected Module UserCloud
 		Private Sub Callback_PutFile(Request As BeaconAPI.Request, Response As BeaconAPI.Response)
 		  If Not Response.Success Then
 		    // Do what?
+		    If Response.HTTPStatus = 446 Then
+		      // This response means the path is not allowed, so we're going to delete the local file
+		      Dim URL As String = Response.URL
+		      Dim BaseURL As String = BeaconAPI.URL("/file")
+		      Dim RemotePath As String = URL.Middle(BaseURL.Length)
+		      Dim LocalFile As FolderItem = LocalFile(RemotePath)
+		      Try
+		        If LocalFile.Exists Then
+		          LocalFile.Remove
+		        End If
+		      Catch Err As RuntimeException
+		      End Try
+		    End If
 		    CleanupRequest(Request)
 		    Return
 		  End If
 		  
 		  // So where do we put the file now?
-		  Dim URL As Text = Response.URL
-		  Dim BaseURL As Text = BeaconAPI.URL("/file")
+		  Dim URL As String = Response.URL
+		  Dim BaseURL As String = BeaconAPI.URL("/file")
 		  If Not URL.BeginsWith(BaseURL) Then
 		    // What the hell is going on here?
 		    CleanupRequest(Request)
 		    Return
 		  End If
 		  
-		  Dim RemotePath As Text = URL.Mid(BaseURL.Length)
+		  Dim RemotePath As String = URL.Middle(BaseURL.Length)
 		  Dim LocalFile As FolderItem = LocalFile(RemotePath)
 		  If LocalFile.Exists Then
 		    Try
-		      Dim Details As Xojo.Core.Dictionary = Response.JSON
-		      LocalFile.ModificationDate = NewDateFromSQLDateTime(Details.Value("modified")).LocalTime
+		      Dim Details As Dictionary = Response.JSON
+		      LocalFile.ModificationDateTime = NewDateFromSQLDateTime(Details.Value("modified")).LocalTime
 		    Catch Err As RuntimeException
 		      
 		    End Try
@@ -56,20 +69,20 @@ Protected Module UserCloud
 
 	#tag Method, Flags = &h21
 		Private Sub CleanupEmptyFolders(Folder As FolderItem)
-		  If Folder = Nil Or Folder.Exists = False Or Folder.Directory = False Then
+		  If Folder = Nil Or Folder.Exists = False Or Folder.IsFolder = False Then
 		    Return
 		  End If
 		  
-		  For I As Integer = Folder.Count DownTo 1
-		    Dim Child As FolderItem = Folder.Item(I)
-		    If Not Child.Directory Then
+		  For I As Integer = Folder.Count - 1 DownTo 0
+		    Dim Child As FolderItem = Folder.ChildAt(I)
+		    If Not Child.IsFolder Then
 		      Continue
 		    End If
 		    If Child.Count > 0 Then
 		      CleanupEmptyFolders(Child)
 		    End If
 		    If Child.Count = 0 Then
-		      Child.Delete
+		      Child.Remove
 		    End If
 		  Next
 		End Sub
@@ -88,7 +101,7 @@ Protected Module UserCloud
 		      
 		      Dim Actions() As Dictionary
 		      For Each Dict As Dictionary In SyncActions
-		        Actions.Append(Dict)
+		        Actions.AddRow(Dict)
 		      Next
 		      NotificationKit.Post(Notification_SyncFinished, Actions)
 		      Redim SyncActions(-1)
@@ -106,7 +119,7 @@ Protected Module UserCloud
 		Protected Function Delete(RemotePath As String) As Boolean
 		  Dim LocalFile As FolderItem = LocalFile(RemotePath, False)
 		  If LocalFile <> Nil And LocalFile.DeepDelete Then
-		    SendRequest(New BeaconAPI.Request("file" + RemotePath.ToText, "DELETE", AddressOf Callback_DeleteFile))
+		    SendRequest(New BeaconAPI.Request("file" + RemotePath, "DELETE", AddressOf Callback_DeleteFile))
 		    Sync()
 		    Return True
 		  End If
@@ -115,17 +128,17 @@ Protected Module UserCloud
 
 	#tag Method, Flags = &h21
 		Private Sub DiscoverPaths(BasePath As String, Folder As FolderItem, Destination As Dictionary)
-		  If Not Folder.Directory Then
+		  If Not Folder.IsFolder Then
 		    Return
 		  End If
 		  
-		  For I As Integer = 1 To Folder.Count
-		    Dim Child As FolderItem = Folder.Item(I)
+		  For I As Integer = 0 To Folder.Count - 1
+		    Dim Child As FolderItem = Folder.ChildAt(I)
 		    If Child.Name.BeginsWith(".") Then
 		      Continue
 		    End If
 		    
-		    If Child.Directory Then
+		    If Child.IsFolder Then
 		      DiscoverPaths(BasePath + "/" + EncodeURLComponent(Child.Name), Child, Destination)
 		    Else
 		      Destination.Value(BasePath + "/" + EncodeURLComponent(Child.Name)) = Child
@@ -139,7 +152,7 @@ Protected Module UserCloud
 		  If PendingRequests = Nil Then
 		    PendingRequests = New Dictionary
 		  End If
-		  Return PendingRequests.Count > 0
+		  Return PendingRequests.KeyCount > 0
 		End Function
 	#tag EndMethod
 
@@ -156,7 +169,7 @@ Protected Module UserCloud
 		      Continue
 		    End If
 		    
-		    Results.Append(Key)
+		    Results.AddRow(Key)
 		  Next
 		  
 		  Return Results
@@ -170,7 +183,7 @@ Protected Module UserCloud
 		  End If
 		  
 		  If RemotePath.Left(1) = "/" Then
-		    RemotePath = RemotePath.Mid(2)
+		    RemotePath = RemotePath.Middle(1)
 		  End If
 		  
 		  Dim LocalFolder As FolderItem = App.ApplicationSupport
@@ -187,18 +200,18 @@ Protected Module UserCloud
 		  End If
 		  
 		  Dim Components() As String = RemotePath.Split("/")
-		  If Components.Ubound = -1 Then
+		  If Components.LastRowIndex = -1 Then
 		    Return LocalFolder
 		  End If
 		  
-		  For I As Integer = 0 To Components.Ubound - 1
+		  For I As Integer = 0 To Components.LastRowIndex - 1
 		    LocalFolder = LocalFolder.Child(DecodeURLComponent(Components(I)).DefineEncoding(Encodings.UTF8))
 		    If Not LocalFolder.CheckIsFolder(Create) Then
 		      Return Nil
 		    End If
 		  Next
 		  
-		  Return LocalFolder.Child(DecodeURLComponent(Components(Components.Ubound)).DefineEncoding(Encodings.UTF8))
+		  Return LocalFolder.Child(DecodeURLComponent(Components(Components.LastRowIndex)).DefineEncoding(Encodings.UTF8))
 		End Function
 	#tag EndMethod
 
@@ -214,21 +227,21 @@ Protected Module UserCloud
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub RequestFileFrom(LocalFile As FolderItem, RemotePath As String, ModificationDate As Date)
-		  SendRequest(New BeaconAPI.Request("file" + RemotePath.ToText, "GET", AddressOf Callback_GetFile))
+		Private Sub RequestFileFrom(LocalFile As FolderItem, RemotePath As String, ModificationDate As DateTime)
+		  SendRequest(New BeaconAPI.Request("file" + RemotePath, "GET", AddressOf Callback_GetFile))
 		  
 		  If Not LocalFile.Exists Then
 		    Dim Stream As BinaryStream = BinaryStream.Create(LocalFile, True)
 		    Stream.Close // Make a 0 byte file to track the modification date
 		    
-		    LocalFile.CreationDate = ModificationDate
+		    LocalFile.CreationDateTime = ModificationDate
 		  End If
-		  LocalFile.ModificationDate = ModificationDate
+		  LocalFile.ModificationDateTime = ModificationDate
 		  
 		  Dim ActionDict As New Dictionary
 		  ActionDict.Value("Action") = "GET"
 		  ActionDict.Value("Path") = RemotePath
-		  SyncActions.Append(ActionDict)
+		  SyncActions.AddRow(ActionDict)
 		End Sub
 	#tag EndMethod
 
@@ -238,7 +251,7 @@ Protected Module UserCloud
 		    PendingRequests = New Dictionary
 		  End If
 		  
-		  Dim Fresh As Boolean = PendingRequests.Count = 0
+		  Dim Fresh As Boolean = PendingRequests.KeyCount = 0
 		  
 		  Request.Authenticate(Preferences.OnlineToken)
 		  PendingRequests.Value(Request.RequestID) = Request
@@ -296,14 +309,14 @@ Protected Module UserCloud
 		  Dim Compressor As New _GZipString
 		  Contents = Compressor.Compress(Contents, _GZipString.DefaultCompression)
 		  
-		  Dim EncryptedContents As Xojo.Core.MemoryBlock = BeaconEncryption.SymmetricEncrypt(App.IdentityManager.CurrentIdentity.UserCloudKey, Beacon.ConvertMemoryBlock(Contents))
+		  Dim EncryptedContents As MemoryBlock = BeaconEncryption.SymmetricEncrypt(App.IdentityManager.CurrentIdentity.UserCloudKey, Contents)
 		  
-		  SendRequest(New BeaconAPI.Request("file" + RemotePath.ToText, "PUT", EncryptedContents, "application/octet-stream", AddressOf Callback_PutFile))
+		  SendRequest(New BeaconAPI.Request("file" + RemotePath, "PUT", EncryptedContents, "application/octet-stream", AddressOf Callback_PutFile))
 		  
 		  Dim ActionDict As New Dictionary
 		  ActionDict.Value("Action") = "PUT"
 		  ActionDict.Value("Path") = RemotePath
-		  SyncActions.Append(ActionDict)
+		  SyncActions.AddRow(ActionDict)
 		End Sub
 	#tag EndMethod
 
@@ -347,7 +360,9 @@ Protected Module UserCloud
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -355,12 +370,15 @@ Protected Module UserCloud
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -368,6 +386,7 @@ Protected Module UserCloud
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -375,6 +394,7 @@ Protected Module UserCloud
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Module

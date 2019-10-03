@@ -5,7 +5,6 @@ Begin BeaconContainer EntryPropertiesEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -55,7 +54,7 @@ Begin BeaconContainer EntryPropertiesEditor
       Top             =   142
       Transparent     =   False
       Underline       =   False
-      Value           =   True
+      Value           =   "True"
       Visible         =   False
       Width           =   58
    End
@@ -88,7 +87,7 @@ Begin BeaconContainer EntryPropertiesEditor
       Top             =   110
       Transparent     =   False
       Underline       =   False
-      Value           =   True
+      Value           =   "True"
       Visible         =   False
       Width           =   58
    End
@@ -121,7 +120,7 @@ Begin BeaconContainer EntryPropertiesEditor
       Top             =   78
       Transparent     =   False
       Underline       =   False
-      Value           =   True
+      Value           =   "True"
       Visible         =   False
       Width           =   58
    End
@@ -154,7 +153,7 @@ Begin BeaconContainer EntryPropertiesEditor
       Top             =   44
       Transparent     =   False
       Underline       =   False
-      Value           =   True
+      Value           =   "True"
       Visible         =   False
       Width           =   58
    End
@@ -187,7 +186,7 @@ Begin BeaconContainer EntryPropertiesEditor
       Top             =   10
       Transparent     =   False
       Underline       =   False
-      Value           =   True
+      Value           =   "True"
       Visible         =   False
       Width           =   58
    End
@@ -292,7 +291,7 @@ Begin BeaconContainer EntryPropertiesEditor
       TabIndex        =   13
       TabPanelIndex   =   0
       TabStop         =   True
-      TickStyle       =   "0"
+      TickStyle       =   0
       Top             =   142
       Transparent     =   False
       Value           =   25
@@ -683,7 +682,7 @@ Begin BeaconContainer EntryPropertiesEditor
       TabIndex        =   18
       TabPanelIndex   =   0
       TabStop         =   True
-      TickStyle       =   "0"
+      TickStyle       =   0
       Top             =   176
       Transparent     =   False
       Value           =   250
@@ -701,6 +700,7 @@ Begin BeaconContainer EntryPropertiesEditor
       CueText         =   ""
       DataField       =   ""
       DataSource      =   ""
+      DoubleValue     =   0.0
       Enabled         =   True
       Format          =   ""
       Height          =   22
@@ -730,7 +730,6 @@ Begin BeaconContainer EntryPropertiesEditor
       Transparent     =   False
       Underline       =   False
       UseFocusRing    =   True
-      Value           =   0.0
       Visible         =   True
       Width           =   53
    End
@@ -798,7 +797,7 @@ Begin BeaconContainer EntryPropertiesEditor
       Top             =   176
       Transparent     =   False
       Underline       =   False
-      Value           =   True
+      Value           =   "True"
       Visible         =   False
       Width           =   58
    End
@@ -808,8 +807,8 @@ End
 #tag WindowCode
 	#tag Method, Flags = &h0
 		Sub ApplyTo(Entries() As Beacon.SetEntry)
-		  Dim MinQuantity As Integer = Val(MinQuantityField.Text)
-		  Dim MaxQuantity As Integer = Val(MaxQuantityField.Text)
+		  Dim MinQuantity As Integer = Val(MinQuantityField.Value)
+		  Dim MaxQuantity As Integer = Val(MaxQuantityField.Value)
 		  If MinQuantity > MaxQuantity Then
 		    Dim Temp As Integer = MaxQuantity
 		    MaxQuantity = MinQuantity
@@ -837,7 +836,7 @@ End
 		      Entry.ChanceToBeBlueprint = ChanceSlider.Value / 100
 		    End If
 		    If EditWeightCheck.Value Then
-		      Entry.RawWeight = WeightField.Value
+		      Entry.RawWeight = WeightField.DoubleValue
 		    End If
 		    If EditMaxQualityCheck.Value Then
 		      Entry.MaxQuality = MaxQuality
@@ -898,7 +897,7 @@ End
 
 	#tag Method, Flags = &h0
 		Sub Setup(Entries() As Beacon.SetEntry)
-		  If Entries = Nil Or Entries.Ubound = -1 Then
+		  If Entries = Nil Or Entries.LastRowIndex = -1 Then
 		    Self.Setup()
 		    Return
 		  End If
@@ -908,12 +907,12 @@ End
 		  Dim TotalWeight, TotalChance As Double
 		  Dim CanBeBlueprint As Boolean
 		  For Each Entry As Beacon.SetEntry In Entries
-		    MinQuantities.Append(Entry.MinQuantity)
-		    MaxQuantities.Append(Entry.MaxQuantity)
+		    MinQuantities.AddRow(Entry.MinQuantity)
+		    MaxQuantities.AddRow(Entry.MaxQuantity)
 		    TotalWeight = TotalWeight + Entry.RawWeight
 		    TotalChance = TotalChance + Entry.ChanceToBeBlueprint
-		    MinQualities.Append(Entry.MinQuality.BaseValue)
-		    MaxQualities.Append(Entry.MaxQuality.BaseValue)
+		    MinQualities.AddRow(Entry.MinQuality.BaseValue)
+		    MaxQualities.AddRow(Entry.MaxQuality.BaseValue)
 		    CanBeBlueprint = CanBeBlueprint Or Entry.CanBeBlueprint
 		  Next
 		  
@@ -923,10 +922,10 @@ End
 		  MaxQualities.Sort
 		  
 		  Self.mIgnoreChanges = True
-		  MinQuantityField.Text = Str(MinQuantities(0))
-		  MaxQuantityField.Text = Str(MaxQuantities(UBound(MaxQuantities)))
+		  MinQuantityField.Value = Str(MinQuantities(0))
+		  MaxQuantityField.Value = Str(MaxQuantities(MaxQuantities.LastRowIndex))
 		  If CanBeBlueprint Then
-		    ChanceSlider.Value = 100 * (TotalChance / (Entries.Ubound + 1))
+		    ChanceSlider.Value = 100 * (TotalChance / (Entries.LastRowIndex + 1))
 		    ChanceSlider.Enabled = True
 		    ChanceLabel.Enabled = True
 		    ChanceField.Enabled = True
@@ -939,12 +938,12 @@ End
 		    EditChanceCheck.Enabled = False
 		  End If
 		  MinQualityMenu.SelectByTag(MinQualities(0))
-		  MaxQualityMenu.SelectByTag(MaxQualities(MaxQualities.Ubound))
-		  WeightSlider.Value = TotalWeight / (Entries.Ubound + 1)
-		  WeightField.Value = TotalWeight / (Entries.Ubound + 1)
+		  MaxQualityMenu.SelectByTag(MaxQualities(MaxQualities.LastRowIndex))
+		  WeightSlider.Value = TotalWeight / (Entries.LastRowIndex + 1)
+		  WeightField.DoubleValue = TotalWeight / (Entries.LastRowIndex + 1)
 		  Self.mIgnoreChanges = False
 		  
-		  If UBound(Entries) > 0 Then
+		  If Entries.LastRowIndex > 0 Then
 		    EditChanceCheck.Visible = True
 		    EditMaxQualityCheck.Visible = True
 		    EditMaxQuantityCheck.Visible = True
@@ -986,15 +985,8 @@ End
 
 #tag Events ChanceField
 	#tag Event
-		Sub TextChange()
-		  If Self.Focus = Me Then
-		    ChanceSlider.Value = Max(Min(Val(Me.Text), ChanceSlider.Maximum), ChanceSlider.Minimum)
-		  End If
-		End Sub
-	#tag EndEvent
-	#tag Event
 		Sub LostFocus()
-		  Me.Text = Str(ChanceSlider.Value, "-0")
+		  Me.Value = Str(ChanceSlider.Value, "-0")
 		  ChanceSlider.Enabled = True
 		End Sub
 	#tag EndEvent
@@ -1003,12 +995,19 @@ End
 		  ChanceSlider.Enabled = False
 		End Sub
 	#tag EndEvent
+	#tag Event
+		Sub TextChanged()
+		  If Self.Focus = Me Then
+		    ChanceSlider.Value = Max(Min(Val(Me.Value), ChanceSlider.MaximumValue), ChanceSlider.MinimumValue)
+		  End If
+		End Sub
+	#tag EndEvent
 #tag EndEvents
 #tag Events ChanceSlider
 	#tag Event
 		Sub ValueChanged()
 		  If Self.Focus <> ChanceField Then
-		    ChanceField.Text = Str(Me.Value, "-0")
+		    ChanceField.Value = Str(Me.Value, "-0")
 		  End If
 		  
 		  If Not Self.mIgnoreChanges Then
@@ -1020,19 +1019,7 @@ End
 #tag EndEvents
 #tag Events QualityMenus
 	#tag Event
-		Sub Open(index as Integer)
-		  Me.DeleteAllRows()
-		  
-		  Dim Qualities() As Beacon.Quality = Beacon.Qualities.All
-		  For Each Quality As Beacon.Quality In Qualities
-		    Me.AddRow(Language.LabelForQuality(Quality), Quality.BaseValue)
-		  Next
-		  
-		  Me.ListIndex = 0
-		End Sub
-	#tag EndEvent
-	#tag Event
-		Sub Change(index as Integer)
+		Sub SelectionChanged(index as Integer)
 		  If Not Self.mIgnoreChanges Then
 		    Select Case Index
 		    Case 0 // Min
@@ -1044,10 +1031,22 @@ End
 		  End If
 		End Sub
 	#tag EndEvent
+	#tag Event
+		Sub Opening(index as Integer)
+		  Me.RemoveAllRows()
+		  
+		  Dim Qualities() As Beacon.Quality = Beacon.Qualities.All
+		  For Each Quality As Beacon.Quality In Qualities
+		    Me.AddRow(Language.LabelForQuality(Quality), Quality.BaseValue)
+		  Next
+		  
+		  Me.SelectedRowIndex = 0
+		End Sub
+	#tag EndEvent
 #tag EndEvents
 #tag Events MaxQuantityField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Not Self.mIgnoreChanges Then
 		    EditMaxQuantityCheck.Value = True
 		    RaiseEvent Changed
@@ -1057,7 +1056,7 @@ End
 #tag EndEvents
 #tag Events MinQuantityField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Not Self.mIgnoreChanges Then
 		    EditMinQuantityCheck.Value = True
 		    RaiseEvent Changed
@@ -1069,7 +1068,7 @@ End
 	#tag Event
 		Sub ValueChanged()
 		  If Self.Focus <> WeightField Then
-		    WeightField.Value = Me.Value
+		    WeightField.DoubleValue = Me.Value
 		  End If
 		  
 		  If Not Self.mIgnoreChanges Then
@@ -1080,13 +1079,6 @@ End
 	#tag EndEvent
 #tag EndEvents
 #tag Events WeightField
-	#tag Event
-		Sub TextChange()
-		  If Self.Focus = Me Then
-		    WeightSlider.Value = Round(Me.Value)
-		  End If
-		End Sub
-	#tag EndEvent
 	#tag Event
 		Sub LostFocus()
 		  WeightSlider.Enabled = True
@@ -1103,52 +1095,94 @@ End
 		  MaxValue = 1000000
 		End Sub
 	#tag EndEvent
+	#tag Event
+		Sub TextChanged()
+		  If Self.Focus = Me Then
+		    WeightSlider.Value = Round(Me.DoubleValue)
+		  End If
+		End Sub
+	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
+	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
 		Visible=true
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -1156,22 +1190,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -1179,61 +1198,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -1241,12 +1270,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -1254,13 +1286,15 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -1268,15 +1302,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1284,7 +1310,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1292,5 +1318,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

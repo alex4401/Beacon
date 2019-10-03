@@ -10,7 +10,7 @@ Protected Class CustomContentParser
 		      
 		      If Not Self.mDiscardNestedParser Then
 		        For Each Value As Beacon.ConfigValue In Values
-		          Self.mValues.Append(Value)
+		          Self.mValues.AddRow(Value)
 		        Next
 		      End If
 		    End If
@@ -24,7 +24,7 @@ Protected Class CustomContentParser
 		  End If
 		  
 		  If Line.BeginsWith("[") And Line.EndsWith("]") Then
-		    Self.mCurrentHeader = Line.SubString(1, Line.Length - 2)
+		    Self.mCurrentHeader = Line.Middle(1, Line.Length - 2)
 		    Self.mSkippedKeys = Self.GetSkippedKeys(Self.mCurrentHeader, Self.mExistingConfigs)
 		  End If
 		  
@@ -34,12 +34,12 @@ Protected Class CustomContentParser
 		  
 		  If Line.BeginsWith("#Server ") Or Line.BeginsWith("#Servers ") Then
 		    Dim Pos As Integer = Line.IndexOf(7, " ") + 1
-		    Dim Def As String = Line.SubString(Pos).Trim
+		    Dim Def As String = Line.Middle(Pos).Trim
 		    Dim ProfileIDs() As String = Def.Split(",")
 		    Self.mDiscardNestedParser = True
 		    If Self.mProfile <> Nil Then
 		      For Each ProfileID As String In ProfileIDs
-		        If Self.mProfile.ProfileID.BeginsWith(ProfileID.Trim.ToText) Then
+		        If Self.mProfile.ProfileID.BeginsWith(ProfileID.Trim) Then
 		          Self.mDiscardNestedParser = False
 		        End If
 		      Next
@@ -57,18 +57,21 @@ Protected Class CustomContentParser
 		  End If
 		  
 		  Dim Key As String = Line.Left(KeyPos).Trim
+		  If Key.IndexOf("[") > -1 And Key.EndsWith("]") Then
+		    Key = Key.Left(Key.IndexOf("["))
+		  End If
 		  If Self.mSkippedKeys.IndexOf(Key) > -1 Then
 		    Return Nil
 		  End If
 		  
-		  Dim Value As String = Line.SubString(KeyPos + 1).Trim
-		  Self.mValues.Append(New Beacon.ConfigValue(Self.mCurrentHeader.ToText, Key.ToText, Value.ToText))
+		  Dim Value As String = Line.Middle(KeyPos + 1).Trim
+		  Self.mValues.AddRow(New Beacon.ConfigValue(Self.mCurrentHeader, Key, Value))
 		  Return Nil
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(InitialHeader As String, ExistingConfigs As Xojo.Core.Dictionary, Profile As Beacon.ServerProfile)
+		Sub Constructor(InitialHeader As String, ExistingConfigs As Dictionary, Profile As Beacon.ServerProfile)
 		  Self.mCurrentHeader = InitialHeader
 		  Self.mExistingConfigs = ExistingConfigs
 		  Self.mProfile = Profile
@@ -77,15 +80,16 @@ Protected Class CustomContentParser
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Shared Function GetSkippedKeys(Header As String, ExistingConfigs As Xojo.Core.Dictionary) As String()
+		Private Shared Function GetSkippedKeys(Header As String, ExistingConfigs As Dictionary) As String()
 		  Dim SkippedKeys() As String
-		  If Not ExistingConfigs.HasKey(Header.ToText) Then
+		  If Not ExistingConfigs.HasKey(Header) Then
 		    Return SkippedKeys
 		  End If
 		  
-		  Dim Siblings As Xojo.Core.Dictionary = ExistingConfigs.Value(Header.ToText)
-		  For Each Entry As Xojo.Core.DictionaryEntry In Siblings
-		    SkippedKeys.Append(Entry.Key)
+		  Dim Siblings As Dictionary = ExistingConfigs.Value(Header)
+		  Dim Keys() As Variant = Siblings.Keys
+		  For Each Key As String In Keys
+		    SkippedKeys.AddRow(Key)
 		  Next
 		  Return SkippedKeys
 		End Function
@@ -101,7 +105,7 @@ Protected Class CustomContentParser
 		      
 		      If Not Self.mDiscardNestedParser Then
 		        For Each Value As Beacon.ConfigValue In Values
-		          Self.mValues.Append(Value)
+		          Self.mValues.AddRow(Value)
 		        Next
 		      End If
 		    End If
@@ -121,7 +125,7 @@ Protected Class CustomContentParser
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mExistingConfigs As Xojo.Core.Dictionary
+		Private mExistingConfigs As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -146,7 +150,9 @@ Protected Class CustomContentParser
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -154,12 +160,15 @@ Protected Class CustomContentParser
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -167,6 +176,7 @@ Protected Class CustomContentParser
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -174,11 +184,7 @@ Protected Class CustomContentParser
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="mNestedParser"
-			Group="Behavior"
-			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

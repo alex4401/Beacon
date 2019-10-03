@@ -2,28 +2,24 @@
 Protected Class Socket
 	#tag Method, Flags = &h1
 		Protected Sub AdvanceQueue()
-		  If UBound(Self.Queue) = -1 Then
+		  If Self.Queue.LastRowIndex = -1 Then
 		    Self.Working = False
 		    Return
 		  End If
 		  
 		  Dim Request As BeaconAPI.Request = Self.Queue(0)
-		  Self.Queue.Remove(0)
+		  Self.Queue.RemoveRowAt(0)
 		  
 		  Self.ActiveRequest = Request
 		  
 		  #if TargetWin32
 		    // The socket does not reset itself correctly on Windows, so create a new one
-		    Self.Socket = New Xojo.Net.HTTPSocket
-		    Self.Socket.ValidateCertificates = True
-		    AddHandler Self.Socket.Error, WeakAddressOf Socket_Error
-		    AddHandler Self.Socket.PageReceived, WeakAddressOf Socket_PageReceived
-		    AddHandler Self.Socket.ReceiveProgress, WeakAddressOf Socket_ReceiveProgress
+		    Self.Constructor()
 		  #else
 		    Self.Socket.ClearRequestHeaders()
 		  #endif
 		  
-		  Dim URL As Text = Request.URL
+		  Dim URL As String = Request.URL
 		  If Request.Authenticated Then
 		    Self.Socket.RequestHeader("Authorization") = Request.AuthHeader
 		  End If
@@ -31,7 +27,7 @@ Protected Class Socket
 		  Self.Socket.RequestHeader("Cache-Control") = "no-cache"
 		  
 		  If Request.Method = "GET" Then
-		    Dim Query As Text = Request.Query
+		    Dim Query As String = Request.Query
 		    If Query <> "" Then
 		      URL = URL + "?" + Query
 		    End If
@@ -45,11 +41,11 @@ Protected Class Socket
 
 	#tag Method, Flags = &h0
 		Sub Constructor()
-		  Self.Socket = New Xojo.Net.HTTPSocket
-		  Self.Socket.ValidateCertificates = True
+		  Self.Socket = New URLConnection
+		  Self.Socket.AllowCertificateValidation = True
 		  AddHandler Self.Socket.Error, WeakAddressOf Socket_Error
-		  AddHandler Self.Socket.PageReceived, WeakAddressOf Socket_PageReceived
-		  AddHandler Self.Socket.ReceiveProgress, WeakAddressOf Socket_ReceiveProgress
+		  AddHandler Self.Socket.ContentReceived, WeakAddressOf Socket_ContentReceived
+		  AddHandler Self.Socket.ReceivingProgressed, WeakAddressOf Socket_ReceivingProgressed
 		End Sub
 	#tag EndMethod
 
@@ -63,17 +59,7 @@ Protected Class Socket
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Socket_Error(Sender As Xojo.Net.HTTPSocket, Err As RuntimeException)
-		  #Pragma Unused Sender
-		  
-		  Self.ActiveRequest.InvokeCallback(New BeaconAPI.Response(Err))
-		  Self.ActiveRequest = Nil
-		  Self.mAdvanceQueueCallbackKey = CallLater.Schedule(50, WeakAddressOf AdvanceQueue)
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Sub Socket_PageReceived(Sender As Xojo.Net.HTTPSocket, URL As Text, HTTPStatus As Integer, Content As Xojo.Core.MemoryBlock)
+		Private Sub Socket_ContentReceived(Sender As URLConnection, URL As String, HTTPStatus As Integer, Content As String)
 		  #Pragma Unused Sender
 		  #Pragma Unused URL
 		  
@@ -86,7 +72,17 @@ Protected Class Socket
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Socket_ReceiveProgress(Sender As Xojo.Net.HTTPSocket, BytesReceived As Int64, BytesTotal As Int64, NewData As Xojo.Core.MemoryBlock)
+		Private Sub Socket_Error(Sender As URLConnection, Err As RuntimeException)
+		  #Pragma Unused Sender
+		  
+		  Self.ActiveRequest.InvokeCallback(New BeaconAPI.Response(Err))
+		  Self.ActiveRequest = Nil
+		  Self.mAdvanceQueueCallbackKey = CallLater.Schedule(50, WeakAddressOf AdvanceQueue)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub Socket_ReceivingProgressed(Sender As URLConnection, BytesReceived As Int64, BytesTotal As Int64, NewData As String)
 		  #Pragma Unused Sender
 		  #Pragma Unused NewData
 		  
@@ -96,8 +92,8 @@ Protected Class Socket
 
 	#tag Method, Flags = &h0
 		Sub Start(Request As BeaconAPI.Request)
-		  Self.Queue.Append(Request)
-		  If UBound(Self.Queue) = 0 And Self.Working = False Then
+		  Self.Queue.AddRow(Request)
+		  If Self.Queue.LastRowIndex = 0 And Self.Working = False Then
 		    Self.mAdvanceQueueCallbackKey = CallLater.Schedule(50, WeakAddressOf AdvanceQueue)
 		    Self.Working = True
 		  End If
@@ -156,11 +152,11 @@ Protected Class Socket
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private Socket As Xojo.Net.HTTPSocket
+		Private Socket As URLConnection
 	#tag EndProperty
 
 
-	#tag Constant, Name = Notification_Unauthorized, Type = Text, Dynamic = False, Default = \"Beacon API Unauthorized", Scope = Public
+	#tag Constant, Name = Notification_Unauthorized, Type = String, Dynamic = False, Default = \"Beacon API Unauthorized", Scope = Public
 	#tag EndConstant
 
 
@@ -171,6 +167,7 @@ Protected Class Socket
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -178,18 +175,23 @@ Protected Class Socket
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -197,6 +199,7 @@ Protected Class Socket
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

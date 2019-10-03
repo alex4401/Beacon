@@ -2,7 +2,7 @@
 Protected Class ClipboardWatcher
 Inherits Timer
 	#tag Event
-		Sub Action()
+		Sub Run()
 		  Dim Board As New Clipboard
 		  Dim Hash As String
 		  If Not Board.TextAvailable Then
@@ -43,32 +43,11 @@ Inherits Timer
 
 	#tag ViewBehavior
 		#tag ViewProperty
-			Name="Name"
-			Visible=true
-			Group="ID"
-			Type="String"
-			EditorType="String"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Index"
-			Visible=true
-			Group="ID"
-			Type="Integer"
-			EditorType="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Super"
-			Visible=true
-			Group="ID"
-			Type="String"
-			EditorType="String"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Mode"
+			Name="RunMode"
 			Visible=true
 			Group="Behavior"
 			InitialValue="2"
-			Type="Integer"
+			Type="RunModes"
 			EditorType="Enum"
 			#tag EnumValues
 				"0 - Off"
@@ -77,11 +56,36 @@ Inherits Timer
 			#tag EndEnumValues
 		#tag EndViewProperty
 		#tag ViewProperty
+			Name="Name"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Index"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Super"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
 			Name="Period"
 			Visible=true
 			Group="Behavior"
 			InitialValue="1000"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

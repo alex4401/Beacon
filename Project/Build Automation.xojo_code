@@ -2,6 +2,26 @@
 			Begin BuildStepList Linux
 				Begin BuildProjectStep Build
 				End
+				Begin CopyFilesBuildStep CopyResourcesLinux
+					AppliesTo = 0
+					Destination = 1
+					Subdirectory = 
+					FolderItem = Li4vLi4vRm9udHMv
+				End
+				Begin IDEScriptBuildStep DownloadClassesDebugLinux , AppliesTo = 1
+					Dim AppName As String = CurrentBuildAppName
+					If TargetMacOS Then
+					Dim ResourcesPath As String = CurrentBuildLocationNative + "/" + AppName + " Resources"
+					Call DoShellCommand("/usr/bin/curl https://lab.beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " > '" + ResourcesPath + "/Classes.json'")
+					End If
+				End
+				Begin IDEScriptBuildStep DownloadClassesBuildLinux , AppliesTo = 2
+					Dim AppName As String = CurrentBuildAppName
+					If TargetMacOS Then
+					Dim ResourcesPath As String = CurrentBuildLocationNative + "/" + AppName + " Resources"
+					Call DoShellCommand("/usr/bin/curl https://beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " > '" + ResourcesPath + "/Classes.json'")
+					End If
+				End
 			End
 			Begin BuildStepList Mac OS X
 				Begin BuildProjectStep Build
@@ -30,16 +50,16 @@
 					FolderItem = Li4vLi4vSW5zdGFsbGVycy9NYWMvY29udGFpbmVyLW1pZ3JhdGlvbi5wbGlzdA==
 				End
 				Begin IDEScriptBuildStep DownloadClassesDebugMac , AppliesTo = 1
-					#if TargetMacOS
+					If TargetMacOS Then
 					Dim App As String = CurrentBuildLocation + "/""" + CurrentBuildAppName + ".app"""
-					Call DoShellCommand("/usr/bin/curl https://workbench.beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " > " + App + "/Contents/Resources/Classes.json")
-					#endif
+					Call DoShellCommand("/usr/bin/curl https://lab.beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " > " + App + "/Contents/Resources/Classes.json")
+					End If
 				End
 				Begin IDEScriptBuildStep DownloadClassesBuildMac , AppliesTo = 2
-					#if TargetMacOS
+					If TargetMacOS Then
 					Dim App As String = CurrentBuildLocation + "/""" + CurrentBuildAppName + ".app"""
 					Call DoShellCommand("/usr/bin/curl https://beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " > " + App + "/Contents/Resources/Classes.json")
-					#endif
+					End If
 				End
 				Begin IDEScriptBuildStep Sign , AppliesTo = 0
 					Dim App As String = CurrentBuildLocation + "/""" + CurrentBuildAppName + ".app"""
@@ -59,21 +79,24 @@
 					FolderItem = Li4vLi4vRm9udHMv
 				End
 				Begin IDEScriptBuildStep DownloadClassesDebugWin , AppliesTo = 1
-					#if TargetWin32
 					Dim AppName As String = Left(CurrentBuildAppName, Len(CurrentBuildAppName) - 4)
+					If TargetWindows Then
 					Dim ResourcesPath As String = CurrentBuildLocationNative + "\" + AppName + " Resources"
-					Call DoShellCommand("powershell -Command ""Invoke-WebRequest https://workbench.beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " -OutFile '" + ResourcesPath + "\Classes.json'""")
-					#endif
+					Call DoShellCommand("powershell -Command ""Invoke-WebRequest https://lab.beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " -OutFile '" + ResourcesPath + "\Classes.json'""")
+					ElseIf TargetMacOS Then
+					Dim ResourcesPath As String = CurrentBuildLocationNative + "/" + AppName + " Resources"
+					Call DoShellCommand("/usr/bin/curl https://lab.beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " > '" + ResourcesPath + "/Classes.json'")
+					End If
 				End
 				Begin IDEScriptBuildStep DownloadClassesBuildWin , AppliesTo = 2
 					Dim AppName As String = Left(CurrentBuildAppName, Len(CurrentBuildAppName) - 4)
-					#if TargetWin32
+					If TargetWindows Then
 					Dim ResourcesPath As String = CurrentBuildLocationNative + "\" + AppName + " Resources"
 					Call DoShellCommand("powershell -Command ""Invoke-WebRequest https://beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " -OutFile '" + ResourcesPath + "\Classes.json'""")
-					#elseif TargetMacOS
+					ElseIf TargetMacOS Then
 					Dim ResourcesPath As String = CurrentBuildLocationNative + "/" + AppName + " Resources"
 					Call DoShellCommand("/usr/bin/curl https://beaconapp.cc/download/classes.php?version=" + PropertyValue("App.ShortVersion") + " > '" + ResourcesPath + "/Classes.json'")
-					#endif
+					End If
 				End
 			End
 #tag EndBuildAutomation

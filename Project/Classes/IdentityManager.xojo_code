@@ -9,15 +9,15 @@ Protected Class IdentityManager
 		  // UserID and PublicKey match what we're saving, then manually consider it a success
 		  Dim Success As Boolean = Response.Success
 		  Try
-		    If Success = False And Response.JSON IsA Xojo.Core.Dictionary Then
-		      Dim Dict As Xojo.Core.Dictionary = Response.JSON
-		      Dim PublicKey As Text = Dict.Value("public_key")
-		      Dim UserID As Text = Dict.Value("user_id")
+		    If Success = False And Response.JSON IsA Dictionary Then
+		      Dim Dict As Dictionary = Response.JSON
+		      Dim PublicKey As String = Dict.Value("public_key")
+		      Dim UserID As String = Dict.Value("user_id")
 		      
-		      Dim ConvertedPublicKey As Xojo.Core.MemoryBlock = BeaconEncryption.PEMDecodePublicKey(PublicKey)
-		      Dim TestValue As Xojo.Core.MemoryBlock = Xojo.Crypto.GenerateRandomBytes(12)
-		      Dim Encrypted As Xojo.Core.MemoryBlock = Xojo.Crypto.RSAEncrypt(TestValue, ConvertedPublicKey)
-		      Dim Decrypted As Xojo.Core.MemoryBlock = Xojo.Crypto.RSADecrypt(Encrypted, Self.mPendingIdentity.PrivateKey)
+		      Dim ConvertedPublicKey As MemoryBlock = BeaconEncryption.PEMDecodePublicKey(PublicKey)
+		      Dim TestValue As MemoryBlock = Crypto.GenerateRandomBytes(12)
+		      Dim Encrypted As MemoryBlock = Crypto.RSAEncrypt(TestValue, ConvertedPublicKey)
+		      Dim Decrypted As MemoryBlock = Crypto.RSADecrypt(Encrypted, Self.mPendingIdentity.PrivateKey)
 		      
 		      If Self.mPendingIdentity.Identifier = UserID And TestValue = Decrypted Then
 		        Success = True
@@ -42,8 +42,8 @@ Protected Class IdentityManager
 		  
 		  If Response.Success Then
 		    Try
-		      Dim Dict As Xojo.Core.Dictionary = Response.JSON
-		      Dim Token As Text = Dict.Value("session_id")
+		      Dim Dict As Dictionary = Response.JSON
+		      Dim Token As String = Dict.Value("session_id")
 		      Preferences.OnlineToken = Token
 		      
 		      Self.RefreshUserDetails()
@@ -74,12 +74,12 @@ Protected Class IdentityManager
 		      Dim Identity As Beacon.Identity
 		      If Self.mUserPassword <> "" Then
 		        Identity = Beacon.Identity.FromUserDictionary(Response.JSON, Self.mUserPassword)
-		        Self.CurrentIdentity = Identity
+		        Self.CurrentIdentity(False) = Identity
 		      ElseIf Self.CurrentIdentity <> Nil Then
 		        Identity = Self.CurrentIdentity.Clone
 		        If Identity.ConsumeUserDictionary(Response.JSON) Then
 		          Identity.Validate()
-		          Self.CurrentIdentity = Identity
+		          Self.CurrentIdentity(False) = Identity
 		        End If
 		      End If
 		      UserCloud.Sync() // Will only trigger is necessary
@@ -89,6 +89,8 @@ Protected Class IdentityManager
 		  ElseIf Response.HTTPStatus = 401 Or Response.HTTPStatus = 403 Then
 		    // Need to get a new token
 		    Self.GetSessionToken()
+		  ElseIf Response.HTTPStatus = 0 Then
+		    Self.mLastError = Response.Message
 		  End If
 		  
 		  Self.FinishProcess()
@@ -102,7 +104,7 @@ Protected Class IdentityManager
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(File As Beacon.FolderItem)
+		Sub Constructor(File As FolderItem)
 		  Self.mFile = File
 		  
 		  If Self.mFile = Nil Then
@@ -114,11 +116,12 @@ Protected Class IdentityManager
 		  End If
 		  
 		  Try
-		    Dim Stream As TextInputStream = TextInputStream.Open(Self.mFile)
-		    Dim Contents As String = Stream.ReadAll(Encodings.UTF8)
-		    Stream.Close
+		    Dim Contents As String = Self.mFile.Read(Encodings.UTF8)
+		    If Contents = "" Then
+		      Return
+		    End If
 		    
-		    Dim Dict As Xojo.Core.Dictionary = Xojo.Data.ParseJSON(Contents.ToText)
+		    Dim Dict As Dictionary = Beacon.ParseJSON(Contents)
 		    Self.mCurrentIdentity = Beacon.Identity.Import(Dict)
 		  Catch Err As RuntimeException
 		  End Try
@@ -141,13 +144,52 @@ Protected Class IdentityManager
 		  Self.StartProcess()
 		  Self.mPendingIdentity = New Beacon.Identity()
 		  
-		  Dim Params As New Xojo.Core.Dictionary
+		  Dim Params As New Dictionary
 		  Params.Value("user_id") = Self.mPendingIdentity.Identifier
-		  Params.Value("public_key") = Xojo.Core.TextEncoding.UTF8.ConvertDataToText(Self.mPendingIdentity.PublicKey)
+		  Params.Value("public_key") = Self.mPendingIdentity.PublicKey
 		  
-		  Dim Body As Text = Xojo.Data.GenerateJSON(Params)
+		  Dim Body As String = Beacon.GenerateJSON(Params, False)
 		  Dim Request As New BeaconAPI.Request("user", "POST", Body, "application/json", AddressOf APICallback_CreateUser)
 		  BeaconAPI.Send(Request)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function CurrentIdentity() As Beacon.Identity
+		  Return Self.mCurrentIdentity
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub CurrentIdentity(Assigns Value As Beacon.Identity)
+		  Self.CurrentIdentity(True) = Value
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h1
+		Protected Sub CurrentIdentity(CheckSessionToken As Boolean, Assigns Value As Beacon.Identity)
+		  If Self.mCurrentIdentity = Value Then
+		    Return
+		  End If
+		  
+		  Dim OldUserID As String = If(Self.mCurrentIdentity <> Nil, Self.mCurrentIdentity.Identifier, "")
+		  Dim NewUserID As String = If(Value <> Nil, Value.Identifier, "")
+		  Dim ReplaceToken As Boolean = CheckSessionToken And OldUserID <> NewUserID
+		  
+		  Self.MergeIdentities(Value, Self.mCurrentIdentity)
+		  Self.mCurrentIdentity = Value
+		  Self.Write()
+		  NotificationKit.Post(Self.Notification_IdentityChanged, Self.mCurrentIdentity)
+		  
+		  If ReplaceToken Then
+		    Preferences.OnlineToken = ""
+		    
+		    If Not Preferences.OnlineEnabled Then
+		      Return
+		    End If
+		    
+		    Self.GetSessionToken()
+		  End If
 		End Sub
 	#tag EndMethod
 
@@ -164,14 +206,20 @@ Protected Class IdentityManager
 		Private Sub GetSessionToken()
 		  Self.StartProcess()
 		  
+		  Dim Identity As Beacon.Identity = Self.CurrentIdentity
+		  If Identity = Nil Then
+		    RaiseEvent NeedsLogin()
+		    Return
+		  End If
+		  
 		  Dim Request As New BeaconAPI.Request("session", "POST", AddressOf APICallback_GetSessionToken)
-		  Request.Sign(CurrentIdentity)
+		  Request.Sign(Identity)
 		  BeaconAPI.Send(Request)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function LastError() As Text
+		Function LastError() As String
 		  Return Self.mLastError
 		End Function
 	#tag EndMethod
@@ -189,23 +237,23 @@ Protected Class IdentityManager
 		  
 		  Self.StartProcess()
 		  
-		  Dim SignedValue As Text = Beacon.CreateUUID
-		  Dim Signature As Text = Beacon.EncodeHex(Source.Sign(Xojo.Core.TextEncoding.UTF8.ConvertTextToData(SignedValue)))
+		  Dim SignedValue As String = New v4UUID
+		  Dim Signature As String = EncodeHex(Source.Sign(SignedValue))
 		  
-		  Dim MergeKeys As New Xojo.Core.Dictionary
+		  Dim MergeKeys As New Dictionary
 		  MergeKeys.Value("user_id") = Destination.Identifier
 		  MergeKeys.Value("login_key") = Destination.LoginKey
 		  MergeKeys.Value("signed_value") = SignedValue
 		  MergeKeys.Value("signature") = Signature
 		  
-		  Dim Request As New BeaconAPI.Request("user", "POST", Xojo.Data.GenerateJSON(MergeKeys), "application/json", AddressOf APICallback_MergeUser)
-		  Request.Sign(Destination)
+		  Dim Request As New BeaconAPI.Request("user", "POST", Beacon.GenerateJSON(MergeKeys, False), "application/json", AddressOf APICallback_MergeUser)
+		  Request.Authenticate(Preferences.OnlineToken)
 		  BeaconAPI.Send(Request)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub RefreshUserDetails(UserPassword As Text = "")
+		Sub RefreshUserDetails(UserPassword As String = "")
 		  If Preferences.OnlineEnabled = False Then
 		    Return
 		  End If
@@ -218,7 +266,7 @@ Protected Class IdentityManager
 		  Self.StartProcess()
 		  Self.mUserPassword = UserPassword
 		  
-		  Dim Fields As New Xojo.Core.Dictionary
+		  Dim Fields As New Dictionary
 		  Fields.Value("hardware_id") = Beacon.HardwareID
 		  
 		  Dim Request As New BeaconAPI.Request("user", "GET", Fields, AddressOf APICallback_RefreshUserDetails)
@@ -244,10 +292,10 @@ Protected Class IdentityManager
 		  
 		  If Self.mCurrentIdentity <> Nil Then
 		    Dim Writer As New Beacon.JSONWriter(Self.mCurrentIdentity.Export, Self.mFile)
-		    Writer.Run
+		    Writer.Start
 		  Else
 		    If Self.mFile.Exists Then
-		      Self.mFile.Delete
+		      Self.mFile.Remove
 		    End If
 		  End If
 		End Sub
@@ -259,55 +307,24 @@ Protected Class IdentityManager
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
+		Event NeedsLogin()
+	#tag EndHook
+
+	#tag Hook, Flags = &h0
 		Event Started()
 	#tag EndHook
 
-
-	#tag ComputedProperty, Flags = &h0
-		#tag Getter
-			Get
-			  Return Self.mCurrentIdentity
-			End Get
-		#tag EndGetter
-		#tag Setter
-			Set
-			  If Self.mCurrentIdentity = Value Then
-			    Return
-			  End If
-			  
-			  Dim OldUserID As Text = If(Self.mCurrentIdentity <> Nil, Self.mCurrentIdentity.Identifier, "")
-			  Dim NewUserID As Text = If(Value <> Nil, Value.Identifier, "")
-			  Dim ReplaceToken As Boolean = OldUserID <> NewUserID
-			  
-			  Self.MergeIdentities(Value, Self.mCurrentIdentity)
-			  Self.mCurrentIdentity = Value
-			  Self.Write()
-			  NotificationKit.Post(Self.Notification_IdentityChanged, Self.mCurrentIdentity)
-			  
-			  If ReplaceToken Then
-			    Preferences.OnlineToken = ""
-			    
-			    If Not Preferences.OnlineEnabled Then
-			      Return
-			    End If
-			    
-			    Self.GetSessionToken()
-			  End If
-			End Set
-		#tag EndSetter
-		CurrentIdentity As Beacon.Identity
-	#tag EndComputedProperty
 
 	#tag Property, Flags = &h21
 		Private mCurrentIdentity As Beacon.Identity
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mFile As Beacon.FolderItem
+		Private mFile As FolderItem
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mLastError As Text
+		Private mLastError As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -319,7 +336,7 @@ Protected Class IdentityManager
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mUserPassword As Text
+		Private mUserPassword As String
 	#tag EndProperty
 
 
@@ -332,7 +349,9 @@ Protected Class IdentityManager
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -340,12 +359,15 @@ Protected Class IdentityManager
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -353,6 +375,7 @@ Protected Class IdentityManager
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -360,6 +383,7 @@ Protected Class IdentityManager
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

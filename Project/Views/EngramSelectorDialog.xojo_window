@@ -3,7 +3,6 @@ Begin BeaconDialog EngramSelectorDialog
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   8
    FullScreen      =   False
@@ -11,7 +10,7 @@ Begin BeaconDialog EngramSelectorDialog
    HasBackColor    =   False
    Height          =   471
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
    MaxHeight       =   32000
    MaximizeButton  =   False
@@ -22,7 +21,9 @@ Begin BeaconDialog EngramSelectorDialog
    MinimizeButton  =   False
    MinWidth        =   600
    Placement       =   1
+   Resizable       =   "True"
    Resizeable      =   True
+   SystemUIVisible =   "True"
    Title           =   "Select Object"
    Visible         =   True
    Width           =   600
@@ -136,7 +137,6 @@ Begin BeaconDialog EngramSelectorDialog
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -161,7 +161,7 @@ Begin BeaconDialog EngramSelectorDialog
    Begin UITweaks.ResizedPushButton ActionButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "Select"
       Default         =   True
@@ -193,7 +193,7 @@ Begin BeaconDialog EngramSelectorDialog
    Begin UITweaks.ResizedPushButton CancelButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Cancel"
       Default         =   False
@@ -254,7 +254,6 @@ Begin BeaconDialog EngramSelectorDialog
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -279,7 +278,7 @@ Begin BeaconDialog EngramSelectorDialog
    Begin UITweaks.ResizedPushButton AddToSelectionsButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   ">>"
       Default         =   False
@@ -311,7 +310,7 @@ Begin BeaconDialog EngramSelectorDialog
    Begin UITweaks.ResizedPushButton RemoveFromSelectionsButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "<<"
       Default         =   False
@@ -348,7 +347,6 @@ Begin BeaconDialog EngramSelectorDialog
       Border          =   15
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   67
       HelpTag         =   ""
       Index           =   -2147483648
@@ -376,7 +374,7 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.Picker.Tags = LocalData.SharedInstance.AllTags(Self.mCategory)
 		  Self.Picker.Spec = Preferences.SelectedTag(Self.mCategory, Self.mSubgroup)
 		  Self.UpdateFilter()
@@ -401,10 +399,10 @@ End
 
 
 	#tag Method, Flags = &h21
-		Private Sub Constructor(Category As Text, Subgroup As Text, Exclude() As Beacon.Blueprint, Mods As Beacon.TextList, AllowMultipleSelection As Boolean)
+		Private Sub Constructor(Category As String, Subgroup As String, Exclude() As Beacon.Blueprint, Mods As Beacon.StringList, AllowMultipleSelection As Boolean)
 		  Self.mSettingUp = True
 		  For Each Blueprint As Beacon.Blueprint In Exclude
-		    Self.mExcluded.Append(Blueprint.Path)
+		    Self.mExcluded.AddRow(Blueprint.Path)
 		  Next
 		  Self.mMods = Mods
 		  Self.mAllowMultipleSelection = AllowMultipleSelection
@@ -414,12 +412,12 @@ End
 		  If AllowMultipleSelection Then
 		    Self.Width = Self.Width + 150
 		    Self.List.ColumnWidths = "*,150"
-		    Self.List.SelectionType = Listbox.SelectionMultiple
+		    Self.List.RowSelectionType = Listbox.RowSelectionTypes.Multiple
 		    Self.List.Width = Self.List.Width - (24 + Self.SelectedList.Width + Self.AddToSelectionsButton.Width)
 		    Self.AddToSelectionsButton.Left = Self.List.Left + Self.List.Width + 12
 		    Self.RemoveFromSelectionsButton.Left = Self.AddToSelectionsButton.Left
 		    Self.SelectedList.Left = Self.AddToSelectionsButton.Left + Self.AddToSelectionsButton.Width + 12
-		    Self.MessageLabel.Text = "Select Objects"
+		    Self.MessageLabel.Value = "Select Objects"
 		  End If
 		End Sub
 	#tag EndMethod
@@ -427,47 +425,47 @@ End
 	#tag Method, Flags = &h21
 		Private Sub MakeSelection()
 		  If Not Self.mAllowMultipleSelection Then
-		    Self.SelectedList.DeleteAllRows()
+		    Self.SelectedList.RemoveAllRows()
 		  End If
 		  
-		  If Self.List.SelCount > 1 Then
-		    For I As Integer = Self.List.ListCount - 1 DownTo 0
+		  If Self.List.SelectedRowCount > 1 Then
+		    For I As Integer = Self.List.RowCount - 1 DownTo 0
 		      If Not Self.List.Selected(I) Then
 		        Continue
 		      End If
 		      
-		      Self.SelectedList.AddRow(Self.List.Cell(I, 0))
-		      Self.SelectedList.RowTag(Self.SelectedList.LastIndex) = Self.List.RowTag(I)
+		      Self.SelectedList.AddRow(Self.List.CellValueAt(I, 0))
+		      Self.SelectedList.RowTagAt(Self.SelectedList.LastAddedRowIndex) = Self.List.RowTagAt(I)
 		      If Self.mAllowMultipleSelection Then
-		        Self.mExcluded.Append(Beacon.Blueprint(Self.List.RowTag(I)).Path)
-		        Self.List.RemoveRow(I)
+		        Self.mExcluded.AddRow(Beacon.Blueprint(Self.List.RowTagAt(I)).Path)
+		        Self.List.RemoveRowAt(I)
 		      End If
 		    Next
-		  ElseIf Self.List.SelCount = 1 Then
-		    Self.SelectedList.AddRow(Self.List.Cell(Self.List.ListIndex, 0))
-		    Self.SelectedList.RowTag(Self.SelectedList.LastIndex) = Self.List.RowTag(Self.List.ListIndex)
+		  ElseIf Self.List.SelectedRowCount = 1 Then
+		    Self.SelectedList.AddRow(Self.List.CellValueAt(Self.List.SelectedRowIndex, 0))
+		    Self.SelectedList.RowTagAt(Self.SelectedList.LastAddedRowIndex) = Self.List.RowTagAt(Self.List.SelectedRowIndex)
 		    If Self.mAllowMultipleSelection Then
-		      Self.mExcluded.Append(Beacon.Blueprint(Self.List.RowTag(Self.List.ListIndex)).Path)
-		      Self.List.RemoveRow(Self.List.ListIndex)
+		      Self.mExcluded.AddRow(Beacon.Blueprint(Self.List.RowTagAt(Self.List.SelectedRowIndex)).Path)
+		      Self.List.RemoveRowAt(Self.List.SelectedRowIndex)
 		    End If
 		  End If
 		  
-		  Self.ActionButton.Enabled = Self.SelectedList.ListCount > 0
+		  Self.ActionButton.Enabled = Self.SelectedList.RowCount > 0
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Present(Parent As Window, Subgroup As Text, Exclude() As Beacon.Creature, Mods As Beacon.TextList = Nil, AllowMultipleSelection As Boolean) As Beacon.Creature()
+		Shared Function Present(Parent As Window, Subgroup As String, Exclude() As Beacon.Creature, Mods As Beacon.StringList = Nil, AllowMultipleSelection As Boolean) As Beacon.Creature()
 		  Dim ExcludeBlueprints() As Beacon.Blueprint
 		  For Each Creature As Beacon.Creature In Exclude
-		    ExcludeBlueprints.Append(Creature)
+		    ExcludeBlueprints.AddRow(Creature)
 		  Next
 		  
 		  Dim Blueprints() As Beacon.Blueprint = Present(Parent, Beacon.CategoryCreatures, Subgroup, ExcludeBlueprints, Mods, AllowMultipleSelection)
 		  Dim Creatures() As Beacon.Creature
 		  For Each Blueprint As Beacon.Blueprint In Blueprints
 		    If Blueprint IsA Beacon.Creature Then
-		      Creatures.Append(Beacon.Creature(Blueprint))
+		      Creatures.AddRow(Beacon.Creature(Blueprint))
 		    End If
 		  Next
 		  Return Creatures
@@ -475,17 +473,17 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Present(Parent As Window, Subgroup As Text, Exclude() As Beacon.Engram, Mods As Beacon.TextList = Nil, AllowMultipleSelection As Boolean) As Beacon.Engram()
+		Shared Function Present(Parent As Window, Subgroup As String, Exclude() As Beacon.Engram, Mods As Beacon.StringList = Nil, AllowMultipleSelection As Boolean) As Beacon.Engram()
 		  Dim ExcludeBlueprints() As Beacon.Blueprint
 		  For Each Engram As Beacon.Engram In Exclude
-		    ExcludeBlueprints.Append(Engram)
+		    ExcludeBlueprints.AddRow(Engram)
 		  Next
 		  
 		  Dim Blueprints() As Beacon.Blueprint = Present(Parent, Beacon.CategoryEngrams, Subgroup, ExcludeBlueprints, Mods, AllowMultipleSelection)
 		  Dim Engrams() As Beacon.Engram
 		  For Each Blueprint As Beacon.Blueprint In Blueprints
 		    If Blueprint IsA Beacon.Engram Then
-		      Engrams.Append(Beacon.Engram(Blueprint))
+		      Engrams.AddRow(Beacon.Engram(Blueprint))
 		    End If
 		  Next
 		  Return Engrams
@@ -493,14 +491,14 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Present(Parent As Window, Category As Text, Subgroup As Text, Exclude() As Beacon.Blueprint, Mods As Beacon.TextList = Nil, AllowMultipleSelection As Boolean) As Beacon.Blueprint()
+		Shared Function Present(Parent As Window, Category As String, Subgroup As String, Exclude() As Beacon.Blueprint, Mods As Beacon.StringList = Nil, AllowMultipleSelection As Boolean) As Beacon.Blueprint()
 		  Dim Blueprints() As Beacon.Blueprint
 		  If Parent = Nil Then
 		    Return Blueprints
 		  End If
 		  
 		  If Mods = Nil Then
-		    Mods = New Beacon.TextList
+		    Mods = New Beacon.StringList
 		  End If
 		  
 		  Dim Win As New EngramSelectorDialog(Category, Subgroup, Exclude, Mods, AllowMultipleSelection)
@@ -510,8 +508,8 @@ End
 		    Return Blueprints
 		  End If
 		  
-		  For I As Integer = 0 To Win.SelectedList.ListCount - 1
-		    Blueprints.Append(Win.SelectedList.RowTag(I))
+		  For I As Integer = 0 To Win.SelectedList.RowCount - 1
+		    Blueprints.AddRow(Win.SelectedList.RowTagAt(I))
 		  Next
 		  
 		  Win.Close
@@ -530,26 +528,26 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UnmakeSelection()
-		  Dim SelectPaths() As Text
-		  For I As Integer = Self.SelectedList.ListCount - 1 DownTo 0
+		  Dim SelectPaths() As String
+		  For I As Integer = Self.SelectedList.RowCount - 1 DownTo 0
 		    If Not Self.SelectedList.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Blueprint As Beacon.Blueprint = Self.SelectedList.RowTag(I)
+		    Dim Blueprint As Beacon.Blueprint = Self.SelectedList.RowTagAt(I)
 		    Dim Idx As Integer = Self.mExcluded.IndexOf(Blueprint.Path)
 		    If Idx > -1 Then
-		      Self.mExcluded.Remove(Idx)
+		      Self.mExcluded.RemoveRowAt(Idx)
 		    End If
-		    SelectPaths.Append(Blueprint.Path)
-		    Self.SelectedList.RemoveRow(I)
+		    SelectPaths.AddRow(Blueprint.Path)
+		    Self.SelectedList.RemoveRowAt(I)
 		  Next
-		  Self.ActionButton.Enabled = Self.SelectedList.ListCount > 0
+		  Self.ActionButton.Enabled = Self.SelectedList.RowCount > 0
 		  
 		  Self.List.SelectionChangeBlocked = True
 		  Self.UpdateFilter()
-		  For I As Integer = 0 To Self.List.ListCount - 1
-		    Dim Blueprint As Beacon.Blueprint = Self.List.RowTag(I)
+		  For I As Integer = 0 To Self.List.RowCount - 1
+		    Dim Blueprint As Beacon.Blueprint = Self.List.RowTagAt(I)
 		    Self.List.Selected(I) = SelectPaths.IndexOf(Blueprint.Path) > -1
 		  Next
 		  Self.List.EnsureSelectionIsVisible
@@ -559,19 +557,19 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateFilter()
-		  Dim SearchText As String = Self.FilterField.Text
-		  Dim Tags As Text = Self.Picker.Spec.ToText
+		  Dim SearchText As String = Self.FilterField.Value
+		  Dim Tags As String = Self.Picker.Spec
 		  
-		  Dim Blueprints() As Beacon.Blueprint = Beacon.Data.SearchForBlueprints(Self.mCategory, SearchText.ToText, Self.mMods, Tags)
+		  Dim Blueprints() As Beacon.Blueprint = Beacon.Data.SearchForBlueprints(Self.mCategory, SearchText, Self.mMods, Tags)
 		  Dim ScrollPosition As Integer = Self.List.ScrollPosition
-		  Self.List.DeleteAllRows
+		  Self.List.RemoveAllRows
 		  For Each Blueprint As Beacon.Blueprint In Blueprints
 		    If Self.mExcluded.IndexOf(Blueprint.Path) > -1 Then
 		      Continue
 		    End If
 		    
 		    Self.List.AddRow(Blueprint.Label, Blueprint.ModName)
-		    Self.List.RowTag(Self.List.LastIndex) = Blueprint
+		    Self.List.RowTagAt(Self.List.LastAddedRowIndex) = Blueprint
 		  Next
 		  Self.List.ScrollPosition = ScrollPosition
 		End Sub
@@ -587,15 +585,15 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mCategory As Text
+		Private mCategory As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mExcluded() As Text
+		Private mExcluded() As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mMods As Beacon.TextList
+		Private mMods As Beacon.StringList
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -603,7 +601,7 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mSubgroup As Text
+		Private mSubgroup As String
 	#tag EndProperty
 
 
@@ -611,23 +609,23 @@ End
 
 #tag Events FilterField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  Self.UpdateFilter()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Change()
+		Sub SelectionChanged()
 		  If Not Self.mAllowMultipleSelection Then
 		    Self.MakeSelection()
 		  End If
 		  
-		  Self.AddToSelectionsButton.Enabled = Me.SelCount > 0
+		  Self.AddToSelectionsButton.Enabled = Me.SelectedRowCount > 0
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub DoubleClick()
+		Sub DoubleClicked()
 		  Self.MakeSelection()
 		  
 		  If Not Self.mAllowMultipleSelection Then
@@ -639,7 +637,7 @@ End
 #tag EndEvents
 #tag Events ActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.mCancelled = False
 		  Self.Hide()
 		End Sub
@@ -647,7 +645,7 @@ End
 #tag EndEvents
 #tag Events CancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.mCancelled = True
 		  Self.Hide()
 		End Sub
@@ -655,17 +653,17 @@ End
 #tag EndEvents
 #tag Events SelectedList
 	#tag Event
-		Sub Change()
-		  Self.RemoveFromSelectionsButton.Enabled = Me.SelCount > 0
+		Sub SelectionChanged()
+		  Self.RemoveFromSelectionsButton.Enabled = Me.SelectedRowCount > 0
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
-		Sub DoubleClick()
+		Sub DoubleClicked()
 		  Self.UnmakeSelection
 		End Sub
 	#tag EndEvent
@@ -679,26 +677,26 @@ End
 #tag EndEvents
 #tag Events AddToSelectionsButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.MakeSelection()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events RemoveFromSelectionsButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.UnmakeSelection()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Picker
 	#tag Event
-		Sub Change()
+		Sub TagsChanged()
 		  If Self.mSettingUp Then
 		    Return
 		  End If
 		  
-		  Preferences.SelectedTag(Self.mCategory, Self.mSubgroup) = Me.Spec.ToText
+		  Preferences.SelectedTag(Self.mCategory, Self.mSubgroup) = Me.Spec
 		  Self.UpdateFilter()
 		End Sub
 	#tag EndEvent
@@ -723,74 +721,59 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="Name"
+		Name="Resizeable"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Interfaces"
+		Name="MenuBarVisible"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Deprecated"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Super"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Width"
-		Visible=true
-		Group="Size"
-		InitialValue="600"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinWidth"
+		Name="MinimumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinHeight"
+		Name="MinimumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
+		Name="MaximumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxHeight"
+		Name="MaximumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -807,78 +790,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Title"
-		Visible=true
-		Group="Frame"
-		InitialValue="Untitled"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasMinimizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinimizeButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
+		Name="HasFullScreenButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -889,61 +837,123 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Super"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Width"
+		Visible=true
+		Group="Size"
+		InitialValue="600"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Title"
+		Visible=true
+		Group="Frame"
+		InitialValue="Untitled"
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Visible"
 		Visible=true
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
+		Visible=false
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MenuBar"
 		Visible=true
 		Group="Menus"
+		InitialValue=""
 		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Visible=true
-		Group="Deprecated"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

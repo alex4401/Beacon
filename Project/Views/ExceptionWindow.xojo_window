@@ -3,7 +3,6 @@ Begin Window ExceptionWindow
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   1
    FullScreen      =   False
@@ -11,7 +10,7 @@ Begin Window ExceptionWindow
    HasBackColor    =   False
    Height          =   400
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
    MaxHeight       =   32000
    MaximizeButton  =   False
@@ -22,7 +21,9 @@ Begin Window ExceptionWindow
    MinimizeButton  =   False
    MinWidth        =   64
    Placement       =   2
+   Resizable       =   "True"
    Resizeable      =   False
+   SystemUIVisible =   "True"
    Title           =   "Beacon Error"
    Visible         =   True
    Width           =   600
@@ -33,7 +34,6 @@ Begin Window ExceptionWindow
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   64
       HelpTag         =   ""
       Index           =   -2147483648
@@ -128,7 +128,7 @@ Begin Window ExceptionWindow
    Begin UITweaks.ResizedPushButton QuitButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "Quit"
       Default         =   False
@@ -164,7 +164,6 @@ Begin Window ExceptionWindow
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -193,7 +192,6 @@ Begin Window ExceptionWindow
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   236
       HelpTag         =   ""
       Index           =   -2147483648
@@ -222,7 +220,6 @@ Begin Window ExceptionWindow
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -251,7 +248,6 @@ Begin Window ExceptionWindow
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   236
       HelpTag         =   ""
       Index           =   -2147483648
@@ -291,7 +287,7 @@ Begin Window ExceptionWindow
       Scope           =   2
       TabIndex        =   8
       TabPanelIndex   =   0
-      TabStop         =   True
+      TabStop         =   "True"
       Top             =   103
       Transparent     =   False
       Value           =   3
@@ -337,6 +333,7 @@ Begin Window ExceptionWindow
          Enabled         =   True
          Height          =   20
          HelpTag         =   ""
+         Indeterminate   =   False
          Index           =   -2147483648
          InitialParent   =   "Pages"
          Left            =   125
@@ -349,10 +346,10 @@ Begin Window ExceptionWindow
          Scope           =   2
          TabIndex        =   1
          TabPanelIndex   =   1
-         TabStop         =   True
+         TabStop         =   "True"
          Top             =   155
          Transparent     =   False
-         Value           =   0
+         Value           =   0.0
          Visible         =   True
          Width           =   434
       End
@@ -394,7 +391,7 @@ Begin Window ExceptionWindow
       Begin UITweaks.ResizedPushButton PermissionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Allow Connection"
          Default         =   False
@@ -498,7 +495,7 @@ Begin Window ExceptionWindow
       Begin UITweaks.ResizedPushButton SolutionOpenButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "View Online"
          Default         =   False
@@ -565,7 +562,7 @@ Begin Window ExceptionWindow
       Begin UITweaks.ResizedPushButton ReportButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Add Comments"
          Default         =   False
@@ -636,21 +633,21 @@ End
 #tag WindowCode
 	#tag Method, Flags = &h21
 		Private Sub BeginChecking()
-		  Self.Pages.Value = Self.PageStart
+		  Self.Pages.SelectedPanelIndex = Self.PageStart
 		  
-		  Dim Trace() As Xojo.Core.StackFrame = Self.mExceptionDetails.Value("Trace")
-		  Dim Lines() As Text
-		  For Each Frame As Xojo.Core.StackFrame In Trace
-		    Lines.Append(Frame.Name)
+		  Dim Trace() As StackFrame = Self.mExceptionDetails.Value("Trace")
+		  Dim Lines() As String
+		  For Each Frame As StackFrame In Trace
+		    Lines.AddRow(Frame.Name)
 		  Next
 		  
-		  Dim Fields As New Xojo.Core.Dictionary
-		  Fields.Value("build") = App.BuildNumber.ToText
+		  Dim Fields As New Dictionary
+		  Fields.Value("build") = App.BuildNumber.ToString
 		  Fields.Value("hash") = Self.mExceptionHash
 		  Fields.Value("type") = Self.mExceptionDetails.Value("Type")
 		  Fields.Value("reason") = Self.mExceptionDetails.Value("Reason")
 		  Fields.Value("location") = Self.mExceptionDetails.Value("Location")
-		  Fields.Value("trace") = Lines.Join(Text.FromUnicodeCodepoint(10))
+		  Fields.Value("trace") = Lines.Join(Encodings.UTF8.Chr(10))
 		  If Self.mExceptionDetails.HasKey("UserID") Then
 		    Fields.Value("user_id") = Self.mExceptionDetails.Value("UserID")
 		  End If
@@ -660,17 +657,17 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Sub Present(Dict As Xojo.Core.Dictionary)
-		  Dim Trace() As Xojo.Core.StackFrame = Dict.Value("Trace")
-		  Dim Lines() As Text
-		  Lines.Append(Dict.Value("Type"))
-		  Lines.Append(Dict.Value("Reason"))
-		  For Each Frame As Xojo.Core.StackFrame In Trace
-		    Lines.Append(Frame.Name)
+		Shared Sub Present(Dict As Dictionary)
+		  Dim Trace() As StackFrame = Dict.Value("Trace")
+		  Dim Lines() As String
+		  Lines.AddRow(Dict.Value("Type"))
+		  Lines.AddRow(Dict.Value("Reason"))
+		  For Each Frame As StackFrame In Trace
+		    Lines.AddRow(Frame.Name)
 		  Next
 		  
-		  Dim HashContent As Text = Lines.Join(Text.FromUnicodeCodepoint(10))
-		  Dim Hash As Text = Beacon.EncodeHex(Xojo.Crypto.SHA1(Xojo.Core.TextEncoding.UTF8.ConvertTextToData(HashContent)))
+		  Dim HashContent As String = Lines.Join(Encodings.UTF8.Chr(10))
+		  Dim Hash As String = EncodeHex(Crypto.SHA1(HashContent))
 		  
 		  Dim Win As New ExceptionWindow
 		  Win.mExceptionHash = Hash.Lowercase
@@ -680,27 +677,26 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Reporter_Callback(URL As Text, Status As Integer, Content As Xojo.Core.MemoryBlock, Tag As Auto)
+		Private Sub Reporter_Callback(URL As String, Status As Integer, Content As MemoryBlock, Tag As Variant)
 		  #Pragma Unused URL
 		  #Pragma Unused Tag
 		  
 		  If Status <> 200 Then
-		    Self.Pages.Value = Self.PageNoSolution
+		    Self.Pages.SelectedPanelIndex = Self.PageNoSolution
 		    Return
 		  End If
 		  
 		  Try
-		    Dim TextContent As Text = Xojo.Core.TextEncoding.UTF8.ConvertDataToText(Content, True)
-		    Dim Dict As Xojo.Core.Dictionary = Xojo.Data.ParseJSON(TextContent)
+		    Dim Dict As Dictionary = Beacon.ParseJSON(Content)
 		    
 		    If Dict.HasKey("solution") And Dict.Value("solution") <> Nil Then
-		      Self.Pages.Value = Self.PageSolutionFound
+		      Self.Pages.SelectedPanelIndex = Self.PageSolutionFound
 		      Self.mSolutionURL = Dict.Value("solution")
 		    Else
-		      Self.Pages.Value = Self.PageNoSolution
+		      Self.Pages.SelectedPanelIndex = Self.PageNoSolution
 		    End If
 		  Catch Err As RuntimeException
-		    Self.Pages.Value = Self.PageNoSolution
+		    Self.Pages.SelectedPanelIndex = Self.PageNoSolution
 		  End Try
 		End Sub
 	#tag EndMethod
@@ -708,12 +704,12 @@ End
 	#tag Method, Flags = &h21
 		Private Sub ShowModal()
 		  If Not Preferences.OnlineEnabled Then
-		    Self.Pages.Value = Self.PagePermission
+		    Self.Pages.SelectedPanelIndex = Self.PagePermission
 		  Else
 		    Self.BeginChecking()
 		  End If
 		  
-		  Self.ErrorIDLabel.Text = Self.ErrorIDLabel.Text.Replace("<hash>", Self.mExceptionHash)
+		  Self.ErrorIDLabel.Value = Self.ErrorIDLabel.Value.Replace("<hash>", Self.mExceptionHash)
 		  
 		  Super.ShowModal()
 		End Sub
@@ -721,15 +717,15 @@ End
 
 
 	#tag Property, Flags = &h21
-		Private mExceptionDetails As Xojo.Core.Dictionary
+		Private mExceptionDetails As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mExceptionHash As Text
+		Private mExceptionHash As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mSolutionURL As Text
+		Private mSolutionURL As String
 	#tag EndProperty
 
 
@@ -759,35 +755,35 @@ End
 #tag EndEvents
 #tag Events QuitButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  App.Terminate(0)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Pages
 	#tag Event
-		Sub Change()
-		  Self.QuitButton.Enabled = Me.Value <> Self.PageStart
+		Sub PanelChanged()
+		  Self.QuitButton.Enabled = Me.SelectedPanelIndex <> Self.PageStart
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events PermissionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.BeginChecking()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events PermissionPolicyLabel
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.URL = Beacon.WebURL("/privacy.php")
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events SolutionOpenButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  If Self.mSolutionURL <> "" Then
 		    ShowURL(Self.mSolutionURL)
 		  Else
@@ -798,81 +794,66 @@ End
 #tag EndEvents
 #tag Events ReportButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  App.ShowBugReporter(Self.mExceptionHash)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="Name"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Name="Resizeable"
+		Visible=false
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Interfaces"
+		Name="MenuBarVisible"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Deprecated"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Super"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Width"
-		Visible=true
-		Group="Size"
-		InitialValue="600"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinWidth"
+		Name="MinimumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinHeight"
+		Name="MinimumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
+		Name="MaximumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxHeight"
+		Name="MaximumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -889,78 +870,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Title"
-		Visible=true
-		Group="Frame"
-		InitialValue="Untitled"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasMinimizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinimizeButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
+		Name="HasFullScreenButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -971,61 +917,123 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Super"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Width"
+		Visible=true
+		Group="Size"
+		InitialValue="600"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Title"
+		Visible=true
+		Group="Frame"
+		InitialValue="Untitled"
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Visible"
 		Visible=true
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
+		Visible=false
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MenuBar"
 		Visible=true
 		Group="Menus"
+		InitialValue=""
 		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Visible=true
-		Group="Deprecated"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

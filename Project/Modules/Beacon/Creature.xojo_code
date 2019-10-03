@@ -8,17 +8,17 @@ Implements Beacon.Blueprint
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Category() As Text
+		Function Category() As String
 		  Return Beacon.CategoryCreatures
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ClassString() As Text
-		  Dim Components() As Text = Self.mPath.Split("/")
-		  Dim Tail As Text = Components(Components.Ubound)
+		Function ClassString() As String
+		  Dim Components() As String = Self.mPath.Split("/")
+		  Dim Tail As String = Components(Components.LastRowIndex)
 		  Components = Tail.Split(".")
-		  Return Components(Components.Ubound) + "_C"
+		  Return Components(Components.LastRowIndex) + "_C"
 		End Function
 	#tag EndMethod
 
@@ -31,6 +31,7 @@ Implements Beacon.Blueprint
 	#tag Method, Flags = &h1
 		Protected Sub Constructor()
 		  Self.mAvailability = Beacon.Maps.All.Mask
+		  Self.mStats = New Dictionary
 		End Sub
 	#tag EndMethod
 
@@ -44,52 +45,49 @@ Implements Beacon.Blueprint
 		  Self.mLabel = Source.mLabel
 		  Self.mModID = Source.mModID
 		  Self.mModName = Source.mModName
-		  If Source.mIncubationTime <> Nil Then
-		    Self.mIncubationTime = Source.mIncubationTime.Clone
-		  End If
-		  If Source.mMatureTime <> Nil Then
-		    Self.mMatureTime = Source.mMatureTime.Clone
-		  End If
+		  Self.mIncubationTime = Source.mIncubationTime
+		  Self.mMatureTime = Source.mMatureTime
+		  Self.mStats = Source.mStats.Clone
 		  
 		  Redim Self.mTags(-1)
-		  For Each Tag As Text In Source.mTags
-		    Self.mTags.Append(Tag)
+		  For Each Tag As String In Source.mTags
+		    Self.mTags.AddRow(Tag)
 		  Next
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function IncubationTime() As Xojo.Core.DateInterval
+		Function IncubationTime() As UInt64
 		  Return Self.mIncubationTime
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function IsTagged(Tag As Text) As Boolean
+		Function IsTagged(Tag As String) As Boolean
 		  Return Self.mTags.IndexOf(Beacon.NormalizeTag(Tag)) > -1
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Label() As Text
+		Function Label() As String
 		  Return Self.mLabel
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function MatureTime() As Xojo.Core.DateInterval
+		Function MatureTime() As UInt64
 		  Return Self.mMatureTime
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ModID() As Text
+		Function ModID() As String
 		  Return Self.mModID
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ModName() As Text
+		Function ModName() As String
 		  Return Self.mModName
 		End Function
 	#tag EndMethod
@@ -101,7 +99,7 @@ Implements Beacon.Blueprint
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ObjectID() As Text
+		Function ObjectID() As String
 		  Return Self.mObjectID
 		End Function
 	#tag EndMethod
@@ -112,23 +110,85 @@ Implements Beacon.Blueprint
 		    Return 1
 		  End If
 		  
-		  Dim SelfPath As Text = Self.Path
-		  Dim OtherPath As Text = Other.Path
-		  Return SelfPath.Compare(OtherPath)
+		  Dim SelfPath As String = Self.Path
+		  Dim OtherPath As String = Other.Path
+		  Return SelfPath.Compare(OtherPath, ComparisonOptions.CaseSensitive)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Path() As Text
+		Function Path() As String
 		  Return Self.mPath
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Tags() As Text()
-		  Dim Clone() As Text
-		  Redim Clone(Self.mTags.Ubound)
-		  For I As Integer = 0 To Self.mTags.Ubound
+		Function StatAddValue(Stat As Beacon.Stat) As Double
+		  Return Self.StatValue(Stat, Self.KeyAdd)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function StatAffinityValue(Stat As Beacon.Stat) As Double
+		  Return Self.StatValue(Stat, Self.KeyAffinity)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function StatBaseValue(Stat As Beacon.Stat) As Double
+		  Return Self.StatValue(Stat, Self.KeyBase)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function StatTamedValue(Stat As Beacon.Stat) As Double
+		  Return Self.StatValue(Stat, Self.KeyTamed)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function StatValue(Stat As Beacon.Stat, Key As String) As Double
+		  If Self.mStats = Nil Or Self.mStats.HasKey(Stat.Index) = False Then
+		    Return Self.MissingStatValue
+		  End If
+		  
+		  Dim Dict As Dictionary = Self.mStats.Value(Stat.Index)
+		  Return Dict.Lookup(Key, Self.MissingStatValue)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub StatValues(Stat As Beacon.Stat, ByRef Base As Double, Wild As Double, Tamed As Double, Add As Double, Affinity As Double)
+		  Base = Self.MissingStatValue
+		  Wild = Self.MissingStatValue
+		  Tamed = Self.MissingStatValue
+		  Add = Self.MissingStatValue
+		  Affinity = Self.MissingStatValue
+		  
+		  If Self.mStats = Nil Or Self.mStats.HasKey(Stat.Index) = False Then
+		    Return
+		  End If
+		  
+		  Dim Dict As Dictionary = Self.mStats.Value(Stat.Index)
+		  Base = Dict.Lookup("Base", Self.MissingStatValue)
+		  Wild = Dict.Lookup("Wild", Self.MissingStatValue)
+		  Tamed = Dict.Lookup("Tamed", Self.MissingStatValue)
+		  Add = Dict.Lookup("Add", Self.MissingStatValue)
+		  Affinity = Dict.Lookup("Affinity", Self.MissingStatValue)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function StatWildValue(Stat As Beacon.Stat) As Double
+		  Return Self.StatValue(Stat, Self.KeyWild)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function Tags() As String()
+		  Dim Clone() As String
+		  Redim Clone(Self.mTags.LastRowIndex)
+		  For I As Integer = 0 To Self.mTags.LastRowIndex
 		    Clone(I) = Self.mTags(I)
 		  Next
 		  Return Clone
@@ -141,36 +201,59 @@ Implements Beacon.Blueprint
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mIncubationTime As Xojo.Core.DateInterval
+		Protected mIncubationTime As UInt64
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mLabel As Text
+		Protected mLabel As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mMatureTime As Xojo.Core.DateInterval
+		Protected mMatureTime As UInt64
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mModID As Text
+		Protected mModID As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mModName As Text
+		Protected mModName As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mObjectID As Text
+		Protected mObjectID As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mPath As Text
+		Protected mPath As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mTags() As Text
+		Protected mStats As Dictionary
 	#tag EndProperty
+
+	#tag Property, Flags = &h1
+		Protected mTags() As String
+	#tag EndProperty
+
+
+	#tag Constant, Name = KeyAdd, Type = String, Dynamic = False, Default = \"Add", Scope = Public
+	#tag EndConstant
+
+	#tag Constant, Name = KeyAffinity, Type = String, Dynamic = False, Default = \"Affinity", Scope = Public
+	#tag EndConstant
+
+	#tag Constant, Name = KeyBase, Type = String, Dynamic = False, Default = \"Base", Scope = Public
+	#tag EndConstant
+
+	#tag Constant, Name = KeyTamed, Type = String, Dynamic = False, Default = \"Tamed", Scope = Public
+	#tag EndConstant
+
+	#tag Constant, Name = KeyWild, Type = String, Dynamic = False, Default = \"Wild", Scope = Public
+	#tag EndConstant
+
+	#tag Constant, Name = MissingStatValue, Type = Double, Dynamic = False, Default = \"-1", Scope = Public
+	#tag EndConstant
 
 
 	#tag ViewBehavior
@@ -178,7 +261,9 @@ Implements Beacon.Blueprint
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -186,12 +271,15 @@ Implements Beacon.Blueprint
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -199,6 +287,7 @@ Implements Beacon.Blueprint
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -206,6 +295,7 @@ Implements Beacon.Blueprint
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

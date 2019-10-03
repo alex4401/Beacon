@@ -5,7 +5,6 @@ Begin BeaconContainer CraftingCostEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,7 @@ Begin BeaconContainer CraftingCostEditor
       Caption         =   "Resources Required"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -65,7 +64,7 @@ Begin BeaconContainer CraftingCostEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -119,7 +118,7 @@ Begin BeaconContainer CraftingCostEditor
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
+      RowCount        =   "0"
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -150,7 +149,7 @@ Begin BeaconContainer CraftingCostEditor
       Caption         =   ""
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   21
       HelpTag         =   ""
       Index           =   -2147483648
@@ -179,12 +178,12 @@ End
 	#tag Method, Flags = &h21
 		Private Sub ShowAddResources()
 		  Dim Engrams() As Beacon.Engram
-		  For I As Integer = 0 To Self.mTarget.Ubound
-		    Engrams.Append(Self.mTarget.Resource(I))
+		  For I As Integer = 0 To Self.mTarget.LastRowIndex
+		    Engrams.AddRow(Self.mTarget.Resource(I))
 		  Next
 		  
 		  Dim NewEngrams() As Beacon.Engram = EngramSelectorDialog.Present(Self, "Resources", Engrams, RaiseEvent GetActiveMods, True)
-		  If NewEngrams = Nil Or NewEngrams.Ubound = -1 Then
+		  If NewEngrams = Nil Or NewEngrams.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
@@ -193,27 +192,27 @@ End
 		  Next
 		  
 		  Self.UpdateList()
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateList()
 		  Dim ScrollPosition As Integer = Self.List.ScrollPosition
-		  Dim Paths() As Text
-		  For I As Integer = 0 To Self.List.ListCount - 1
+		  Dim Paths() As String
+		  For I As Integer = 0 To Self.List.RowCount - 1
 		    If Self.List.Selected(I) Then
-		      Dim Resource As Beacon.Engram = Self.List.RowTag(I)
-		      Paths.Append(Resource.Path)
+		      Dim Resource As Beacon.Engram = Self.List.RowTagAt(I)
+		      Paths.AddRow(Resource.Path)
 		    End If
 		  Next
 		  
-		  Self.List.DeleteAllRows
-		  For I As Integer = 0 To Self.mTarget.Ubound
+		  Self.List.RemoveAllRows
+		  For I As Integer = 0 To Self.mTarget.LastRowIndex
 		    Self.List.AddRow(Self.mTarget.Resource(I).Label, Str(Self.mTarget.Quantity(I), "-0"))
-		    Self.List.CellCheck(Self.List.LastIndex, Self.ColumnRequireExact) = Self.mTarget.RequireExactResource(I)
-		    Self.List.Selected(Self.List.LastIndex) = Paths.IndexOf(Self.mTarget.Resource(I).Path) > -1
-		    Self.List.RowTag(Self.List.LastIndex) = Self.mTarget.Resource(I)
+		    Self.List.CellCheckBoxValueAt(Self.List.LastAddedRowIndex, Self.ColumnRequireExact) = Self.mTarget.RequireExactResource(I)
+		    Self.List.Selected(Self.List.LastAddedRowIndex) = Paths.IndexOf(Self.mTarget.Resource(I).Path) > -1
+		    Self.List.RowTagAt(Self.List.LastAddedRowIndex) = Self.mTarget.Resource(I)
 		  Next
 		  Self.List.Sort
 		  Self.List.ScrollPosition = ScrollPosition
@@ -223,8 +222,8 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateStatus()
-		  Dim TotalItems As Integer = Self.List.ListCount
-		  Dim SelectedItems As Integer = Self.List.SelCount
+		  Dim TotalItems As Integer = Self.List.RowCount
+		  Dim SelectedItems As Integer = Self.List.SelectedRowCount
 		  
 		  Dim Noun As String = If(TotalItems = 1, "Resource", "Resources")
 		  
@@ -238,7 +237,7 @@ End
 
 
 	#tag Hook, Flags = &h0
-		Event GetActiveMods() As Beacon.TextList
+		Event GetActiveMods() As Beacon.StringList
 	#tag EndHook
 
 
@@ -260,7 +259,7 @@ End
 			  
 			  If Value = Nil Then
 			    Self.mTarget = Nil
-			    Self.List.DeleteAllRows
+			    Self.List.RemoveAllRows
 			    Self.Enabled = False
 			    Return
 			  End If
@@ -294,7 +293,7 @@ End
 
 #tag Events Header
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddResource"
 		    Self.ShowAddResources()
@@ -302,8 +301,8 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
-		  Dim AddButton As New BeaconToolbarItem("AddResource", IconAdd)
+		Sub Opening()
+		  Dim AddButton As New BeaconToolbarItem("AddResource", IconToolbarAdd)
 		  AddButton.HelpTag = "Add resources to this crafting cost."
 		  Me.LeftItems.Append(AddButton)
 		End Sub
@@ -311,20 +310,20 @@ End
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Open()
-		  Me.ColumnAlignment(Self.ColumnQuantity) = Listbox.AlignRight
-		  Me.ColumnType(Self.ColumnQuantity) = Listbox.TypeEditable
-		  Me.ColumnType(Self.ColumnRequireExact) = Listbox.TypeCheckbox
+		Sub Opening()
+		  Me.ColumnAlignmentAt(Self.ColumnQuantity) = Listbox.Alignments.Right
+		  Me.ColumnTypeAt(Self.ColumnQuantity) = Listbox.CellTypes.TextField
+		  Me.ColumnTypeAt(Self.ColumnRequireExact) = Listbox.CellTypes.CheckBox
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function CanCopy() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
@@ -336,10 +335,10 @@ End
 		Sub PerformClear(Warn As Boolean)
 		  If Warn Then
 		    Dim Message As String
-		    If Me.SelCount = 1 Then
-		      Message = "Are you sure you want to remove """ + Me.Cell(Me.ListIndex, 0) + """ from the required resources?"
+		    If Me.SelectedRowCount = 1 Then
+		      Message = "Are you sure you want to remove """ + Me.CellValueAt(Me.SelectedRowIndex, 0) + """ from the required resources?"
 		    Else
-		      Message = "Are you sure you want to delete these " + Str(Me.SelCount, "-0") + " resources from the crafting cost?"
+		      Message = "Are you sure you want to delete these " + Str(Me.SelectedRowCount, "-0") + " resources from the crafting cost?"
 		    End If
 		    
 		    If Not Self.ShowConfirm(Message, "This action cannot be undone.", "Delete", "Cancel") Then
@@ -347,37 +346,37 @@ End
 		    End If
 		  End If
 		  
-		  For I As Integer = Me.ListCount - 1 DownTo 0
+		  For I As Integer = Me.RowCount - 1 DownTo 0
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Engram As Beacon.Engram = Me.RowTag(I)
+		    Dim Engram As Beacon.Engram = Me.RowTagAt(I)
 		    Self.mTarget.Remove(Engram)
-		    Me.RemoveRow(I)
-		    Self.ContentsChanged = True
+		    Me.RemoveRowAt(I)
+		    Self.Changed = True
 		  Next
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub PerformCopy(Board As Clipboard)
-		  Dim Dicts() As Xojo.Core.Dictionary
-		  For I As Integer = 0 To Me.ListCount - 1
+		  Dim Dicts() As Dictionary
+		  For I As Integer = 0 To Me.RowCount - 1
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Engram As Beacon.Engram = Me.RowTag(I)
+		    Dim Engram As Beacon.Engram = Me.RowTagAt(I)
 		    Dim Idx As Integer = Self.mTarget.IndexOf(Engram)
 		    
-		    Dim Dict As New Xojo.Core.Dictionary
+		    Dim Dict As New Dictionary
 		    Dict.Value("Class") = Engram.ClassString
 		    Dict.Value("Quantity") = Self.mTarget.Quantity(Idx)
 		    Dict.Value("Exact") = Self.mTarget.RequireExactResource(Idx)
-		    Dicts.Append(Dict)
+		    Dicts.AddRow(Dict)
 		  Next
 		  
-		  Board.AddRawData(Xojo.Data.GenerateJSON(Dicts), Self.kClipboardType)
+		  Board.AddRawData(Beacon.GenerateJSON(Dicts, False), Self.kClipboardType)
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -386,13 +385,13 @@ End
 		    Return
 		  End If
 		  
-		  Dim Dicts() As Auto
+		  Dim Dicts() As Variant
 		  Try
 		    Dim Contents As String = Board.RawData(Self.kClipboardType).DefineEncoding(Encodings.UTF8)
-		    Dicts = Xojo.Data.ParseJSON(Contents.ToText)
+		    Dicts = Beacon.ParseJSON(Contents)
 		    
-		    For Each Dict As Xojo.Core.Dictionary In Dicts
-		      Dim ClassString As Text = Dict.Value("Class")
+		    For Each Dict As Dictionary In Dicts
+		      Dim ClassString As String = Dict.Value("Class")
 		      Dim Engram As Beacon.Engram = Beacon.Data.GetEngramByClass(ClassString)
 		      If Engram = Nil Then
 		        Engram = Beacon.Engram.CreateUnknownEngram(ClassString)
@@ -404,46 +403,112 @@ End
 		    Next
 		    
 		    Self.UpdateList()
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  Catch Err As RuntimeException
 		    Return
 		  End Try
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
+		Sub SelectionChanged()
 		  Self.UpdateStatus()
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub CellAction(row As Integer, column As Integer)
-		  Dim Engram As Beacon.Engram = Me.RowTag(Row)
+		  Dim Engram As Beacon.Engram = Me.RowTagAt(Row)
 		  Dim Idx As Integer = Self.mTarget.IndexOf(Engram)
 		  Select Case Column
 		  Case Self.ColumnQuantity
-		    Self.mTarget.Quantity(Idx) = Val(Me.Cell(Row, Column))
-		    Self.ContentsChanged = True
+		    Self.mTarget.Quantity(Idx) = Val(Me.CellValueAt(Row, Column))
+		    Self.Changed = True
 		  Case Self.ColumnRequireExact
-		    Self.mTarget.RequireExactResource(Idx) = Me.CellCheck(Row, Column)
-		    Self.ContentsChanged = True
+		    Self.mTarget.RequireExactResource(Idx) = Me.CellCheckBoxValueAt(Row, Column)
+		    Self.Changed = True
 		  End Select
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -451,6 +516,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -458,53 +524,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -512,6 +596,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -519,7 +604,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -527,7 +612,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -535,72 +620,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -608,7 +636,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -616,6 +644,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

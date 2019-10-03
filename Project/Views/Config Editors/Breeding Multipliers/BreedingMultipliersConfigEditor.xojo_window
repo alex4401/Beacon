@@ -5,7 +5,6 @@ Begin ConfigEditor BreedingMultipliersConfigEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -682,7 +681,6 @@ Begin ConfigEditor BreedingMultipliersConfigEditor
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -1093,7 +1091,6 @@ Begin ConfigEditor BreedingMultipliersConfigEditor
       Caption         =   "Breeding Multipliers"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -1124,7 +1121,6 @@ Begin ConfigEditor BreedingMultipliersConfigEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -1377,7 +1373,7 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.MinimumWidth = 744
 		  Self.MinimumHeight = 544
 		End Sub
@@ -1392,16 +1388,16 @@ End
 	#tag Event
 		Sub SetupUI()
 		  Dim Config As BeaconConfigs.BreedingMultipliers = Self.Config(False)
-		  Self.EggLayPeriodField.Text = Format(Config.LayEggIntervalMultiplier, "0.0#####")
-		  Self.FoodConsumptionField.Text = Format(Config.BabyFoodConsumptionSpeedMultiplier, "0.0#####")
-		  Self.ImprintGracePeriodField.Text = Format(Config.BabyCuddleGracePeriodMultiplier, "0.0#####")
-		  Self.ImprintLossSpeedField.Text = Format(Config.BabyCuddleLoseImprintQualitySpeedMultiplier, "0.0#####")
-		  Self.ImprintPeriodField.Text = Format(Config.BabyCuddleIntervalMultiplier, "0.0#####")
-		  Self.ImprintStatScaleField.Text = Format(Config.BabyImprintingStatScaleMultiplier, "0.0#####")
-		  Self.IncubationSpeedField.Text = Format(Config.EggHatchSpeedMultiplier, "0.0#####")
-		  Self.MatureSpeedField.Text = Format(Config.BabyMatureSpeedMultiplier, "0.0#####")
-		  Self.MatingSpeedField.Text = Format(Config.MatingSpeedMultiplier, "0.0#####")
-		  Self.MatingIntervalField.Text = Format(Config.MatingIntervalMultiplier, "0.0#####")
+		  Self.EggLayPeriodField.Value = Format(Config.LayEggIntervalMultiplier, "0.0#####")
+		  Self.FoodConsumptionField.Value = Format(Config.BabyFoodConsumptionSpeedMultiplier, "0.0#####")
+		  Self.ImprintGracePeriodField.Value = Format(Config.BabyCuddleGracePeriodMultiplier, "0.0#####")
+		  Self.ImprintLossSpeedField.Value = Format(Config.BabyCuddleLoseImprintQualitySpeedMultiplier, "0.0#####")
+		  Self.ImprintPeriodField.Value = Format(Config.BabyCuddleIntervalMultiplier, "0.0#####")
+		  Self.ImprintStatScaleField.Value = Format(Config.BabyImprintingStatScaleMultiplier, "0.0#####")
+		  Self.IncubationSpeedField.Value = Format(Config.EggHatchSpeedMultiplier, "0.0#####")
+		  Self.MatureSpeedField.Value = Format(Config.BabyMatureSpeedMultiplier, "0.0#####")
+		  Self.MatingSpeedField.Value = Format(Config.MatingSpeedMultiplier, "0.0#####")
+		  Self.MatingIntervalField.Value = Format(Config.MatingIntervalMultiplier, "0.0#####")
 		  Self.UpdateStats()
 		End Sub
 	#tag EndEvent
@@ -1409,7 +1405,7 @@ End
 
 	#tag Method, Flags = &h1
 		Protected Function Config(ForWriting As Boolean) As BeaconConfigs.BreedingMultipliers
-		  Static ConfigName As Text = BeaconConfigs.BreedingMultipliers.ConfigName
+		  Static ConfigName As String = BeaconConfigs.BreedingMultipliers.ConfigName
 		  
 		  Dim Document As Beacon.Document = Self.Document
 		  Dim Config As BeaconConfigs.BreedingMultipliers
@@ -1433,58 +1429,64 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ConfigLabel() As Text
+		Function ConfigLabel() As String
 		  Return Language.LabelForConfig(BeaconConfigs.BreedingMultipliers.ConfigName)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function ParseDouble(Input As String, ByRef Value As Double) As Boolean
+		  If IsNumeric(Input) Then
+		    Value = CDbl(Input)
+		    Return True
+		  Else
+		    Return False
+		  End If
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateStats()
 		  Dim CuddlePeriod As Integer = LocalData.SharedInstance.GetIntegerVariable("Cuddle Period") * Self.Config(False).BabyCuddleIntervalMultiplier
-		  Dim Creatures() As Beacon.Creature = LocalData.SharedInstance.SearchForCreatures("", New Beacon.TextList)
-		  Dim SelectedClass As Text
-		  If CreaturesList.ListIndex > -1 Then
-		    SelectedClass = CreaturesList.RowTag(CreaturesList.ListIndex)
+		  Dim Creatures() As Beacon.Creature = LocalData.SharedInstance.SearchForCreatures("", New Beacon.StringList)
+		  Dim SelectedClass As String
+		  If CreaturesList.SelectedRowIndex > -1 Then
+		    SelectedClass = CreaturesList.RowTagAt(CreaturesList.SelectedRowIndex)
 		  End If
 		  Dim Position As Integer = Self.CreaturesList.ScrollPosition
-		  Self.CreaturesList.DeleteAllRows
+		  Self.CreaturesList.RemoveAllRows
 		  
 		  Dim IncubationMultiplier As Double = Self.Config(False).EggHatchSpeedMultiplier
 		  Dim MatureMultiplier As Double = Self.Config(False).BabyMatureSpeedMultiplier
 		  
 		  For Each Creature As Beacon.Creature In Creatures
-		    If Creature.IncubationTime = Nil Or Creature.MatureTime = Nil Then
+		    If Creature.IncubationTime = 0 Or Creature.MatureTime = 0 Then
 		      Continue
 		    End If
 		    
-		    Dim IncubationPeriod As Xojo.Core.DateInterval = Creature.IncubationTime
-		    Dim IncubationSeconds As UInt64 = Beacon.IntervalToSeconds(IncubationPeriod) / IncubationMultiplier
-		    Dim MaturePeriod As Xojo.Core.DateInterval = Creature.MatureTime
-		    Dim MatureSeconds As UInt64 = Beacon.IntervalToSeconds(MaturePeriod) / MatureMultiplier
+		    Dim IncubationSeconds As UInt64 = Creature.IncubationTime / IncubationMultiplier
+		    Dim MatureSeconds As UInt64 = Creature.MatureTime / MatureMultiplier
 		    
 		    Dim MaxCuddles As Integer = Floor(MatureSeconds / CuddlePeriod)
 		    Dim PerCuddle As Double = 0
 		    If MaxCuddles > 0 Then
-		       PerCuddle = 1 / MaxCuddles
+		      PerCuddle = 1 / MaxCuddles
 		    End If
 		    Dim MaxImprint As Double = MaxCuddles * PerCuddle
 		    
-		    IncubationPeriod = Beacon.SecondsToInterval(IncubationSeconds)
-		    MaturePeriod = Beacon.SecondsToInterval(MatureSeconds)
-		    
-		    CreaturesList.AddRow(Creature.Label, Beacon.IntervalToString(IncubationPeriod), Beacon.IntervalToString(MaturePeriod), If(MaxCuddles = 0, "Can't Imprint", Format(PerCuddle, "0%")), If(PerCuddle = 0, "", Format(MaxImprint, "0%")))
-		    CreaturesList.CellTag(CreaturesList.LastIndex, Self.ColumnIncubationTime) = IncubationSeconds
-		    CreaturesList.CellTag(CreaturesList.LastIndex, Self.ColumnMatureTime) = MatureSeconds
-		    CreaturesList.RowTag(CreaturesList.LastIndex) = Creature.ClassString
+		    CreaturesList.AddRow(Creature.Label, Beacon.SecondsToString(IncubationSeconds), Beacon.SecondsToString(MatureSeconds), If(MaxCuddles = 0, "Can't Imprint", Format(PerCuddle, "0%")), If(PerCuddle = 0, "", Format(MaxImprint, "0%")))
+		    CreaturesList.CellTagAt(CreaturesList.LastAddedRowIndex, Self.ColumnIncubationTime) = IncubationSeconds
+		    CreaturesList.CellTagAt(CreaturesList.LastAddedRowIndex, Self.ColumnMatureTime) = MatureSeconds
+		    CreaturesList.RowTagAt(CreaturesList.LastAddedRowIndex) = Creature.ClassString
 		    If Creature.ClassString = SelectedClass Then
-		      CreaturesList.ListIndex = CreaturesList.LastIndex
+		      CreaturesList.SelectedRowIndex = CreaturesList.LastAddedRowIndex
 		    End If
 		  Next
 		  
 		  CreaturesList.ScrollPosition = Position
 		  CreaturesList.Sort
 		  
-		  Self.ImprintPeriodPreviewField.Text = Beacon.IntervalToString(Beacon.SecondsToInterval(CuddlePeriod))
+		  Self.ImprintPeriodPreviewField.Value = Beacon.SecondsToString(CuddlePeriod)
 		End Sub
 	#tag EndMethod
 
@@ -1514,19 +1516,19 @@ End
 
 #tag Events MatureSpeedField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).BabyMatureSpeedMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		  Self.UpdateStats()
 		End Sub
@@ -1534,19 +1536,19 @@ End
 #tag EndEvents
 #tag Events IncubationSpeedField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).EggHatchSpeedMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		  Self.UpdateStats()
 		End Sub
@@ -1554,57 +1556,57 @@ End
 #tag EndEvents
 #tag Events EggLayPeriodField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).LayEggIntervalMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events FoodConsumptionField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).BabyFoodConsumptionSpeedMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ImprintPeriodField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).BabyCuddleIntervalMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		  Self.UpdateStats()
 		End Sub
@@ -1612,67 +1614,67 @@ End
 #tag EndEvents
 #tag Events ImprintStatScaleField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).BabyImprintingStatScaleMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ImprintGracePeriodField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).BabyCuddleGracePeriodMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ImprintLossSpeedField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).BabyCuddleLoseImprintQualitySpeedMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events CreaturesList
 	#tag Event
-		Function CompareRows(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
+		Function RowComparison(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
 		  If Column = Self.ColumnIncubationTime Or Column = Self.ColumnMatureTime Then
-		    Dim Period1 As UInt64 = Me.CellTag(Row1, Column)
-		    Dim Period2 As UInt64 = Me.CellTag(Row2, Column)
+		    Dim Period1 As UInt64 = Me.CellTagAt(Row1, Column)
+		    Dim Period2 As UInt64 = Me.CellTagAt(Row2, Column)
 		    If Period1 = Period2 Then
 		      Result = 0
 		    ElseIf Period1 > Period2 Then
@@ -1689,67 +1691,141 @@ End
 #tag EndEvents
 #tag Events Header
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AutoTuneButton"
 		    Dim Interval As Double = BreedingTunerDialog.Present(Self, Self.Config(False).BabyMatureSpeedMultiplier)
 		    If Interval > 0 Then
-		      Self.ImprintPeriodField.Text = Interval.PrettyText
+		      Self.ImprintPeriodField.Value = Interval.PrettyText
 		      Self.UpdateStats
 		    End If
+		  Case "ShareLinkButton"
+		    Dim Config As BeaconConfigs.BreedingMultipliers = Self.Config(False)
+		    Dim Format As String = "-0.0#######"
+		    Dim MatureSpeedMultiplier As String = Str(Config.BabyMatureSpeedMultiplier, Format)
+		    Dim IncubationSpeedMultiplier As String = Str(Config.EggHatchSpeedMultiplier, Format)
+		    Dim ImprintPeriodMultiplier As String = Str(Config.BabyCuddleIntervalMultiplier, Format)
+		    LinkSharingDialog.Present(Self, Beacon.WebURL("/tools/breeding?msm=" + EncodeURLComponent(MatureSpeedMultiplier) + "&ism=" + EncodeURLComponent(IncubationSpeedMultiplier) + "&ipm=" + EncodeURLComponent(ImprintPeriodMultiplier)))
 		  End Select
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.LeftItems.Append(New BeaconToolbarItem("AutoTuneButton", IconToolbarWizard, "Automatically compute imprint interval to give at least a specified imprinting on all creatures."))
+		  Me.LeftItems.Append(New BeaconToolbarItem("ShareLinkButton", IconToolbarShare, "Generates a link so you can share this breeding chart."))
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events MatingSpeedField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).MatingSpeedMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events MatingIntervalField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
-		  Dim Value As Double = CDbl(Me.Text)
-		  If Value = 0 Then
+		  Dim Value As Double
+		  If Not Self.ParseDouble(Me.Value, Value) Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Self.Config(True).MatingIntervalMultiplier = Value
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.SettingUp = False
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -1757,6 +1833,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -1764,10 +1841,13 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -1775,15 +1855,17 @@ End
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1791,6 +1873,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -1798,53 +1881,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -1852,6 +1953,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -1859,7 +1961,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1867,7 +1969,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -1875,72 +1977,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -1948,7 +1993,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -1956,6 +2001,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

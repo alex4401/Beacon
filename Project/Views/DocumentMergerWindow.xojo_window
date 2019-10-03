@@ -3,7 +3,6 @@ Begin BeaconDialog DocumentMergerWindow
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   8
    FullScreen      =   False
@@ -11,7 +10,7 @@ Begin BeaconDialog DocumentMergerWindow
    HasBackColor    =   False
    Height          =   400
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
    MaxHeight       =   32000
    MaximizeButton  =   False
@@ -22,7 +21,9 @@ Begin BeaconDialog DocumentMergerWindow
    MinimizeButton  =   False
    MinWidth        =   600
    Placement       =   1
+   Resizable       =   "True"
    Resizeable      =   False
+   SystemUIVisible =   "True"
    Title           =   "Import From Document"
    Visible         =   True
    Width           =   600
@@ -93,7 +94,6 @@ Begin BeaconDialog DocumentMergerWindow
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -118,7 +118,7 @@ Begin BeaconDialog DocumentMergerWindow
    Begin UITweaks.ResizedPushButton ActionButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "OK"
       Default         =   True
@@ -150,7 +150,7 @@ Begin BeaconDialog DocumentMergerWindow
    Begin UITweaks.ResizedPushButton CancelButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Cancel"
       Default         =   False
@@ -184,7 +184,7 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.SwapButtons()
 		End Sub
 	#tag EndEvent
@@ -202,7 +202,7 @@ End
 
 	#tag Method, Flags = &h0
 		Shared Sub Present(Parent As Window, SourceDocuments() As Beacon.Document, DestinationDocument As Beacon.Document, Callback As MergeFinishedCallback = Nil)
-		  Dim OAuthData As New Xojo.Core.Dictionary
+		  Dim OAuthData As New Dictionary
 		  For Each Document As Beacon.Document In SourceDocuments
 		    For I As Integer = 0 To Document.ServerProfileCount - 1
 		      Dim Profile As Beacon.ServerProfile = Document.ServerProfile(I)
@@ -217,15 +217,15 @@ End
 		    MapMask = MapMask Or Document.MapCompatibility
 		  Next
 		  Dim NewMaps() As Beacon.Map = Beacon.Maps.ForMask(MapMask)
-		  For I As Integer = NewMaps.Ubound DownTo 0
+		  For I As Integer = NewMaps.LastRowIndex DownTo 0
 		    If DestinationDocument.SupportsMap(NewMaps(I)) Then
-		      NewMaps.Remove(I)
+		      NewMaps.RemoveRowAt(I)
 		    End If
 		  Next
 		  Dim OldMaps() As Beacon.Map = DestinationDocument.Maps
-		  For I As Integer = OldMaps.Ubound DownTo 0
+		  For I As Integer = OldMaps.LastRowIndex DownTo 0
 		    If OldMaps(I).Matches(MapMask) Then
-		      OldMaps.Remove(I)
+		      OldMaps.RemoveRowAt(I)
 		    End If
 		  Next
 		  
@@ -234,7 +234,7 @@ End
 		  Win.mOAuthData = OAuthData
 		  Win.mCallback = Callback
 		  Dim Enabled As Boolean
-		  Dim UsePrefixes As Boolean = SourceDocuments.Ubound > 0
+		  Dim UsePrefixes As Boolean = SourceDocuments.LastRowIndex > 0
 		  For Each Document As Beacon.Document In SourceDocuments
 		    Dim Prefix As String = If(UsePrefixes, Document.Title + ": ", "")
 		    Dim Configs() As Beacon.ConfigGroup = Document.ImplementedConfigs
@@ -248,9 +248,9 @@ End
 		        CellContent = CellContent + EndOfLine + "This imported config is not perfect. Beacon will make a close approximation."
 		      End If
 		      Win.List.AddRow("", CellContent)
-		      Win.List.CellCheck(Win.List.LastIndex, 0) = UsePrefixes = False And Config.DefaultImported And (CurrentConfig = Nil Or CurrentConfig.IsImplicit)
-		      Win.List.RowTag(Win.List.LastIndex) = Config
-		      Enabled = Enabled Or Win.List.CellCheck(Win.List.LastIndex, 0)
+		      Win.List.CellCheckBoxValueAt(Win.List.LastAddedRowIndex, 0) = UsePrefixes = False And Config.DefaultImported And (CurrentConfig = Nil Or CurrentConfig.IsImplicit)
+		      Win.List.RowTagAt(Win.List.LastAddedRowIndex) = Config
+		      Enabled = Enabled Or Win.List.CellCheckBoxValueAt(Win.List.LastAddedRowIndex, 0)
 		    Next
 		    For I As Integer = 0 To Document.ServerProfileCount - 1
 		      For X As Integer = 0 To DestinationDocument.ServerProfileCount - 1
@@ -259,22 +259,22 @@ End
 		        End If
 		      Next
 		      Win.List.AddRow("", "Server Link: " + Document.ServerProfile(I).Name)
-		      Win.List.CellCheck(Win.List.LastIndex, 0) = True
-		      Win.List.RowTag(Win.List.LastIndex) = Document.ServerProfile(I)
-		      Enabled = Enabled Or Win.List.CellCheck(Win.List.LastIndex, 0)
+		      Win.List.CellCheckBoxValueAt(Win.List.LastAddedRowIndex, 0) = True
+		      Win.List.RowTagAt(Win.List.LastAddedRowIndex) = Document.ServerProfile(I)
+		      Enabled = Enabled Or Win.List.CellCheckBoxValueAt(Win.List.LastAddedRowIndex, 0)
 		    Next
 		  Next
 		  For Each Map As Beacon.Map In NewMaps
 		    Win.List.AddRow("", "Add Map: " + Map.Name)
-		    Win.List.CellCheck(Win.List.LastIndex, 0) = True
-		    Win.List.RowTag(Win.List.LastIndex) = "Map+" + Str(Map.Mask)
-		    Enabled = Enabled Or Win.List.CellCheck(Win.List.LastIndex, 0)
+		    Win.List.CellCheckBoxValueAt(Win.List.LastAddedRowIndex, 0) = True
+		    Win.List.RowTagAt(Win.List.LastAddedRowIndex) = "Map+" + Str(Map.Mask)
+		    Enabled = Enabled Or Win.List.CellCheckBoxValueAt(Win.List.LastAddedRowIndex, 0)
 		  Next
 		  For Each Map As Beacon.Map In OldMaps
 		    Win.List.AddRow("", "Remove Map: " + Map.Name)
-		    Win.List.CellCheck(Win.List.LastIndex, 0) = True
-		    Win.List.RowTag(Win.List.LastIndex) = "Map-" + Str(Map.Mask)
-		    Enabled = Enabled Or Win.List.CellCheck(Win.List.LastIndex, 0)
+		    Win.List.CellCheckBoxValueAt(Win.List.LastAddedRowIndex, 0) = True
+		    Win.List.RowTagAt(Win.List.LastAddedRowIndex) = "Map-" + Str(Map.Mask)
+		    Enabled = Enabled Or Win.List.CellCheckBoxValueAt(Win.List.LastAddedRowIndex, 0)
 		  Next
 		  Win.ActionButton.Enabled = Enabled
 		  
@@ -303,7 +303,7 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mOAuthData As Xojo.Core.Dictionary
+		Private mOAuthData As Dictionary
 	#tag EndProperty
 
 
@@ -311,8 +311,8 @@ End
 
 #tag Events List
 	#tag Event
-		Sub Open()
-		  Me.ColumnType(0) = Listbox.TypeCheckbox
+		Sub Opening()
+		  Me.ColumnTypeAt(0) = Listbox.CellTypes.CheckBox
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -320,8 +320,8 @@ End
 		  #Pragma Unused Row
 		  #Pragma Unused Column
 		  
-		  For I As Integer = 0 To Me.ListCount - 1
-		    If Me.CellCheck(I, 0) Then
+		  For I As Integer = 0 To Me.RowCount - 1
+		    If Me.CellCheckBoxValueAt(I, 0) Then
 		      Self.ActionButton.Enabled = True
 		      Return
 		    End If
@@ -333,15 +333,15 @@ End
 #tag EndEvents
 #tag Events ActionButton
 	#tag Event
-		Sub Action()
-		  Dim PreviousMods As New Beacon.TextList(Self.mDestination.Mods)
+		Sub Pressed()
+		  Dim PreviousMods As New Beacon.StringList(Self.mDestination.Mods)
 		  
-		  For I As Integer = 0 To Self.List.ListCount - 1
-		    If Not Self.List.CellCheck(I, 0) Or Self.List.RowTag(I) = Nil Then
+		  For I As Integer = 0 To Self.List.RowCount - 1
+		    If Not Self.List.CellCheckBoxValueAt(I, 0) Or Self.List.RowTagAt(I) = Nil Then
 		      Continue
 		    End If
 		    
-		    Dim Tag As Variant = Self.List.RowTag(I)
+		    Dim Tag As Variant = Self.List.RowTagAt(I)
 		    Select Case Tag.Type
 		    Case Variant.TypeObject
 		      Select Case Tag
@@ -353,7 +353,7 @@ End
 		        Self.mDestination.Add(Profile)
 		        
 		        If Profile.OAuthProvider <> "" And Self.mOAuthData.HasKey(Profile.OAuthProvider) Then
-		          Dim OAuthData As Xojo.Core.Dictionary = Self.mOAuthData.Value(Profile.OAuthProvider)
+		          Dim OAuthData As Dictionary = Self.mOAuthData.Value(Profile.OAuthProvider)
 		          If OAuthData <> Nil Then
 		            Self.mDestination.OAuthData(Profile.OAuthProvider) = OAuthData
 		          End If
@@ -362,8 +362,8 @@ End
 		    Case Variant.TypeString
 		      Dim StringValue As String = Tag.StringValue
 		      If StringValue.BeginsWith("Map") Then
-		        Dim Operator As String = StringValue.Mid(4, 1)
-		        Dim Mask As UInt64 = Val(StringValue.Mid(5))
+		        Dim Operator As String = StringValue.Middle(3, 1)
+		        Dim Mask As UInt64 = Val(StringValue.Middle(4))
 		        If Operator = "+" Then
 		          Self.mDestination.MapCompatibility = Self.mDestination.MapCompatibility Or Mask
 		        Else
@@ -390,81 +390,66 @@ End
 #tag EndEvents
 #tag Events CancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.Close
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="Name"
+		Name="Resizeable"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Interfaces"
+		Name="MenuBarVisible"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Deprecated"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Super"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Width"
-		Visible=true
-		Group="Size"
-		InitialValue="600"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinWidth"
+		Name="MinimumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinHeight"
+		Name="MinimumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
+		Name="MaximumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxHeight"
+		Name="MaximumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -481,78 +466,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Title"
-		Visible=true
-		Group="Frame"
-		InitialValue="Untitled"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasMinimizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinimizeButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
+		Name="HasFullScreenButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -563,61 +513,123 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Super"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Width"
+		Visible=true
+		Group="Size"
+		InitialValue="600"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Title"
+		Visible=true
+		Group="Frame"
+		InitialValue="Untitled"
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Visible"
 		Visible=true
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
+		Visible=false
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MenuBar"
 		Visible=true
 		Group="Menus"
+		InitialValue=""
 		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Visible=true
-		Group="Deprecated"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

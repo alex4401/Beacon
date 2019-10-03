@@ -5,7 +5,6 @@ Begin ServerViewContainer NitradoServerView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -42,7 +41,7 @@ Begin ServerViewContainer NitradoServerView
       Caption         =   "Untitled"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -73,7 +72,7 @@ Begin ServerViewContainer NitradoServerView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -181,7 +180,7 @@ Begin ServerViewContainer NitradoServerView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -286,29 +285,20 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
-		  If Self.mBrowser <> Nil And Self.mBrowser.Value <> Nil And Self.mBrowser.Value IsA MiniBrowser Then
-		    MiniBrowser(Self.mBrowser.Value).Close
-		    Self.mBrowser = Nil
-		  End If
-		End Sub
-	#tag EndEvent
-
-	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.Auth.Provider = Beacon.OAuth2Client.ProviderNitrado
 		  Self.Auth.AuthData = Self.mDocument.OAuthData("Nitrado")
-		  Self.Auth.Authenticate
+		  Self.Auth.Authenticate(App.IdentityManager.CurrentIdentity)
 		  
 		  Self.Controls.Caption = Self.mProfile.Name
 		  
-		  Self.ServerNameField.Text = Self.mProfile.Name
+		  Self.ServerNameField.Value = Self.mProfile.Name
 		End Sub
 	#tag EndEvent
 
 
 	#tag Method, Flags = &h21
-		Private Sub Callback_ServerStatus(URL As Text, Status As Integer, Content As Xojo.Core.MemoryBlock, Tag As Auto)
+		Private Sub Callback_ServerStatus(URL As String, Status As Integer, Content As MemoryBlock, Tag As Variant)
 		  #Pragma Unused URL
 		  #Pragma Unused Tag
 		  
@@ -321,48 +311,47 @@ End
 		  End If
 		  
 		  Try
-		    Dim TextContent As Text = Xojo.Core.TextEncoding.UTF8.ConvertDataToText(Content, False)
-		    Dim Response As Xojo.Core.Dictionary = Xojo.Data.ParseJSON(TextContent)
-		    Dim Data As Xojo.Core.Dictionary = Response.Value("data")
-		    Dim GameServer As Xojo.Core.Dictionary = Data.Value("gameserver")
+		    Dim Response As Dictionary = Beacon.ParseJSON(Content)
+		    Dim Data As Dictionary = Response.Value("data")
+		    Dim GameServer As Dictionary = Data.Value("gameserver")
 		    
-		    Dim ServerStatus As Text = GameServer.Value("status")
+		    Dim ServerStatus As String = GameServer.Value("status")
 		    Dim Started, Enabled As Boolean
 		    Select Case ServerStatus
 		    Case "started"
-		      Self.ServerStatusField.Text = "Running"
+		      Self.ServerStatusField.Value = "Running"
 		      Started = True
 		      Enabled = True
 		    Case "stopped"
-		      Self.ServerStatusField.Text = "Stopped"
+		      Self.ServerStatusField.Value = "Stopped"
 		      Started = False
 		      Enabled = True
 		    Case "stopping"
-		      Self.ServerStatusField.Text = "Stopping"
+		      Self.ServerStatusField.Value = "Stopping"
 		      Started = True
 		      Enabled = False
 		    Case "restarting"
-		      Self.ServerStatusField.Text = "Restarting"
+		      Self.ServerStatusField.Value = "Restarting"
 		      Started = False
 		      Enabled = False
 		    Case "suspended"
-		      Self.ServerStatusField.Text = "Suspended"
+		      Self.ServerStatusField.Value = "Suspended"
 		      Started = False
 		      Enabled = False
 		    Case "guardian_locked"
-		      Self.ServerStatusField.Text = "Locked by Guardian"
+		      Self.ServerStatusField.Value = "Locked by Guardian"
 		      Started = False
 		      Enabled = False
 		    Case "gs_installation"
-		      Self.ServerStatusField.Text = "Switching games"
+		      Self.ServerStatusField.Value = "Switching games"
 		      Started = False
 		      Enabled = False
 		    Case "backup_restore"
-		      Self.ServerStatusField.Text = "Restoring from backup"
+		      Self.ServerStatusField.Value = "Restoring from backup"
 		      Started = False
 		      Enabled = False
 		    Case "backup_creation"
-		      Self.ServerStatusField.Text = "Creating backup"
+		      Self.ServerStatusField.Value = "Creating backup"
 		      Started = False
 		      Enabled = False
 		    End Select
@@ -374,15 +363,15 @@ End
 		    Self.Controls.PowerButton.Enabled = False
 		    Self.Controls.PowerButton.Toggled = False
 		    Self.Controls.PowerButton.HelpTag = "Server state unknown. Cannot start or stop."
-		    Self.ServerStatusField.Text = "Unknown"
+		    Self.ServerStatusField.Value = "Unknown"
 		  End Try
 		  
-		  Self.RefreshTimer.Mode = Timer.ModeSingle
+		  Self.RefreshTimer.RunMode = Timer.RunModes.Single
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Callback_ServerToggle(URL As Text, Status As Integer, Content As Xojo.Core.MemoryBlock, Tag As Auto)
+		Private Sub Callback_ServerToggle(URL As String, Status As Integer, Content As MemoryBlock, Tag As Variant)
 		  #Pragma Unused URL
 		  #Pragma Unused Content
 		  #Pragma Unused Tag
@@ -426,20 +415,20 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub RefreshServerStatus()
-		  Dim Headers As New Xojo.Core.Dictionary
+		  Dim Headers As New Dictionary
 		  Headers.Value("Authorization") = "Bearer " + Self.Auth.AccessToken
 		  
-		  SimpleHTTP.Get("https://api.nitrado.net/services/" + Self.mProfile.ServiceID.ToText + "/gameservers", AddressOf Callback_ServerStatus, Nil, Headers)
+		  SimpleHTTP.Get("https://api.nitrado.net/services/" + Self.mProfile.ServiceID.ToString + "/gameservers", AddressOf Callback_ServerStatus, Nil, Headers)
 		End Sub
 	#tag EndMethod
 
 
 	#tag Property, Flags = &h21
-		Private mBrowser As WeakRef
+		Private mDocument As Beacon.Document
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mDocument As Beacon.Document
+		Private mOAuthWindow As OAuthAuthorizationWindow
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -457,39 +446,54 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Function ShowURL(URL As Text) As Beacon.WebView
-		  If Self.mBrowser <> Nil And Self.mBrowser.Value <> Nil And Self.mBrowser.Value IsA MiniBrowser Then
-		    MiniBrowser(Self.mBrowser.Value).Close
-		    Self.mBrowser = Nil
+		Function StartAuthentication(URL As String, Provider As String) As Boolean
+		  If Not Self.ShowConfirm("You must reauthorize " + Provider + " to allow Beacon to access your servers.", "The authorization tokens expires. If it has been a while since you've deployed, this can happen.", "Continue", "Cancel") Then
+		    Return False
 		  End If
 		  
-		  Dim Browser As MiniBrowser = MiniBrowser.ShowURL(URL)
-		  If Browser <> Nil Then
-		    Self.mBrowser = New WeakRef(Browser)
-		  End If
-		  Return Browser
+		  ShowURL(URL)
+		  Return True
 		End Function
+	#tag EndEvent
+	#tag Event
+		Sub DismissWaitingWindow()
+		  If Self.mOAuthWindow <> Nil Then
+		    Self.mOAuthWindow.Close
+		    Self.mOAuthWindow = Nil
+		  End If
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub ShowWaitingWindow()
+		  Self.mOAuthWindow = New OAuthAuthorizationWindow(Me)
+		  Self.mOAuthWindow.Show()
+		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Controls
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "PowerButton"
-		    Dim Headers As New Xojo.Core.Dictionary
+		    Dim Headers As New Dictionary
 		    Headers.Value("Authorization") = "Bearer " + Self.Auth.AccessToken
 		    
 		    If Item.Toggled Then
-		      Dim FormData As New Xojo.Core.Dictionary
-		      FormData.Value("message") = "Server stopped by Beacon (https://beaconapp.cc)"
-		      FormData.Value("stop_message") = "Server is now stopping."
+		      Dim StopMessage As String = StopMessageDialog.Present(Self)
+		      If StopMessage = "" Then
+		        Return
+		      End If
 		      
-		      SimpleHTTP.Post("https://api.nitrado.net/services/" + Self.mProfile.ServiceID.ToText + "/gameservers/stop", FormData, AddressOf Callback_ServerToggle, Nil, Headers)
+		      Dim FormData As New Dictionary
+		      FormData.Value("message") = "Server stopped by Beacon (https://beaconapp.cc)"
+		      FormData.Value("stop_message") = StopMessage
+		      
+		      SimpleHTTP.Post("https://api.nitrado.net/services/" + Self.mProfile.ServiceID.ToString + "/gameservers/stop", FormData, AddressOf Callback_ServerToggle, Nil, Headers)
 		    Else
-		      Dim FormData As New Xojo.Core.Dictionary
+		      Dim FormData As New Dictionary
 		      FormData.Value("message") = "Server started by Beacon (https://beaconapp.cc)"
 		      
-		      SimpleHTTP.Post("https://api.nitrado.net/services/" + Self.mProfile.ServiceID.ToText + "/gameservers/restart", FormData, AddressOf Callback_ServerToggle, Nil, Headers)
+		      SimpleHTTP.Post("https://api.nitrado.net/services/" + Self.mProfile.ServiceID.ToString + "/gameservers/restart", FormData, AddressOf Callback_ServerToggle, Nil, Headers)
 		    End If
 		    
 		    Item.Enabled = False
@@ -497,37 +501,105 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.LeftItems.Append(New BeaconToolbarItem("PowerButton", IconToolbarPower, False, "Start or stop the server."))
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events RefreshTimer
 	#tag Event
-		Sub Action()
+		Sub Run()
 		  Self.RefreshServerStatus()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ServerNameField
 	#tag Event
-		Sub TextChange()
-		  Self.mProfile.Name = Me.Text.ToText
-		  Self.Controls.Caption = Me.Text
-		  Self.ContentsChanged = Self.mProfile.Modified
+		Sub TextChanged()
+		  Self.mProfile.Name = Me.Value
+		  Self.Controls.Caption = Me.Value
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -537,6 +609,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -544,20 +617,23 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -565,6 +641,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -572,53 +649,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -626,6 +721,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -633,7 +729,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -641,7 +737,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -649,72 +745,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -722,7 +761,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -730,6 +769,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

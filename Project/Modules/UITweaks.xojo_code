@@ -29,8 +29,6 @@ Protected Module UITweaks
 		        If ControlPanelIndex = 4294967295 Then
 		          ControlPanelIndex = -1
 		        End If
-		      #else
-		        #Pragma Error "Test PanelIndex again to make sure this code is still necessary"
 		      #endif
 		    #endif
 		    If ControlPanelIndex <> PanelIndex Then
@@ -55,8 +53,8 @@ Protected Module UITweaks
 		  
 		  Dim LeftButton As PushButton = if(DefaultButton.Left < CancelButton.Left, DefaultButton, CancelButton)
 		  Dim RightButton As PushButton = if(DefaultButton.Left < CancelButton.Left, CancelButton, DefaultButton)
-		  Dim LeftRect As New Xojo.Core.Rect(LeftButton.Left, LeftButton.Top, LeftButton.Width, LeftButton.Height)
-		  Dim RightRect As New Xojo.Core.Rect(RightButton.Left, RightButton.Top, RightButton.Width, RightButton.Height)
+		  Dim LeftRect As New Rect(LeftButton.Left, LeftButton.Top, LeftButton.Width, LeftButton.Height)
+		  Dim RightRect As New Rect(RightButton.Left, RightButton.Top, RightButton.Width, RightButton.Height)
 		  
 		  #if TargetWindows
 		    DefaultButton.Left = LeftRect.Left
@@ -88,6 +86,7 @@ Protected Module UITweaks
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -95,18 +94,23 @@ Protected Module UITweaks
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -114,6 +118,7 @@ Protected Module UITweaks
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Module

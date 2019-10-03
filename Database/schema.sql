@@ -105,6 +105,32 @@ CREATE DOMAIN public.hex AS public.citext
 ALTER DOMAIN public.hex OWNER TO thommcgrath;
 
 --
+-- Name: ini_file; Type: TYPE; Schema: public; Owner: thommcgrath
+--
+
+CREATE TYPE public.ini_file AS ENUM (
+    'Game.ini',
+    'GameUserSettings.ini'
+);
+
+
+ALTER TYPE public.ini_file OWNER TO thommcgrath;
+
+--
+-- Name: ini_value_type; Type: TYPE; Schema: public; Owner: thommcgrath
+--
+
+CREATE TYPE public.ini_value_type AS ENUM (
+    'Numeric',
+    'Array',
+    'Structure',
+    'Boolean'
+);
+
+
+ALTER TYPE public.ini_value_type OWNER TO thommcgrath;
+
+--
 -- Name: loot_source_kind; Type: TYPE; Schema: public; Owner: thommcgrath
 --
 
@@ -183,67 +209,6 @@ $_$;
 
 
 ALTER FUNCTION public.compute_class_trigger() OWNER TO thommcgrath;
-
---
--- Name: documents_maintenance_function(); Type: FUNCTION; Schema: public; Owner: thommcgrath
---
-
-CREATE FUNCTION public.documents_maintenance_function() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-	p_update_meta BOOLEAN;
-	p_console_safe_known BOOLEAN;
-	p_rec RECORD;
-BEGIN
-	IF TG_OP = 'INSERT' THEN
-		NEW.document_id = (NEW.contents->>'Identifier')::UUID;
-		p_update_meta = TRUE;
-	ELSIF TG_OP = 'UPDATE' THEN
-		IF NEW.document_id != OLD.document_id OR NEW.contents->>'Identifier' != OLD.contents->>'Identifier' THEN
-			RAISE EXCEPTION 'Cannot change document identifier';
-		END IF;
-		IF NEW.contents != OLD.contents THEN
-			NEW.last_update = clock_timestamp();
-			NEW.revision = NEW.revision + 1;
-			p_update_meta = TRUE;
-		ELSE
-			IF NEW.title != OLD.title OR NEW.description != OLD.description OR NEW.map != OLD.map OR NEW.difficulty != OLD.difficulty OR NEW.console_safe != OLD.console_safe THEN
-				RAISE EXCEPTION 'Do not change meta properties. Change the contents JSON instead.';
-			END IF;
-		END IF;
-	END IF;
-	IF p_update_meta = TRUE THEN
-		NEW.map = coalesce((NEW.contents->>'Map')::integer, 1);
-		NEW.console_safe = TRUE;
-		p_console_safe_known = FALSE;
-		IF coalesce((NEW.contents->>'Version')::numeric, 2) = 3 THEN
-			NEW.title = coalesce(NEW.contents->'Configs'->'Metadata'->>'Title', 'Untitled Document');
-			NEW.description = coalesce(NEW.contents->'Configs'->'Metadata'->>'Description', '');
-			NEW.difficulty = coalesce((NEW.contents->'Configs'->'Difficulty'->>'MaxDinoLevel')::numeric, 150) / 30;
-			FOR p_rec IN SELECT DISTINCT mods.console_safe FROM (SELECT DISTINCT jsonb_array_elements(jsonb_array_elements(jsonb_array_elements(jsonb_array_elements(NEW.contents->'Configs'->'LootDrops'->'Contents')->'ItemSets')->'ItemEntries')->'Items')->>'Path' AS path) AS items LEFT JOIN (engrams INNER JOIN mods ON (engrams.mod_id = mods.mod_id)) ON (items.path = engrams.path) LOOP
-				NEW.console_safe = NEW.console_safe AND coalesce(p_rec.console_safe, FALSE);
-				p_console_safe_known = TRUE;
-			END LOOP;
-		ELSE
-			NEW.title = coalesce(NEW.contents->>'Title', 'Untitled Document');
-			NEW.description = coalesce(NEW.contents->>'Description', '');
-			NEW.difficulty = coalesce((NEW.contents->>'DifficultyValue')::numeric, 4.0);
-			FOR p_rec IN SELECT DISTINCT mods.console_safe FROM (SELECT DISTINCT jsonb_array_elements(jsonb_array_elements(jsonb_array_elements(jsonb_array_elements(NEW.contents->'LootSources')->'ItemSets')->'ItemEntries')->'Items')->>'Path' AS path) AS items LEFT JOIN (engrams INNER JOIN mods ON (engrams.mod_id = mods.mod_id)) ON (items.path = engrams.path) LOOP
-				NEW.console_safe = NEW.console_safe AND coalesce(p_rec.console_safe, FALSE);
-				p_console_safe_known = TRUE;
-			END LOOP;
-		END IF;
-		IF NOT p_console_safe_known THEN
-			NEW.console_safe = FALSE;
-		END IF;
-	END IF;
-	RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.documents_maintenance_function() OWNER TO thommcgrath;
 
 --
 -- Name: enforce_mod_owner(); Type: FUNCTION; Schema: public; Owner: thommcgrath
@@ -660,6 +625,82 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: documents; Type: TABLE; Schema: public; Owner: thommcgrath
+--
+
+CREATE TABLE public.documents (
+    document_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    title text NOT NULL,
+    description text NOT NULL,
+    map integer NOT NULL,
+    difficulty numeric(12,4) NOT NULL,
+    console_safe boolean NOT NULL,
+    last_update timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    revision integer DEFAULT 1 NOT NULL,
+    download_count integer DEFAULT 0 NOT NULL,
+    published public.publish_status DEFAULT 'Private'::public.publish_status NOT NULL,
+    mods uuid[] NOT NULL,
+    included_editors text[] NOT NULL
+);
+
+
+ALTER TABLE public.documents OWNER TO thommcgrath;
+
+--
+-- Name: guest_documents; Type: TABLE; Schema: public; Owner: thommcgrath
+--
+
+CREATE TABLE public.guest_documents (
+    document_id uuid NOT NULL,
+    user_id uuid NOT NULL
+);
+
+
+ALTER TABLE public.guest_documents OWNER TO thommcgrath;
+
+--
+-- Name: allowed_documents; Type: VIEW; Schema: public; Owner: thommcgrath
+--
+
+CREATE VIEW public.allowed_documents AS
+ SELECT documents.document_id,
+    documents.user_id,
+    documents.title,
+    documents.description,
+    documents.map,
+    documents.difficulty,
+    documents.console_safe,
+    documents.last_update,
+    documents.revision,
+    documents.download_count,
+    documents.published,
+    documents.mods,
+    documents.included_editors,
+    'Owner'::text AS role
+   FROM public.documents
+UNION
+ SELECT documents.document_id,
+    guest_documents.user_id,
+    documents.title,
+    documents.description,
+    documents.map,
+    documents.difficulty,
+    documents.console_safe,
+    documents.last_update,
+    documents.revision,
+    documents.download_count,
+    documents.published,
+    documents.mods,
+    documents.included_editors,
+    'Guest'::text AS role
+   FROM (public.guest_documents
+     JOIN public.documents ON ((guest_documents.document_id = documents.document_id)));
+
+
+ALTER TABLE public.allowed_documents OWNER TO thommcgrath;
+
+--
 -- Name: blog_articles; Type: TABLE; Schema: public; Owner: thommcgrath
 --
 
@@ -900,28 +941,6 @@ INHERITS (public.objects);
 ALTER TABLE public.diets OWNER TO thommcgrath;
 
 --
--- Name: documents; Type: TABLE; Schema: public; Owner: thommcgrath
---
-
-CREATE TABLE public.documents (
-    document_id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    title text NOT NULL,
-    description text NOT NULL,
-    map integer NOT NULL,
-    difficulty numeric(8,4) NOT NULL,
-    console_safe boolean NOT NULL,
-    last_update timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
-    revision integer DEFAULT 1 NOT NULL,
-    download_count integer DEFAULT 0 NOT NULL,
-    contents jsonb NOT NULL,
-    published public.publish_status DEFAULT 'Private'::public.publish_status
-);
-
-
-ALTER TABLE public.documents OWNER TO thommcgrath;
-
---
 -- Name: email_addresses; Type: TABLE; Schema: public; Owner: thommcgrath
 --
 
@@ -1038,6 +1057,25 @@ CREATE TABLE public.help_topics (
 ALTER TABLE public.help_topics OWNER TO thommcgrath;
 
 --
+-- Name: ini_options; Type: TABLE; Schema: public; Owner: thommcgrath
+--
+
+CREATE TABLE public.ini_options (
+    native_editor_version integer,
+    file public.ini_file NOT NULL,
+    header public.citext NOT NULL,
+    key public.citext NOT NULL,
+    value_type public.ini_value_type NOT NULL,
+    max_allowed integer,
+    description text NOT NULL,
+    default_value text NOT NULL
+)
+INHERITS (public.objects);
+
+
+ALTER TABLE public.ini_options OWNER TO thommcgrath;
+
+--
 -- Name: loot_source_icons; Type: TABLE; Schema: public; Owner: thommcgrath
 --
 
@@ -1067,6 +1105,20 @@ CREATE TABLE public.mods (
 
 
 ALTER TABLE public.mods OWNER TO thommcgrath;
+
+--
+-- Name: oauth_requests; Type: TABLE; Schema: public; Owner: thommcgrath
+--
+
+CREATE TABLE public.oauth_requests (
+    request_id uuid NOT NULL,
+    encrypted_payload text NOT NULL,
+    encrypted_symmetric_key text NOT NULL,
+    expiration timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.oauth_requests OWNER TO thommcgrath;
 
 --
 -- Name: oauth_tokens; Type: TABLE; Schema: public; Owner: thommcgrath
@@ -1453,7 +1505,8 @@ CREATE TABLE public.usercloud_queue (
     hostname public.citext NOT NULL,
     request_method public.citext NOT NULL,
     queue_time timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    http_status integer
+    http_status integer,
+    attempts integer DEFAULT 0 NOT NULL
 );
 
 
@@ -1598,6 +1651,41 @@ ALTER TABLE ONLY public.engrams ALTER COLUMN mod_id SET DEFAULT '30bbab29-44b2-4
 --
 
 ALTER TABLE ONLY public.engrams ALTER COLUMN tags SET DEFAULT '{}'::public.citext[];
+
+
+--
+-- Name: ini_options object_id; Type: DEFAULT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.ini_options ALTER COLUMN object_id SET DEFAULT public.gen_random_uuid();
+
+
+--
+-- Name: ini_options min_version; Type: DEFAULT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.ini_options ALTER COLUMN min_version SET DEFAULT 0;
+
+
+--
+-- Name: ini_options last_update; Type: DEFAULT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.ini_options ALTER COLUMN last_update SET DEFAULT ('now'::text)::timestamp(0) with time zone;
+
+
+--
+-- Name: ini_options mod_id; Type: DEFAULT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.ini_options ALTER COLUMN mod_id SET DEFAULT '30bbab29-44b2-4f4b-a373-6d4740d9d3b5'::uuid;
+
+
+--
+-- Name: ini_options tags; Type: DEFAULT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.ini_options ALTER COLUMN tags SET DEFAULT '{}'::public.citext[];
 
 
 --
@@ -1925,11 +2013,35 @@ ALTER TABLE ONLY public.game_variables
 
 
 --
+-- Name: guest_documents guest_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.guest_documents
+    ADD CONSTRAINT guest_documents_pkey PRIMARY KEY (document_id, user_id);
+
+
+--
 -- Name: help_topics help_topics_pkey; Type: CONSTRAINT; Schema: public; Owner: thommcgrath
 --
 
 ALTER TABLE ONLY public.help_topics
     ADD CONSTRAINT help_topics_pkey PRIMARY KEY (config_name);
+
+
+--
+-- Name: ini_options ini_options_file_header_key_key; Type: CONSTRAINT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.ini_options
+    ADD CONSTRAINT ini_options_file_header_key_key UNIQUE (file, header, key);
+
+
+--
+-- Name: ini_options ini_options_pkey; Type: CONSTRAINT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.ini_options
+    ADD CONSTRAINT ini_options_pkey PRIMARY KEY (object_id);
 
 
 --
@@ -1962,6 +2074,14 @@ ALTER TABLE ONLY public.loot_sources
 
 ALTER TABLE ONLY public.mods
     ADD CONSTRAINT mods_pkey PRIMARY KEY (mod_id);
+
+
+--
+-- Name: oauth_requests oauth_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.oauth_requests
+    ADD CONSTRAINT oauth_requests_pkey PRIMARY KEY (request_id);
 
 
 --
@@ -2385,13 +2505,6 @@ CREATE TRIGGER diets_before_update_trigger BEFORE UPDATE ON public.diets FOR EAC
 
 
 --
--- Name: documents documents_maintenance_trigger; Type: TRIGGER; Schema: public; Owner: thommcgrath
---
-
-CREATE TRIGGER documents_maintenance_trigger BEFORE INSERT OR UPDATE ON public.documents FOR EACH ROW EXECUTE PROCEDURE public.documents_maintenance_function();
-
-
---
 -- Name: mods enforce_mod_owner; Type: TRIGGER; Schema: public; Owner: thommcgrath
 --
 
@@ -2438,6 +2551,27 @@ CREATE TRIGGER game_variables_before_update_trigger BEFORE INSERT OR UPDATE ON p
 --
 
 CREATE TRIGGER help_topics_before_update_trigger BEFORE INSERT OR UPDATE ON public.help_topics FOR EACH ROW EXECUTE PROCEDURE public.generic_update_trigger();
+
+
+--
+-- Name: ini_options ini_options_after_delete_trigger; Type: TRIGGER; Schema: public; Owner: thommcgrath
+--
+
+CREATE TRIGGER ini_options_after_delete_trigger AFTER DELETE ON public.ini_options FOR EACH ROW EXECUTE PROCEDURE public.object_delete_trigger();
+
+
+--
+-- Name: ini_options ini_options_before_insert_trigger; Type: TRIGGER; Schema: public; Owner: thommcgrath
+--
+
+CREATE TRIGGER ini_options_before_insert_trigger BEFORE INSERT ON public.ini_options FOR EACH ROW EXECUTE PROCEDURE public.object_insert_trigger();
+
+
+--
+-- Name: ini_options ini_options_before_update_trigger; Type: TRIGGER; Schema: public; Owner: thommcgrath
+--
+
+CREATE TRIGGER ini_options_before_update_trigger BEFORE UPDATE ON public.ini_options FOR EACH ROW EXECUTE PROCEDURE public.object_update_trigger();
 
 
 --
@@ -2688,6 +2822,30 @@ ALTER TABLE ONLY public.exception_users
 
 
 --
+-- Name: guest_documents guest_documents_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.guest_documents
+    ADD CONSTRAINT guest_documents_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(document_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: guest_documents guest_documents_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.guest_documents
+    ADD CONSTRAINT guest_documents_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ini_options ini_options_mod_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: thommcgrath
+--
+
+ALTER TABLE ONLY public.ini_options
+    ADD CONSTRAINT ini_options_mod_id_fkey FOREIGN KEY (mod_id) REFERENCES public.mods(mod_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- Name: loot_source_icons loot_source_icons_mod_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: thommcgrath
 --
 
@@ -2864,6 +3022,27 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: TABLE documents; Type: ACL; Schema: public; Owner: thommcgrath
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.documents TO thezaz_website;
+
+
+--
+-- Name: TABLE guest_documents; Type: ACL; Schema: public; Owner: thommcgrath
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.guest_documents TO thezaz_website;
+
+
+--
+-- Name: TABLE allowed_documents; Type: ACL; Schema: public; Owner: thommcgrath
+--
+
+GRANT SELECT ON TABLE public.allowed_documents TO thezaz_website;
+
+
+--
 -- Name: TABLE blog_articles; Type: ACL; Schema: public; Owner: thommcgrath
 --
 
@@ -2955,13 +3134,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.diets TO thezaz_website;
 
 
 --
--- Name: TABLE documents; Type: ACL; Schema: public; Owner: thommcgrath
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.documents TO thezaz_website;
-
-
---
 -- Name: TABLE email_addresses; Type: ACL; Schema: public; Owner: thommcgrath
 --
 
@@ -3018,6 +3190,13 @@ GRANT SELECT ON TABLE public.help_topics TO thezaz_website;
 
 
 --
+-- Name: TABLE ini_options; Type: ACL; Schema: public; Owner: thommcgrath
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.ini_options TO thezaz_website;
+
+
+--
 -- Name: TABLE loot_source_icons; Type: ACL; Schema: public; Owner: thommcgrath
 --
 
@@ -3029,6 +3208,13 @@ GRANT SELECT ON TABLE public.loot_source_icons TO thezaz_website;
 --
 
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.mods TO thezaz_website;
+
+
+--
+-- Name: TABLE oauth_requests; Type: ACL; Schema: public; Owner: thommcgrath
+--
+
+GRANT SELECT,INSERT,DELETE ON TABLE public.oauth_requests TO thezaz_website;
 
 
 --

@@ -5,7 +5,6 @@ Begin ConfigEditor CraftingCostsConfigEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,7 @@ Begin ConfigEditor CraftingCostsConfigEditor
       Caption         =   "Engrams"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -65,7 +64,7 @@ Begin ConfigEditor CraftingCostsConfigEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -96,7 +95,7 @@ Begin ConfigEditor CraftingCostsConfigEditor
       Caption         =   ""
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   21
       HelpTag         =   ""
       Index           =   -2147483648
@@ -150,7 +149,7 @@ Begin ConfigEditor CraftingCostsConfigEditor
       LockRight       =   False
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
+      RowCount        =   "0"
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -179,7 +178,7 @@ Begin ConfigEditor CraftingCostsConfigEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   396
       HelpTag         =   ""
       Index           =   -2147483648
@@ -219,7 +218,7 @@ Begin ConfigEditor CraftingCostsConfigEditor
       Scope           =   2
       TabIndex        =   5
       TabPanelIndex   =   0
-      TabStop         =   True
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   1
@@ -233,7 +232,7 @@ Begin ConfigEditor CraftingCostsConfigEditor
          Caption         =   "No Selection"
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   True
+         EraseBackground =   "True"
          Height          =   396
          HelpTag         =   ""
          Index           =   -2147483648
@@ -293,7 +292,7 @@ Begin ConfigEditor CraftingCostsConfigEditor
          Caption         =   "Multiple Selection"
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   True
+         EraseBackground =   "True"
          Height          =   396
          HelpTag         =   ""
          Index           =   -2147483648
@@ -321,25 +320,25 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.MinimumWidth = Self.ListMinWidth + Self.ListSeparator.Width + Self.Editor.MinimumWidth
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub ParsingFinished(ParsedData As Xojo.Core.Dictionary)
+		Sub ParsingFinished(ParsedData As Dictionary)
 		  If ParsedData = Nil Then
 		    Return
 		  End If
 		  
-		  Dim OtherConfig As BeaconConfigs.CraftingCosts = BeaconConfigs.CraftingCosts.FromImport(ParsedData, New Xojo.Core.Dictionary, Self.Document.MapCompatibility, Self.Document.DifficultyValue)
-		  If OtherConfig = Nil Or OtherConfig.Ubound = -1 Then
+		  Dim OtherConfig As BeaconConfigs.CraftingCosts = BeaconConfigs.CraftingCosts.FromImport(ParsedData, New Dictionary, Self.Document.MapCompatibility, Self.Document.Difficulty)
+		  If OtherConfig = Nil Or OtherConfig.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
 		  Dim Config As BeaconConfigs.CraftingCosts = Self.Config(True)
 		  Dim NewCosts() As Beacon.CraftingCost
-		  For I As Integer = 0 To OtherConfig.Ubound
+		  For I As Integer = 0 To OtherConfig.LastRowIndex
 		    Dim CraftingCost As Beacon.CraftingCost = OtherConfig(I)
 		    Dim Idx As Integer = Config.IndexOf(CraftingCost)
 		    If Idx > -1 Then
@@ -347,9 +346,9 @@ End
 		    Else
 		      Config.Append(CraftingCost)
 		    End If
-		    NewCosts.Append(CraftingCost)
+		    NewCosts.AddRow(CraftingCost)
 		  Next
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.UpdateList(NewCosts)
 		End Sub
 	#tag EndEvent
@@ -398,7 +397,7 @@ End
 
 	#tag Method, Flags = &h1
 		Protected Function Config(ForWriting As Boolean) As BeaconConfigs.CraftingCosts
-		  Static ConfigName As Text = BeaconConfigs.CraftingCosts.ConfigName
+		  Static ConfigName As String = BeaconConfigs.CraftingCosts.ConfigName
 		  
 		  Dim Document As Beacon.Document = Self.Document
 		  Dim Config As BeaconConfigs.CraftingCosts
@@ -422,7 +421,7 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ConfigLabel() As Text
+		Function ConfigLabel() As String
 		  Return Language.LabelForConfig(BeaconConfigs.CraftingCosts.ConfigName)
 		End Function
 	#tag EndMethod
@@ -454,16 +453,16 @@ End
 		Private Sub ShowAddEngram()
 		  Dim CurrentEngrams() As Beacon.Engram
 		  Dim Config As BeaconConfigs.CraftingCosts = Self.Config(False)
-		  For I As Integer = 0 To Config.Ubound
+		  For I As Integer = 0 To Config.LastRowIndex
 		    If Config(I).Engram = Nil Then
 		      Continue
 		    End If
 		    
-		    CurrentEngrams.Append(Config(I).Engram)
+		    CurrentEngrams.AddRow(Config(I).Engram)
 		  Next
 		  
 		  Dim NewEngrams() As Beacon.Engram = EngramSelectorDialog.Present(Self, "Crafting", CurrentEngrams, Self.Document.Mods, False)
-		  If NewEngrams = Nil Or NewEngrams.Ubound = -1 Then
+		  If NewEngrams = Nil Or NewEngrams.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
@@ -473,36 +472,36 @@ End
 		  For Each Engram As Beacon.Engram In NewEngrams
 		    Dim Cost As New Beacon.CraftingCost(Engram)
 		    Config.Append(Cost)
-		    NewCosts.Append(Cost)
+		    NewCosts.AddRow(Cost)
 		  Next
 		  
 		  Self.UpdateList(NewCosts)
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub ShowDuplicateSelection()
-		  If Self.List.SelCount <> 1 Or Self.List.ListIndex < 0 Or Self.List.ListIndex >= Self.List.ListCount Then
+		  If Self.List.SelectedRowCount <> 1 Or Self.List.SelectedRowIndex < 0 Or Self.List.SelectedRowIndex >= Self.List.RowCount Then
 		    Return
 		  End If
 		  
 		  Dim CurrentEngrams() As Beacon.Engram
 		  Dim Config As BeaconConfigs.CraftingCosts = Self.Config(False)
-		  For I As Integer = 0 To Config.Ubound
+		  For I As Integer = 0 To Config.LastRowIndex
 		    If Config(I).Engram = Nil Then
 		      Continue
 		    End If
 		    
-		    CurrentEngrams.Append(Config(I).Engram)
+		    CurrentEngrams.AddRow(Config(I).Engram)
 		  Next
 		  
 		  Dim NewEngrams() As Beacon.Engram = EngramSelectorDialog.Present(Self, "Crafting", CurrentEngrams, Self.Document.Mods, True)
-		  If NewEngrams = Nil Or NewEngrams.Ubound = -1 Then
+		  If NewEngrams = Nil Or NewEngrams.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
-		  Dim SourceCost As Beacon.CraftingCost = Self.List.RowTag(Self.List.ListIndex)
+		  Dim SourceCost As Beacon.CraftingCost = Self.List.RowTagAt(Self.List.SelectedRowIndex)
 		  Config = Self.Config(True)
 		  
 		  Dim NewCosts() As Beacon.CraftingCost
@@ -510,23 +509,23 @@ End
 		    Dim Cost As New Beacon.CraftingCost(SourceCost)
 		    Cost.Engram = Engram
 		    Config.Append(Cost)
-		    NewCosts.Append(Cost)
+		    NewCosts.AddRow(Cost)
 		  Next
 		  
 		  Self.UpdateList(NewCosts)
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateList()
 		  Dim Arr() As Beacon.CraftingCost
-		  For I As Integer = 0 To Self.List.ListCount - 1
+		  For I As Integer = 0 To Self.List.RowCount - 1
 		    If Not Self.List.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Arr.Append(Self.List.RowTag(I))
+		    Arr.AddRow(Self.List.RowTagAt(I))
 		  Next
 		  Self.UpdateList(Arr)
 		End Sub
@@ -537,18 +536,18 @@ End
 		  Dim ScrollPosition As Integer = Self.List.ScrollPosition
 		  Self.List.SelectionChangeBlocked = True
 		  
-		  Dim ObjectIDs() As Text
+		  Dim ObjectIDs() As String
 		  For Each Item As Beacon.CraftingCost In SelectItems
-		    ObjectIDs.Append(Item.ObjectID)
+		    ObjectIDs.AddRow(Item.ObjectID)
 		  Next
 		  
-		  Self.List.DeleteAllRows
+		  Self.List.RemoveAllRows
 		  Dim Config As BeaconConfigs.CraftingCosts = Self.Config(False)
-		  For I As Integer = 0 To Config.Ubound
+		  For I As Integer = 0 To Config.LastRowIndex
 		    Dim Cost As Beacon.CraftingCost = Config(I)
 		    Self.List.AddRow(If(Cost.Engram <> Nil, Cost.Engram.Label, "No Engram Selected"))
-		    Self.List.RowTag(Self.List.LastIndex) = Cost
-		    Self.List.Selected(Self.List.LastIndex) = ObjectIDs.IndexOf(Cost.ObjectID) > -1
+		    Self.List.RowTagAt(Self.List.LastAddedRowIndex) = Cost
+		    Self.List.Selected(Self.List.LastAddedRowIndex) = ObjectIDs.IndexOf(Cost.ObjectID) > -1
 		  Next
 		  
 		  Self.List.Sort
@@ -562,7 +561,7 @@ End
 		Private Sub UpdateList(SelectItem As Beacon.CraftingCost)
 		  Dim Arr() As Beacon.CraftingCost
 		  If SelectItem <> Nil Then
-		    Arr.Append(SelectItem)
+		    Arr.AddRow(SelectItem)
 		  End If
 		  Self.UpdateList(Arr)
 		  Self.List.EnsureSelectionIsVisible()
@@ -571,8 +570,8 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateStatus()
-		  Dim TotalItems As Integer = Self.List.ListCount
-		  Dim SelectedItems As Integer = Self.List.SelCount
+		  Dim TotalItems As Integer = Self.List.RowCount
+		  Dim SelectedItems As Integer = Self.List.SelectedRowCount
 		  
 		  Dim Noun As String = If(TotalItems = 1, "Engram", "Engrams")
 		  
@@ -616,8 +615,8 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
-		  Dim AddButton As New BeaconToolbarItem("AddEngram", IconAdd)
+		Sub Opening()
+		  Dim AddButton As New BeaconToolbarItem("AddEngram", IconToolbarAdd)
 		  AddButton.HelpTag = "Change the crafting cost for a new item."
 		  
 		  Dim DuplicateButton As New BeaconToolbarItem("Duplicate", IconToolbarClone, False)
@@ -628,7 +627,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddEngram"
 		    Self.ShowAddEngram()
@@ -640,39 +639,39 @@ End
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Change()
-		  If Me.SelCount = 1 Then
-		    Self.Editor.Target = Me.RowTag(Me.ListIndex)
+		Sub SelectionChanged()
+		  If Me.SelectedRowCount = 1 Then
+		    Self.Editor.Target = Me.RowTagAt(Me.SelectedRowIndex)
 		  Else
 		    Self.Editor.Target = Nil
 		  End If
 		  
-		  If Me.SelCount = 0 Then
-		    Self.Panel.Value = Self.PageNoSelection
-		  ElseIf Me.SelCount = 1 Then
-		    Self.Panel.Value = Self.PageSingleSelection
+		  If Me.SelectedRowCount = 0 Then
+		    Self.Panel.SelectedPanelIndex = Self.PageNoSelection
+		  ElseIf Me.SelectedRowCount = 1 Then
+		    Self.Panel.SelectedPanelIndex = Self.PageSingleSelection
 		  Else
-		    Self.Panel.Value = Self.PageMultipleSelection
+		    Self.Panel.SelectedPanelIndex = Self.PageMultipleSelection
 		  End If
 		  
-		  Self.Header.Duplicate.Enabled = Me.SelCount = 1
+		  Self.Header.Duplicate.Enabled = Me.SelectedRowCount = 1
 		  
 		  Self.UpdateStatus()
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
 		Sub PerformClear(Warn As Boolean)
 		  If Warn Then
 		    Dim Message As String
-		    If Me.SelCount = 1 Then
-		      Message = "Are you sure you want to delete the """ + Me.Cell(Me.ListIndex, 0) + """ crafting cost override?"
+		    If Me.SelectedRowCount = 1 Then
+		      Message = "Are you sure you want to delete the """ + Me.CellValueAt(Me.SelectedRowIndex, 0) + """ crafting cost override?"
 		    Else
-		      Message = "Are you sure you want to delete these " + Str(Me.SelCount, "-0") + " crafting cost overrides?"
+		      Message = "Are you sure you want to delete these " + Str(Me.SelectedRowCount, "-0") + " crafting cost overrides?"
 		    End If
 		    
 		    If Not Self.ShowConfirm(Message, "This action cannot be undone.", "Delete", "Cancel") Then
@@ -682,12 +681,12 @@ End
 		  
 		  Me.SelectionChangeBlocked = True
 		  Dim Config As BeaconConfigs.CraftingCosts = Self.Config(True)
-		  For I As Integer = Me.ListCount - 1 DownTo 0
+		  For I As Integer = Me.RowCount - 1 DownTo 0
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Cost As Beacon.CraftingCost = Me.RowTag(I)
+		    Dim Cost As Beacon.CraftingCost = Me.RowTagAt(I)
 		    Config.Remove(Cost)
 		  Next
 		  Self.UpdateList()
@@ -696,7 +695,7 @@ End
 	#tag EndEvent
 	#tag Event
 		Function CanCopy() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
@@ -714,45 +713,47 @@ End
 	#tag EndEvent
 	#tag Event
 		Sub PerformCopy(Board As Clipboard)
-		  Dim Dicts() As Xojo.Core.Dictionary
-		  For I As Integer = 0 To Me.ListCount - 1
+		  Dim Dicts() As Dictionary
+		  For I As Integer = 0 To Me.RowCount - 1
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Cost As Beacon.CraftingCost = Me.RowTag(I)
-		    Dicts.Append(Cost.Export)
+		    Dim Cost As Beacon.CraftingCost = Me.RowTagAt(I)
+		    Dicts.AddRow(Cost.Export)
 		  Next
 		  
-		  Board.AddRawData(Xojo.Data.GenerateJSON(Dicts), Self.kClipboardType)
+		  Board.AddRawData(Beacon.GenerateJSON(Dicts, False), Self.kClipboardType)
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub PerformPaste(Board As Clipboard)
 		  If Board.TextAvailable And Board.Text.IndexOf("ConfigOverrideItemCraftingCosts") > -1 Then
 		    Dim ImportText As String = Board.Text.GuessEncoding
-		    Self.Parse(ImportText.ToText, "Clipboard")
+		    Self.Parse(ImportText, "Clipboard")
 		    Return
 		  End If
 		  
-		  If Not Board.RawDataAvailable(Self.kClipboardType) Then
-		    Dim Dicts() As Auto
+		  If Board.RawDataAvailable(Self.kClipboardType) Then
+		    Dim Dicts() As Variant
 		    Try
 		      Dim Contents As String = Board.RawData(Self.kClipboardType).DefineEncoding(Encodings.UTF8)
-		      Dicts = Xojo.Data.ParseJSON(Contents.ToText)
+		      Dicts = Beacon.ParseJSON(Contents)
 		      
 		      Dim Costs() As Beacon.CraftingCost
-		      For Each Dict As Xojo.Core.Dictionary In Dicts
+		      Dim Config As BeaconConfigs.CraftingCosts = Self.Config(True)
+		      For Each Dict As Dictionary In Dicts
 		        Dim Cost As Beacon.CraftingCost = Beacon.CraftingCost.ImportFromBeacon(Dict)
 		        If Cost <> Nil Then
-		          Self.Config(False).Append(Cost)
-		          Costs.Append(Cost)
+		          Config.Append(Cost)
+		          Costs.AddRow(Cost)
 		        End If
 		      Next
 		      
 		      Self.UpdateList(Costs)
-		      Self.ContentsChanged = True
+		      Self.Changed = True
 		    Catch Err As RuntimeException
+		      System.Beep
 		    End Try
 		    Return
 		  End If
@@ -760,22 +761,22 @@ End
 	#tag EndEvent
 	#tag Event
 		Function RowIsInvalid(Row As Integer) As Boolean
-		  Return Not Beacon.CraftingCost(Me.RowTag(Row)).IsValid
+		  Return Not Beacon.CraftingCost(Me.RowTagAt(Row)).IsValid
 		End Function
 	#tag EndEvent
 #tag EndEvents
 #tag Events Editor
 	#tag Event
 		Sub ContentsChanged()
-		  If Self.List.SelCount = 1 Then
-		    Self.List.Cell(Self.List.ListIndex, 0) = Me.Target.Label
+		  If Self.List.SelectedRowCount = 1 Then
+		    Self.List.CellValueAt(Self.List.SelectedRowIndex, 0) = Me.Target.Label
 		    Self.List.Sort
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  End If
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Function GetActiveMods() As Beacon.TextList
+		Function GetActiveMods() As Beacon.StringList
 		  If Self.Document <> Nil Then
 		    Return Self.Document.Mods
 		  End If
@@ -784,10 +785,76 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -795,6 +862,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -802,10 +870,13 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -813,15 +884,17 @@ End
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -829,6 +902,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -836,53 +910,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -890,6 +982,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -897,7 +990,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -905,7 +998,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -913,72 +1006,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -986,7 +1022,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -994,6 +1030,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

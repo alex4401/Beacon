@@ -2,40 +2,34 @@
 Protected Class FTPDeploymentEngine
 Implements Beacon.DeploymentEngine
 	#tag Method, Flags = &h0
-		Function BackupGameIni() As Text
+		Function BackupGameIni() As String
 		  Return Self.mGameIniOriginal
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function BackupGameUserSettingsIni() As Text
+		Function BackupGameUserSettingsIni() As String
 		  Return Self.mGameUserSettingsIniOriginal
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Begin(Label As Text, Document As Beacon.Document, Identity As Beacon.Identity)
+		Sub Begin(Label As String, Document As Beacon.Document, Identity As Beacon.Identity, StopMessage As String)
 		  // Part of the Beacon.DeploymentEngine interface.
 		  
 		  #Pragma Unused Label
+		  #Pragma Unused StopMessage
 		  
-		  Dim Options() As Beacon.ConfigValue
-		  Self.mGameIniDict = New Xojo.Core.Dictionary
-		  Self.mGameUserSettingsIniDict = New Xojo.Core.Dictionary
-		  Document.CreateConfigObjects(Options, Self.mGameIniDict, Self.mGameUserSettingsIniDict, Self.mProfile.Mask, Identity, Self.mProfile)
-		  
-		  Dim SessionSettingsValues() As Text = Array("SessionName=" + Self.mProfile.Name)
-		  Dim SessionSettings As New Xojo.Core.Dictionary
-		  SessionSettings.Value("SessionName") = SessionSettingsValues
-		  Self.mGameUserSettingsIniDict.Value("SessionSettings") = SessionSettings
+		  Self.mIdentity = Identity
+		  Self.mDocument = Document
 		  
 		  Self.DownloadGameIni()
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function BuildFTPParameters(File As Text) As Xojo.Core.Dictionary
-		  Dim Fields As Xojo.Core.Dictionary = Self.mProfile.AsFormData
+		Private Function BuildFTPParameters(File As String) As Dictionary
+		  Dim Fields As Dictionary = Self.mProfile.AsFormData
 		  If File <> "" Then
 		    Fields.Value("path") = File
 		  End If
@@ -55,7 +49,7 @@ Implements Beacon.DeploymentEngine
 		  End If
 		  
 		  Try
-		    Dim Dict As Xojo.Core.Dictionary = Response.JSON
+		    Dim Dict As Dictionary = Response.JSON
 		    If Dict.HasKey("ftp_mode") Then
 		      Self.mProfile.Mode = Dict.Value("ftp_mode")
 		    End If
@@ -81,7 +75,7 @@ Implements Beacon.DeploymentEngine
 		  End If
 		  
 		  Try
-		    Dim Dict As Xojo.Core.Dictionary = Response.JSON
+		    Dim Dict As Dictionary = Response.JSON
 		    If Dict.HasKey("ftp_mode") Then
 		      Self.mProfile.Mode = Dict.Value("ftp_mode")
 		    End If
@@ -133,39 +127,34 @@ Implements Beacon.DeploymentEngine
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(Profile As Beacon.FTPServerProfile, Identity As Beacon.Identity)
+		Sub Constructor(Profile As Beacon.FTPServerProfile)
 		  Self.mProfile = Profile
 		  Self.mSocket = New BeaconAPI.Socket
-		  Self.mIdentity = Identity
+		  
+		  Self.mGameIniRewriter = New Beacon.Rewriter
+		  AddHandler mGameIniRewriter.Finished, WeakAddressOf mGameIniRewriter_Finished
+		  
+		  Self.mGameUserSettingsIniRewriter = New Beacon.Rewriter
+		  AddHandler mGameUserSettingsIniRewriter.Finished, WeakAddressOf mGameUserSettingsIniRewriter_Finished
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub DownloadGameIni()
-		  If Self.mGameIniDict.Count = 0 Then
-		    Self.DownloadGameUserSettingsIni
-		    Return
-		  End If
-		  
 		  Self.mStatus = "Downloading Game.ini…"
 		  
 		  Dim Request As New BeaconAPI.Request("ftp", "GET", Self.BuildFTPParameters(Self.mProfile.GameIniPath), AddressOf Callback_DownloadGameIni)
-		  Request.Sign(Self.mIdentity)
+		  Request.Authenticate(Preferences.OnlineToken)
 		  Self.mSocket.Start(Request)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub DownloadGameUserSettingsIni()
-		  If Self.mGameUserSettingsIniDict.Count = 0 Then
-		    Self.UploadGameIni()
-		    Return
-		  End If
-		  
 		  Self.mStatus = "Downloading GameUserSettings.ini…"
 		  
 		  Dim Request As New BeaconAPI.Request("ftp", "GET", Self.BuildFTPParameters(Self.mProfile.GameUserSettingsIniPath), AddressOf Callback_DownloadGameUserSettingsIni)
-		  Request.Sign(Self.mIdentity)
+		  Request.Authenticate(Preferences.OnlineToken)
 		  Self.mSocket.Start(Request)
 		End Sub
 	#tag EndMethod
@@ -184,8 +173,40 @@ Implements Beacon.DeploymentEngine
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Sub mGameIniRewriter_Finished(Sender As Beacon.Rewriter)
+		  If Sender.Errored Then
+		    Self.SetError("Unable to generate updated Game.ini file")
+		    Return
+		  End If
+		  
+		  Dim Content As String = Sender.UpdatedContent
+		  
+		  Self.mStatus = "Uploading Game.ini"
+		  Dim Request As New BeaconAPI.Request("ftp?" + SimpleHTTP.BuildFormData(Self.BuildFTPParameters(Self.mProfile.GameIniPath)), "POST", Content, "text/plain", AddressOf Callback_UploadGameIni)
+		  Request.Authenticate(Preferences.OnlineToken)
+		  Self.mSocket.Start(Request)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub mGameUserSettingsIniRewriter_Finished(Sender As Beacon.Rewriter)
+		  If Sender.Errored Then
+		    Self.SetError("Unable to generate updated GameUserSettings.ini file")
+		    Return
+		  End If
+		  
+		  Dim Content As String = Sender.UpdatedContent
+		  
+		  Self.mStatus = "Uploading GameUserSettings.ini"
+		  Dim Request As New BeaconAPI.Request("ftp?" + SimpleHTTP.BuildFormData(Self.BuildFTPParameters(Self.mProfile.GameUserSettingsIniPath)), "POST", Content, "text/plain", AddressOf Callback_UploadGameUserSettingsIni)
+		  Request.Authenticate(Preferences.OnlineToken)
+		  Self.mSocket.Start(Request)
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
-		Function Name() As Text
+		Function Name() As String
 		  Return Self.mProfile.Name
 		End Function
 	#tag EndMethod
@@ -198,12 +219,12 @@ Implements Beacon.DeploymentEngine
 
 	#tag Method, Flags = &h21
 		Private Sub SetError(Err As RuntimeException)
-		  Dim Info As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Err)
-		  Dim Reason As Text
+		  Dim Info As Introspection.TypeInfo = Introspection.GetType(Err)
+		  Dim Reason As String
 		  If Err.Reason <> "" Then
 		    Reason = Err.Reason
 		  ElseIf Err.Message <> "" Then
-		    Reason = Err.Message.ToText
+		    Reason = Err.Message
 		  Else
 		    Reason = "No details available"
 		  End If
@@ -213,7 +234,7 @@ Implements Beacon.DeploymentEngine
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub SetError(Message As Text)
+		Private Sub SetError(Message As String)
 		  Self.mStatus = "Error: " + Message
 		  Self.mFinished = True
 		  Self.mErrored = True
@@ -221,7 +242,7 @@ Implements Beacon.DeploymentEngine
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Status() As Text
+		Function Status() As String
 		  // Part of the Beacon.DeploymentEngine interface.
 		  
 		  Return Self.mStatus
@@ -230,40 +251,25 @@ Implements Beacon.DeploymentEngine
 
 	#tag Method, Flags = &h21
 		Private Sub UploadGameIni()
-		  If Self.mGameIniDict.Count = 0 Then
-		    Self.UploadGameUserSettingsIni
-		    Return
-		  End If
-		  
-		  Self.mStatus = "Uploading Game.ini"
-		  
-		  Dim Content As Text = Beacon.RewriteIniContent(Self.mGameIniOriginal, Self.mGameIniDict)
-		  Dim Request As New BeaconAPI.Request("ftp?" + BeaconAPI.Request.URLEncodeFormData(Self.BuildFTPParameters(Self.mProfile.GameIniPath)), "POST", Content, "text/plain", AddressOf Callback_UploadGameIni)
-		  Request.Sign(App.IdentityManager.CurrentIdentity)
-		  Self.mSocket.Start(Request)
+		  Self.mStatus = "Generating Game.ini"
+		  Self.mGameIniRewriter.Rewrite(Self.mGameIniOriginal, Beacon.RewriteModeGameIni, Self.mDocument, Self.mIdentity, True, Self.mProfile)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub UploadGameUserSettingsIni()
-		  If Self.mGameUserSettingsIniDict.Count = 0 Then
-		    Self.mStatus = "Finished"
-		    Self.mFinished = True
-		    Return
-		  End If
-		  
-		  Self.mStatus = "Uploading GameUserSettings.ini"
-		  
-		  Dim Content As Text = Beacon.RewriteIniContent(Self.mGameUserSettingsIniOriginal, Self.mGameUserSettingsIniDict)
-		  Dim Request As New BeaconAPI.Request("ftp?" + BeaconAPI.Request.URLEncodeFormData(Self.BuildFTPParameters(Self.mProfile.GameUserSettingsIniPath)), "POST", Content, "text/plain", AddressOf Callback_UploadGameUserSettingsIni)
-		  Request.Sign(App.IdentityManager.CurrentIdentity)
-		  Self.mSocket.Start(Request)
+		  Self.mStatus = "Generating GameUserSettings.ini"
+		  Self.mGameUserSettingsIniRewriter.Rewrite(Self.mGameUserSettingsIniOriginal, Beacon.RewriteModeGameUserSettingsIni, Self.mDocument, Self.mIdentity, True, Self.mProfile)
 		End Sub
 	#tag EndMethod
 
 
 	#tag Property, Flags = &h21
 		Private mCancelled As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mDocument As Document
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -275,19 +281,19 @@ Implements Beacon.DeploymentEngine
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mGameIniDict As Xojo.Core.Dictionary
+		Private mGameIniOriginal As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mGameIniOriginal As Text
+		Private mGameIniRewriter As Beacon.Rewriter
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mGameUserSettingsIniDict As Xojo.Core.Dictionary
+		Private mGameUserSettingsIniOriginal As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mGameUserSettingsIniOriginal As Text
+		Private mGameUserSettingsIniRewriter As Beacon.Rewriter
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -303,7 +309,7 @@ Implements Beacon.DeploymentEngine
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mStatus As Text
+		Private mStatus As String
 	#tag EndProperty
 
 
@@ -312,7 +318,9 @@ Implements Beacon.DeploymentEngine
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -320,12 +328,15 @@ Implements Beacon.DeploymentEngine
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -333,6 +344,7 @@ Implements Beacon.DeploymentEngine
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -340,6 +352,7 @@ Implements Beacon.DeploymentEngine
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

@@ -8,7 +8,7 @@ Protected Module Maps
 
 	#tag Method, Flags = &h1
 		Protected Function All() As Beacon.Map()
-		  Dim Maps(6) As Beacon.Map
+		  Dim Maps(7) As Beacon.Map
 		  Maps(0) = Beacon.Maps.TheIsland
 		  Maps(1) = Beacon.Maps.ScorchedEarth
 		  Maps(2) = Beacon.Maps.Aberration
@@ -16,6 +16,7 @@ Protected Module Maps
 		  Maps(4) = Beacon.Maps.TheCenter
 		  Maps(5) = Beacon.Maps.Ragnarok
 		  Maps(6) = Beacon.Maps.Valguero
+		  Maps(7) = Beacon.Maps.Genesis
 		  Return Maps
 		  
 		End Function
@@ -33,7 +34,7 @@ Protected Module Maps
 		  Dim Matches() As Beacon.Map
 		  For Each Map As Beacon.Map In Possibles
 		    If (Map.Mask And Mask) > 0 Then
-		      Matches.Append(Map)
+		      Matches.AddRow(Map)
 		    End If
 		  Next
 		  
@@ -42,9 +43,15 @@ Protected Module Maps
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
+		Protected Function Genesis() As Beacon.Map
+		  Return New Beacon.Map("Genesis", "Genesis_P", 128, 4.0, True, "abbc2e33-f7c9-4b31-b906-bfdc8adc3685")
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h1
 		Protected Function GuessMap(Sources() As Beacon.LootSource) As UInt64
 		  Dim List() As Beacon.Map = All
-		  Dim Counts As New Xojo.Core.Dictionary
+		  Dim Counts As New Dictionary
 		  
 		  For Each Map As Beacon.Map In List
 		    For Each Source As Beacon.LootSource In Sources
@@ -59,7 +66,7 @@ Protected Module Maps
 		  
 		  Dim BestMask As UInt64
 		  Dim MaxCount As UInteger
-		  For Each Entry As Xojo.Core.DictionaryEntry In Counts
+		  For Each Entry As DictionaryEntry In Counts
 		    Dim Mask As UInt64 = Entry.Key
 		    Dim Count As UInteger = Entry.Value
 		    
@@ -78,7 +85,7 @@ Protected Module Maps
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
-		Protected Function MaskForIdentifier(Identifier As Text) As UInt64
+		Protected Function MaskForIdentifier(Identifier As String) As UInt64
 		  Dim Possibles() As Beacon.Map = All
 		  For Each Map As Beacon.Map In Possibles
 		    If Map.Identifier = Identifier Then
@@ -128,6 +135,7 @@ Protected Module Maps
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -135,18 +143,23 @@ Protected Module Maps
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -154,6 +167,7 @@ Protected Module Maps
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Module

@@ -20,10 +20,10 @@ Inherits M_Crypto.Encrypter
 		Sub Decrypt(type As Functions, data As Xojo.Core.MutableMemoryBlock, isFinalBlock As Boolean)
 		  select case type
 		  case Functions.Default, Functions.ECB
-		    DecryptECB data
+		    DecryptMbECB data
 		    
 		  case Functions.CBC
-		    DecryptCBC data, isFinalBlock
+		    DecryptMbCBC data, isFinalBlock
 		    
 		  case else
 		    raise new M_Crypto.UnsupportedFunctionException
@@ -36,10 +36,10 @@ Inherits M_Crypto.Encrypter
 		Sub Encrypt(type As Functions, data As Xojo.Core.MutableMemoryBlock, isFinalBlock As Boolean)
 		  select case type
 		  case Functions.Default, Functions.ECB
-		    EncryptECB data
+		    EncryptMbECB data
 		    
 		  case Functions.CBC
-		    EncryptCBC data, isFinalBlock
+		    EncryptMbCBC data, isFinalBlock
 		    
 		  case else
 		    raise new M_Crypto.UnsupportedFunctionException
@@ -290,7 +290,7 @@ Inherits M_Crypto.Encrypter
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub DecryptCBC(data As Xojo.Core.MutableMemoryBlock, isFinalBlock As Boolean = True)
+		Private Sub DecryptMbCBC(data As Xojo.Core.MutableMemoryBlock, isFinalBlock As Boolean = True)
 		  #if not DebugBuild
 		    #pragma BackgroundTasks False
 		    #pragma BoundsChecking False
@@ -333,7 +333,7 @@ Inherits M_Crypto.Encrypter
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub DecryptECB(data As Xojo.Core.MutableMemoryBlock)
+		Private Sub DecryptMbECB(data As Xojo.Core.MutableMemoryBlock)
 		  dim dataPtr as ptr = data.Data
 		  
 		  dim lastIndex As integer = data.Size - 1
@@ -345,7 +345,7 @@ Inherits M_Crypto.Encrypter
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub EncryptCBC(data As Xojo.Core.MutableMemoryBlock, isFinalBlock As Boolean = True)
+		Private Sub EncryptMbCBC(data As Xojo.Core.MutableMemoryBlock, isFinalBlock As Boolean = True)
 		  #if not DebugBuild
 		    #pragma BackgroundTasks False
 		    #pragma BoundsChecking False
@@ -382,7 +382,7 @@ Inherits M_Crypto.Encrypter
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub EncryptECB(data As Xojo.Core.MutableMemoryBlock)
+		Private Sub EncryptMbECB(data As Xojo.Core.MutableMemoryBlock)
 		  dim dataPtr as ptr = data.Data
 		  
 		  dim lastByte As integer = data.Size - 1
@@ -406,7 +406,8 @@ Inherits M_Crypto.Encrypter
 		  // The first round key is the key itself.
 		  //
 		  RoundKey = new Xojo.Core.MutableMemoryBlock( KeyExpSize )
-		  M_Crypto.CopyStringToMutableMemoryBlock( key.LeftB( KeyLen ), RoundKey )
+		  dim keyMem as MemoryBlock = key
+		  M_Crypto.CopyStringToMutableMemoryBlock( keyMem.StringValue( 0, min( KeyLen, keyMem.size ) ), RoundKey )
 		  
 		  dim ptrRoundKey as Ptr = RoundKey.Data
 		  
@@ -504,7 +505,7 @@ Inherits M_Crypto.Encrypter
 		    'dim ptrs() as ptr = array( MultiplyH9Ptr, MultiplyHBPtr, MultiplyHDPtr, MultiplyHEPtr )
 		    'dim values() as integer = array( kH9, kHB, kHD, kHE )
 		    '
-		    'for i as integer = 0 to ptrs.Ubound
+		    'for i as integer = 0 to ptrs.LastRowIndex
 		    'dim p as ptr = ptrs( i )
 		    'dim v as integer = values( i )
 		    '
@@ -1116,7 +1117,7 @@ Inherits M_Crypto.Encrypter
 	#tag Constant, Name = kNb, Type = Double, Dynamic = False, Default = \"4", Scope = Private
 	#tag EndConstant
 
-	#tag Constant, Name = kVersion, Type = String, Dynamic = False, Default = \"1.5", Scope = Public
+	#tag Constant, Name = kVersion, Type = String, Dynamic = False, Default = \"2.5.2", Scope = Public
 	#tag EndConstant
 
 
@@ -1129,9 +1130,54 @@ Inherits M_Crypto.Encrypter
 
 	#tag ViewBehavior
 		#tag ViewProperty
-			Name="Bits"
+			Name="BlockSize"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="CurrentVector"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="PaddingMethod"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Padding"
+			EditorType="Enum"
+			#tag EnumValues
+				"0 - NullsOnly"
+				"1 - NullsWithCount"
+				"2 - PKCS"
+			#tag EndEnumValues
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="UseFunction"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Functions"
+			EditorType="Enum"
+			#tag EnumValues
+				"0 - Default"
+				"1 - ECB"
+				"2 - CBC"
+			#tag EndEnumValues
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Bits"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -1139,6 +1185,7 @@ Inherits M_Crypto.Encrypter
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -1146,18 +1193,23 @@ Inherits M_Crypto.Encrypter
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -1165,6 +1217,7 @@ Inherits M_Crypto.Encrypter
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

@@ -3,22 +3,24 @@ Protected Class BeaconToolbar
 Inherits ControlCanvas
 Implements ObservationKit.Observer
 	#tag Event
-		Sub Activate()
-		  RaiseEvent Activate
+		Sub Activated()
+		  RaiseEvent Activated
 		  Self.Invalidate
+		  
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Deactivate()
-		  RaiseEvent Deactivate
+		Sub Deactivated()
+		  RaiseEvent Deactivated
 		  Self.Invalidate
+		  
 		End Sub
 	#tag EndEvent
 
 	#tag Event
 		Function MouseDown(X As Integer, Y As Integer) As Boolean
-		  Dim Point As New REALbasic.Point(X, Y)
+		  Dim Point As New Xojo.Point(X, Y)
 		  Self.mMouseDownName = ""
 		  Self.mMouseHeld = False
 		  Self.mMouseDownX = X
@@ -26,7 +28,7 @@ Implements ObservationKit.Observer
 		  Self.mMouseX = X
 		  Self.mMouseY = Y
 		  
-		  Tooltip.Hide
+		  App.HideTooltip
 		  CallLater.Cancel(Self.mHoverCallbackKey)
 		  
 		  If Self.mResizerEnabled And Self.mResizerRect <> Nil And Self.mResizerRect.Contains(Point) Then
@@ -48,7 +50,7 @@ Implements ObservationKit.Observer
 		    Self.mPressedName = Self.mMouseDownName
 		    Self.Refresh
 		    If HitItem.HasMenu Then
-		      Self.mHoldTimer.Mode = Timer.ModeSingle
+		      Self.mHoldTimer.RunMode = Timer.RunModes.Single
 		    End If
 		    Return True
 		  End If
@@ -90,15 +92,15 @@ Implements ObservationKit.Observer
 		  If Self.mMouseDownName <> "" Then
 		    Dim Item As BeaconToolbarItem = Self.ItemWithName(Self.mMouseDownName)
 		    If Item <> Nil Then
-		      Dim Rect As REALbasic.Rect = Item.Rect
-		      If Rect.Contains(New REALbasic.Point(X, Y)) Then
+		      Dim Rect As Xojo.Rect = Item.Rect
+		      If Rect.Contains(New Xojo.Point(X, Y)) Then
 		        If Self.mPressedName <> Item.Name Then
 		          Self.mPressedName = Item.Name
 		          Self.Invalidate
 		        End If
 		        If Not Self.mMouseHeld Then
 		          Self.mHoldTimer.Reset
-		          Self.mHoldTimer.Mode = Timer.ModeSingle
+		          Self.mHoldTimer.RunMode = Timer.RunModes.Single
 		        End If
 		      Else
 		        If Self.mPressedName <> "" Then
@@ -106,7 +108,7 @@ Implements ObservationKit.Observer
 		          Self.Invalidate
 		        End If
 		        Self.mHoldTimer.Reset
-		        Self.mHoldTimer.Mode = Timer.ModeOff
+		        Self.mHoldTimer.RunMode = Timer.RunModes.Off
 		      End If
 		      Return
 		    End If
@@ -125,7 +127,7 @@ Implements ObservationKit.Observer
 
 	#tag Event
 		Sub MouseMove(X As Integer, Y As Integer)
-		  Dim Point As New REALbasic.Point(X, Y)
+		  Dim Point As New Xojo.Point(X, Y)
 		  Self.HoverItem = Self.ItemAtPoint(Point)
 		  
 		  If Self.mResizerRect <> Nil Then
@@ -150,7 +152,7 @@ Implements ObservationKit.Observer
 		  Self.mMouseY = Y
 		  
 		  Self.mHoldTimer.Reset
-		  Self.mHoldTimer.Mode = Timer.ModeOff
+		  Self.mHoldTimer.RunMode = Timer.RunModes.Off
 		  
 		  If Self.mResizing Then
 		    Self.mResizing = False
@@ -160,9 +162,9 @@ Implements ObservationKit.Observer
 		  
 		  If Self.mMouseDownName <> "" Then
 		    Dim Item As BeaconToolbarItem = Self.ItemWithName(Self.mMouseDownName)
-		    If Item <> Nil And Item.Rect.Contains(New REALbasic.Point(X, Y)) And Not Self.mMouseHeld Then
+		    If Item <> Nil And Item.Rect.Contains(New Xojo.Point(X, Y)) And Not Self.mMouseHeld Then
 		      // Action
-		      RaiseEvent Action(Item)
+		      RaiseEvent Pressed(Item)
 		    End If
 		    Self.mPressedName = ""
 		    Self.mMouseDownName = ""
@@ -173,10 +175,9 @@ Implements ObservationKit.Observer
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
-		  RaiseEvent Open
+		Sub Opening()
+		  RaiseEvent Opening
 		  Self.Transparent = True
-		  Self.DoubleBuffer = False
 		End Sub
 	#tag EndEvent
 
@@ -197,9 +198,9 @@ Implements ObservationKit.Observer
 		  Self.mRightItems = New BeaconToolbarItemArray
 		  Self.mRightItems.AddObserver(Self, BeaconToolbarItem.KeyChanged)
 		  Self.mHoldTimer = New Timer
-		  Self.mHoldTimer.Mode = Timer.ModeOff
+		  Self.mHoldTimer.RunMode = Timer.RunModes.Off
 		  Self.mHoldTimer.Period = 250
-		  AddHandler Self.mHoldTimer.Action, WeakAddressOf Self.mHoldTimer_Action
+		  AddHandler Self.mHoldTimer.Run, WeakAddressOf Self.mHoldTimer_Run
 		End Sub
 	#tag EndMethod
 
@@ -210,7 +211,7 @@ Implements ObservationKit.Observer
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub DrawButton(G As Graphics, Button As BeaconToolbarItem, Rect As REALbasic.Rect, Mode As ButtonModes, Highlighted As Boolean)
+		Private Sub DrawButton(G As Graphics, Button As BeaconToolbarItem, Rect As Xojo.Rect, Mode As ButtonModes, Highlighted As Boolean)
 		  #Pragma Unused Highlighted
 		  
 		  Dim PrecisionX As Double = 1 / G.ScaleX
@@ -253,8 +254,8 @@ Implements ObservationKit.Observer
 		    End If
 		    
 		    If Button.Toggled Then
-		      G.ForeColor = If(UseAccent, AccentColor, SystemColors.SelectedContentBackgroundColor)
-		      G.FillRoundRect(NearestMultiple(Rect.Left, PrecisionX), NearestMultiple(Rect.Top, PrecisionY), NearestMultiple(Rect.Width, PrecisionX), NearestMultiple(Rect.Height, PrecisionY), 4, 4)
+		      G.DrawingColor = If(UseAccent, AccentColor, SystemColors.SelectedContentBackgroundColor)
+		      G.FillRoundRectangle(NearestMultiple(Rect.Left, PrecisionX), NearestMultiple(Rect.Top, PrecisionY), NearestMultiple(Rect.Width, PrecisionX), NearestMultiple(Rect.Height, PrecisionY), 4, 4)
 		    End If
 		    
 		    Dim Overlay As Picture
@@ -266,8 +267,8 @@ Implements ObservationKit.Observer
 		  End If
 		  
 		  If Mode = ButtonModes.Pressed Then
-		    G.ForeColor = &c00000080
-		    G.FillRoundRect(NearestMultiple(Rect.Left, PrecisionX), NearestMultiple(Rect.Top, PrecisionY), NearestMultiple(Rect.Width, PrecisionX), NearestMultiple(Rect.Height, PrecisionY), 4, 4)
+		    G.DrawingColor = &c00000080
+		    G.FillRoundRectangle(NearestMultiple(Rect.Left, PrecisionX), NearestMultiple(Rect.Top, PrecisionY), NearestMultiple(Rect.Width, PrecisionX), NearestMultiple(Rect.Height, PrecisionY), 4, 4)
 		  End If
 		End Sub
 	#tag EndMethod
@@ -286,7 +287,7 @@ Implements ObservationKit.Observer
 		  
 		  Self.mHoverItem = Item
 		  
-		  Tooltip.Hide
+		  App.HideTooltip
 		  CallLater.Cancel(Self.mHoverCallbackKey)
 		  
 		  If Item <> Nil And Item.HelpTag <> "" Then
@@ -297,14 +298,14 @@ Implements ObservationKit.Observer
 
 	#tag Method, Flags = &h0
 		Function ItemAtPoint(X As Integer, Y As Integer) As BeaconToolbarItem
-		  Return Self.ItemAtPoint(New REALbasic.Point(X, Y))
+		  Return Self.ItemAtPoint(New Xojo.Point(X, Y))
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ItemAtPoint(Point As REALbasic.Point) As BeaconToolbarItem
+		Function ItemAtPoint(Point As Xojo.Point) As BeaconToolbarItem
 		  If Self.mLeftItems <> Nil Then
-		    For I As Integer = 0 To Self.mLeftItems.UBound
+		    For I As Integer = 0 To Self.mLeftItems.LastRowIndex
 		      Try
 		        If Self.mLeftItems(I) <> Nil And Self.mLeftItems(I).Rect.Contains(Point) Then
 		          Return Self.mLeftItems(I)
@@ -316,7 +317,7 @@ Implements ObservationKit.Observer
 		  End If
 		  
 		  If Self.mRightItems <> Nil Then
-		    For I As Integer = 0 To Self.mRightItems.UBound
+		    For I As Integer = 0 To Self.mRightItems.LastRowIndex
 		      Try
 		        If Self.mRightItems(I) <> Nil And Self.mRightItems(I).Rect.Contains(Point) Then
 		          Return Self.mRightItems(I)
@@ -334,12 +335,12 @@ Implements ObservationKit.Observer
 
 	#tag Method, Flags = &h0
 		Function ItemWithName(Name As String) As BeaconToolbarItem
-		  For I As Integer = 0 To Self.mLeftItems.UBound
+		  For I As Integer = 0 To Self.mLeftItems.LastRowIndex
 		    If Self.mLeftItems(I).Name = Name Then
 		      Return Self.mLeftItems(I)
 		    End If
 		  Next
-		  For I As Integer = 0 To Self.mRightItems.UBound
+		  For I As Integer = 0 To Self.mRightItems.LastRowIndex
 		    If Self.mRightItems(I).Name = Name Then
 		      Return Self.mRightItems(I)
 		    End If
@@ -348,7 +349,7 @@ Implements ObservationKit.Observer
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub mHoldTimer_Action(Sender As Timer)
+		Private Sub mHoldTimer_Run(Sender As Timer)
 		  #Pragma Unused Sender
 		  
 		  If Self.mMouseHeld Or Self.mPressedName = "" Then
@@ -364,7 +365,7 @@ Implements ObservationKit.Observer
 		    Return
 		  End If
 		  
-		  Dim Position As Xojo.Core.Point = Self.Window.GlobalPosition
+		  Dim Position As Point = Self.Window.GlobalPosition
 		  Dim Choice As MenuItem = Menu.PopUp(Position.X + Self.Left + Item.Rect.Left, Position.Y + Self.Top + Item.Rect.Bottom)
 		  If Choice <> Nil Then
 		    RaiseEvent HandleMenuAction(Item, Choice)
@@ -373,7 +374,7 @@ Implements ObservationKit.Observer
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub ObservedValueChanged(Source As ObservationKit.Observable, Key As Text, Value As Auto)
+		Sub ObservedValueChanged(Source As ObservationKit.Observable, Key As String, Value As Variant)
 		  // Part of the ObservationKit.Observer interface.
 		  
 		  #Pragma Unused Source
@@ -402,7 +403,7 @@ Implements ObservationKit.Observer
 		    Highlighted = IsKeyWindow(Self.TrueWindow.Handle) Or IsMainWindow(Self.TrueWindow.Handle)
 		  #endif
 		  
-		  Dim ContentRect As New REALbasic.Rect(CellPadding, CellPadding, G.Width - (CellPadding * 2), G.Height - (CellPadding * 2))
+		  Dim ContentRect As New Xojo.Rect(CellPadding, CellPadding, G.Width - (CellPadding * 2), G.Height - (CellPadding * 2))
 		  
 		  If Self.mResizerStyle <> ResizerTypes.None Then
 		    Dim ResizeIcon As Picture
@@ -418,7 +419,7 @@ Implements ObservationKit.Observer
 		    Dim ResizerLeft As Integer = ContentRect.Right + CellPadding
 		    Dim ResizerTop As Integer = (G.Height - ResizeIcon.Height) / 2
 		    
-		    Self.mResizerRect = New REALbasic.Rect(ResizerLeft, 0, G.Width - ResizerLeft, G.Height)
+		    Self.mResizerRect = New Xojo.Rect(ResizerLeft, 0, G.Width - ResizerLeft, G.Height)
 		    
 		    Dim ResizeColor As Color = SystemColors.LabelColor
 		    If Not Self.ResizerEnabled Then
@@ -437,7 +438,7 @@ Implements ObservationKit.Observer
 		  ContentRect.Left = ContentRect.Left + (ItemsPerSide * (ButtonSize + CellPadding))
 		  ContentRect.Width = ContentRect.Width - ((ItemsPerSide * 2) * (ButtonSize + CellPadding))
 		  
-		  For I As Integer = 0 To Self.mLeftItems.UBound
+		  For I As Integer = 0 To Self.mLeftItems.LastRowIndex
 		    Dim Item As BeaconToolbarItem = Self.mLeftItems(I)
 		    Dim Mode As ButtonModes = ButtonModes.Normal
 		    If Self.mPressedName = Item.Name Then
@@ -447,12 +448,12 @@ Implements ObservationKit.Observer
 		      Mode = ButtonModes.Disabled
 		    End If
 		    
-		    Item.Rect = New REALbasic.Rect(NextLeft, CellPadding, ButtonSize, ButtonSize)
+		    Item.Rect = New Xojo.Rect(NextLeft, CellPadding, ButtonSize, ButtonSize)
 		    Self.DrawButton(G, Item, Item.Rect, Mode, Highlighted)
 		    NextLeft = Item.Rect.Right + CellPadding
 		  Next
 		  
-		  For I As Integer = 0 To Self.mRightItems.UBound
+		  For I As Integer = 0 To Self.mRightItems.LastRowIndex
 		    Dim Item As BeaconToolbarItem = Self.mRightItems(I)
 		    Dim Mode As ButtonModes = ButtonModes.Normal
 		    If Self.mPressedName = Item.Name Then
@@ -462,25 +463,25 @@ Implements ObservationKit.Observer
 		      Mode = ButtonModes.Disabled
 		    End If
 		    
-		    Item.Rect = New REALbasic.Rect(NextRight - ButtonSize, CellPadding, ButtonSize, ButtonSize)
+		    Item.Rect = New Xojo.Rect(NextRight - ButtonSize, CellPadding, ButtonSize, ButtonSize)
 		    Self.DrawButton(G, Item, Item.Rect, Mode, Highlighted)
 		    NextRight = Item.Rect.Left - CellPadding
 		  Next
 		  
 		  If Self.Caption <> "" Then
-		    Dim Caption As String = Self.Caption.NthField(EndOfLine, 1)
+		    Dim Caption As String = Self.Caption.FieldAtPosition(EndOfLine, 1)
 		    
 		    Dim CaptionSize As Double = 0
 		    
-		    G.TextSize = CaptionSize
-		    Dim CaptionWidth As Integer = Ceil(G.StringWidth(Caption))
+		    G.FontSize = CaptionSize
+		    Dim CaptionWidth As Integer = Ceil(G.TextWidth(Caption))
 		    
 		    CaptionWidth = Min(CaptionWidth, ContentRect.Width)
 		    Dim CaptionLeft As Integer = ContentRect.Left + ((ContentRect.Width - CaptionWidth) / 2)
-		    Dim CaptionBottom As Integer = ContentRect.Top + (ContentRect.Height / 2) + ((G.TextAscent * 0.8) / 2)
+		    Dim CaptionBottom As Integer = ContentRect.Top + (ContentRect.Height / 2) + ((G.FontAscent * 0.8) / 2)
 		    
-		    G.ForeColor = SystemColors.LabelColor
-		    G.DrawString(Self.Caption, CaptionLeft, CaptionBottom, CaptionWidth, True)
+		    G.DrawingColor = SystemColors.LabelColor
+		    G.DrawText(Self.Caption, CaptionLeft, CaptionBottom, CaptionWidth, True)
 		  End If
 		End Sub
 	#tag EndMethod
@@ -491,17 +492,13 @@ Implements ObservationKit.Observer
 		    Return
 		  End If
 		  
-		  Tooltip.Show(Self.mHoverItem.HelpTag, System.MouseX, System.MouseY + 16)
+		  App.ShowTooltip(Self.mHoverItem.HelpTag, System.MouseX, System.MouseY + 16)
 		End Sub
 	#tag EndMethod
 
 
 	#tag Hook, Flags = &h0
-		Event Action(Item As BeaconToolbarItem)
-	#tag EndHook
-
-	#tag Hook, Flags = &h0
-		Event Activate()
+		Event Activated()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -509,7 +506,7 @@ Implements ObservationKit.Observer
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Deactivate()
+		Event Deactivated()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -517,7 +514,11 @@ Implements ObservationKit.Observer
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event Opening()
+	#tag EndHook
+
+	#tag Hook, Flags = &h0
+		Event Pressed(Item As BeaconToolbarItem)
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -620,7 +621,7 @@ Implements ObservationKit.Observer
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mResizerRect As REALbasic.Rect
+		Private mResizerRect As Xojo.Rect
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -698,25 +699,76 @@ Implements ObservationKit.Observer
 
 	#tag ViewBehavior
 		#tag ViewProperty
+			Name="DoubleBuffer"
+			Visible=false
+			Group="Behavior"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Tooltip"
+			Visible=true
+			Group="Appearance"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowAutoDeactivate"
+			Visible=true
+			Group="Appearance"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowFocusRing"
+			Visible=true
+			Group="Appearance"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowFocus"
+			Visible=true
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowTabs"
+			Visible=true
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
 			Name="Index"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="Integer"
-			EditorType="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Height"
@@ -724,17 +776,23 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="40"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="InitialParent"
+			Visible=false
 			Group="Position"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockBottom"
@@ -742,6 +800,7 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="False"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockLeft"
@@ -749,6 +808,7 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="True"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockRight"
@@ -756,6 +816,7 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="False"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockTop"
@@ -763,6 +824,7 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="True"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabIndex"
@@ -770,12 +832,15 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabPanelIndex"
+			Visible=false
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabStop"
@@ -783,12 +848,15 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="True"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Width"
@@ -796,19 +864,15 @@ Implements ObservationKit.Observer
 			Group="Position"
 			InitialValue="200"
 			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AutoDeactivate"
-			Visible=true
-			Group="Appearance"
-			InitialValue="True"
-			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Backdrop"
+			Visible=false
 			Group="Appearance"
+			InitialValue=""
 			Type="Picture"
-			EditorType="Picture"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Enabled"
@@ -816,20 +880,7 @@ Implements ObservationKit.Observer
 			Group="Appearance"
 			InitialValue="True"
 			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="HelpTag"
-			Visible=true
-			Group="Appearance"
-			Type="String"
-			EditorType="MultiLineEditor"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="UseFocusRing"
-			Visible=true
-			Group="Appearance"
-			InitialValue="True"
-			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Visible"
@@ -837,24 +888,15 @@ Implements ObservationKit.Observer
 			Group="Appearance"
 			InitialValue="True"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="ScrollSpeed"
+			Visible=false
 			Group="Behavior"
 			InitialValue="20"
 			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AcceptFocus"
-			Visible=true
-			Group="Behavior"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AcceptTabs"
-			Visible=true
-			Group="Behavior"
-			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Caption"
@@ -863,17 +905,6 @@ Implements ObservationKit.Observer
 			InitialValue="Untitled"
 			Type="String"
 			EditorType="MultiLineEditor"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="DoubleBuffer"
-			Group="Behavior"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="EraseBackground"
-			Group="Behavior"
-			Type="Boolean"
-			EditorType="Boolean"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Resizer"
@@ -890,9 +921,11 @@ Implements ObservationKit.Observer
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Transparent"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="ResizerEnabled"
@@ -900,6 +933,7 @@ Implements ObservationKit.Observer
 			Group="Behavior"
 			InitialValue="True"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

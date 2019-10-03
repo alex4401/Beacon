@@ -3,7 +3,6 @@ Begin BeaconDialog DinoAdjustmentDialog
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   8
    FullScreen      =   False
@@ -11,18 +10,20 @@ Begin BeaconDialog DinoAdjustmentDialog
    HasBackColor    =   False
    Height          =   346
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
-   MaxHeight       =   32000
+   MaxHeight       =   346
    MaximizeButton  =   False
-   MaxWidth        =   32000
+   MaxWidth        =   626
    MenuBar         =   0
    MenuBarVisible  =   True
-   MinHeight       =   64
+   MinHeight       =   346
    MinimizeButton  =   False
-   MinWidth        =   64
+   MinWidth        =   626
    Placement       =   1
+   Resizable       =   "False"
    Resizeable      =   False
+   SystemUIVisible =   "True"
    Title           =   "Edit Creature"
    Visible         =   True
    Width           =   626
@@ -274,7 +275,7 @@ Begin BeaconDialog DinoAdjustmentDialog
       Scope           =   2
       TabIndex        =   8
       TabPanelIndex   =   0
-      TabStop         =   True
+      TabStop         =   "True"
       Top             =   158
       Transparent     =   False
       Value           =   0
@@ -774,7 +775,7 @@ Begin BeaconDialog DinoAdjustmentDialog
       Begin UITweaks.ResizedPushButton ChooseReplacementButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Choose…"
          Default         =   False
@@ -842,7 +843,7 @@ Begin BeaconDialog DinoAdjustmentDialog
    Begin UITweaks.ResizedPushButton ActionButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "OK"
       Default         =   True
@@ -874,7 +875,7 @@ Begin BeaconDialog DinoAdjustmentDialog
    Begin UITweaks.ResizedPushButton CancelButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Cancel"
       Default         =   False
@@ -906,7 +907,7 @@ Begin BeaconDialog DinoAdjustmentDialog
    Begin UITweaks.ResizedPushButton ChooseTargetButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "Choose…"
       Default         =   False
@@ -974,8 +975,15 @@ End
 #tag EndWindow
 
 #tag WindowCode
+	#tag Event
+		Sub Opening()
+		  Self.SwapButtons()
+		End Sub
+	#tag EndEvent
+
+
 	#tag Method, Flags = &h21
-		Private Sub Constructor(ConfiguredClasses() As Text, DisabledClasses() As Text, Mods As Beacon.TextList)
+		Private Sub Constructor(ConfiguredClasses() As String, DisabledClasses() As String, Mods As Beacon.StringList)
 		  Self.ConfiguredClasses = ConfiguredClasses
 		  Self.DisabledClasses = DisabledClasses
 		  Self.Mods = Mods
@@ -984,7 +992,7 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Present(Parent As Window, EditClass As Text, Config As BeaconConfigs.DinoAdjustments, Mods As Beacon.TextList) As Boolean
+		Shared Function Present(Parent As Window, EditClass As String, Config As BeaconConfigs.DinoAdjustments, Mods As Beacon.StringList) As Boolean
 		  // This one needs the whole config because there are a lot of factors to showing the creatures in the menus
 		  
 		  If Parent = Nil Or Config = Nil Then
@@ -992,14 +1000,14 @@ End
 		  End If
 		  
 		  Dim ConfiguredBehaviors() As Beacon.CreatureBehavior = Config.All
-		  Dim ConfiguredClasses(), DisabledClasses() As Text
+		  Dim ConfiguredClasses(), DisabledClasses() As String
 		  For Each Behavior As Beacon.CreatureBehavior In ConfiguredBehaviors
 		    If Behavior.TargetClass = EditClass Then
 		      Continue
 		    End If
-		    ConfiguredClasses.Append(Behavior.TargetClass)
+		    ConfiguredClasses.AddRow(Behavior.TargetClass)
 		    If Behavior.ProhibitSpawning Then
-		      DisabledClasses.Append(Behavior.TargetClass)
+		      DisabledClasses.AddRow(Behavior.TargetClass)
 		    End If
 		  Next
 		  
@@ -1015,10 +1023,10 @@ End
 		        Win.SelectedReplacement = Behavior.ReplacementClass
 		        Win.ModeReplaceRadio.Value = True
 		      Else
-		        Win.WildDamageField.Text = Format(Behavior.DamageMultiplier, "0.0#####")
-		        Win.WildResistanceField.Text = Format(Behavior.ResistanceMultiplier, "0.0#####")
-		        Win.TameDamageField.Text = Format(Behavior.TamedDamageMultiplier, "0.0#####")
-		        Win.TameResistanceField.Text = Format(Behavior.TamedResistanceMultiplier, "0.0#####")
+		        Win.WildDamageField.Value = Format(Behavior.DamageMultiplier, "0.0#####")
+		        Win.WildResistanceField.Value = Format(Behavior.ResistanceMultiplier, "0.0#####")
+		        Win.TameDamageField.Value = Format(Behavior.TamedDamageMultiplier, "0.0#####")
+		        Win.TameResistanceField.Value = Format(Behavior.TamedResistanceMultiplier, "0.0#####")
 		        Win.ModeMultipliersRadio.Value = True
 		      End If
 		    End If
@@ -1029,17 +1037,17 @@ End
 		    Return False
 		  End If
 		  
-		  Dim TargetClass As Text = Win.SelectedClass
+		  Dim TargetClass As String = Win.SelectedClass
 		  Dim Behavior As New Beacon.MutableCreatureBehavior(TargetClass)
 		  If Win.ModeDisableRadio.Value Then
 		    Behavior.ProhibitSpawning = True
 		  ElseIf Win.ModeReplaceRadio.Value Then
 		    Behavior.ReplacementClass = Win.SelectedReplacement
 		  Else
-		    Behavior.DamageMultiplier = CDbl(Win.WildDamageField.Text)
-		    Behavior.ResistanceMultiplier = CDbl(Win.WildResistanceField.Text)
-		    Behavior.TamedDamageMultiplier = CDbl(Win.TameDamageField.Text)
-		    Behavior.TamedResistanceMultiplier = CDbl(Win.TameResistanceField.Text)
+		    Behavior.DamageMultiplier = CDbl(Win.WildDamageField.Value)
+		    Behavior.ResistanceMultiplier = CDbl(Win.WildResistanceField.Value)
+		    Behavior.TamedDamageMultiplier = CDbl(Win.TameDamageField.Value)
+		    Behavior.TamedResistanceMultiplier = CDbl(Win.TameResistanceField.Value)
 		  End If
 		  
 		  If EditClass <> "" And TargetClass <> EditClass Then
@@ -1057,23 +1065,23 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private ConfiguredClasses() As Text
+		Private ConfiguredClasses() As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private DisabledClasses() As Text
+		Private DisabledClasses() As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private Mods As Beacon.TextList
+		Private Mods As Beacon.StringList
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mSelectedClass As Text
+		Private mSelectedClass As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mSelectedReplacement As Text
+		Private mSelectedReplacement As String
 	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h21
@@ -1091,15 +1099,15 @@ End
 			  Self.mSelectedClass = Value
 			  If Self.mSelectedClass = "" Then
 			    Self.TargetDinoNameLabel.Italic = True
-			    Self.TargetDinoNameLabel.Text = "No Selection"
+			    Self.TargetDinoNameLabel.Value = "No Selection"
 			  Else
 			    Self.TargetDinoNameLabel.Italic = False
 			    
 			    Dim Creature As Beacon.Creature = Beacon.Data.GetCreatureByClass(Self.mSelectedClass)
 			    If Creature <> Nil Then
-			      Self.TargetDinoNameLabel.Text = Creature.Label
+			      Self.TargetDinoNameLabel.Value = Creature.Label
 			    Else
-			      Self.TargetDinoNameLabel.Text = Self.mSelectedClass
+			      Self.TargetDinoNameLabel.Value = Self.mSelectedClass
 			    End If
 			  End If
 			  
@@ -1108,7 +1116,7 @@ End
 			  End If
 			End Set
 		#tag EndSetter
-		Private SelectedClass As Text
+		Private SelectedClass As String
 	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h21
@@ -1126,20 +1134,20 @@ End
 			  Self.mSelectedReplacement = Value
 			  If Self.mSelectedReplacement = "" Then
 			    Self.ReplacementDinoNameLabel.Italic = True
-			    Self.ReplacementDinoNameLabel.Text = "No Selection"
+			    Self.ReplacementDinoNameLabel.Value = "No Selection"
 			  Else
 			    Self.ReplacementDinoNameLabel.Italic = False
 			    
 			    Dim Creature As Beacon.Creature = Beacon.Data.GetCreatureByClass(Self.mSelectedReplacement)
 			    If Creature <> Nil Then
-			      Self.ReplacementDinoNameLabel.Text = Creature.Label
+			      Self.ReplacementDinoNameLabel.Value = Creature.Label
 			    Else
-			      Self.ReplacementDinoNameLabel.Text = Self.mSelectedReplacement
+			      Self.ReplacementDinoNameLabel.Value = Self.mSelectedReplacement
 			    End If
 			  End If
 			End Set
 		#tag EndSetter
-		Private SelectedReplacement As Text
+		Private SelectedReplacement As String
 	#tag EndComputedProperty
 
 
@@ -1166,36 +1174,36 @@ End
 
 #tag Events ModeMultipliersRadio
 	#tag Event
-		Sub Action()
+		Sub ValueChanged()
 		  If Me.Value Then
-		    Self.Pages.Value = Self.PageMultipliers
+		    Self.Pages.SelectedPanelIndex = Self.PageMultipliers
 		  End If
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ModeReplaceRadio
 	#tag Event
-		Sub Action()
+		Sub ValueChanged()
 		  If Me.Value Then
-		    Self.Pages.Value = Self.PageReplace
+		    Self.Pages.SelectedPanelIndex = Self.PageReplace
 		  End If
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ModeDisableRadio
 	#tag Event
-		Sub Action()
+		Sub ValueChanged()
 		  If Me.Value Then
-		    Self.Pages.Value = Self.PageDisable
+		    Self.Pages.SelectedPanelIndex = Self.PageDisable
 		  End If
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Pages
 	#tag Event
-		Sub Change()
+		Sub PanelChanged()
 		  Dim OriginalHeight As Integer = Me.Height
-		  Select Case Me.Value
+		  Select Case Me.SelectedPanelIndex
 		  Case Self.PageMultipliers
 		    Me.Height = Self.HeightMultipliers
 		  Case Self.PageReplace
@@ -1210,22 +1218,22 @@ End
 #tag EndEvents
 #tag Events ChooseReplacementButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Dim Exclude() As Beacon.Creature
 		  Dim SelectedCreature As Beacon.Creature = Beacon.Data.GetCreatureByClass(Self.mSelectedClass)
 		  If SelectedCreature <> Nil Then
-		    Exclude.Append(SelectedCreature)
+		    Exclude.AddRow(SelectedCreature)
 		  End If
-		  For Each ClassString As Text In Self.DisabledClasses
+		  For Each ClassString As String In Self.DisabledClasses
 		    Dim Creature As Beacon.Creature = Beacon.Data.GetCreatureByClass(ClassString)
 		    If Creature <> Nil Then
-		      Exclude.Append(Creature)
+		      Exclude.AddRow(Creature)
 		    End If
 		  Next
 		  
 		  // Do include mods here, because only dinos actually present in game files should be selectable
 		  Dim Creatures() As Beacon.Creature = EngramSelectorDialog.Present(Self, "", Exclude, Self.Mods, False)
-		  If Creatures <> Nil And Creatures.Ubound = 0 Then
+		  If Creatures <> Nil And Creatures.LastRowIndex = 0 Then
 		    Self.SelectedReplacement = Creatures(0).ClassString
 		  End If
 		End Sub
@@ -1233,7 +1241,7 @@ End
 #tag EndEvents
 #tag Events ActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  If Self.SelectedClass = "" Then
 		    Self.ShowAlert("You haven't selected a creature", "That's an important step, right?")
 		    Return
@@ -1245,10 +1253,10 @@ End
 		      Return
 		    End If
 		  ElseIf Self.ModeMultipliersRadio.Value Then
-		    Dim DamageMultiplier As Double = CDbl(Self.WildDamageField.Text)
-		    Dim ResistanceMultiplier As Double = CDbl(Self.WildResistanceField.Text)
-		    Dim TamedDamageMultiplier As Double = CDbl(Self.TameDamageField.Text)
-		    Dim TamedResistanceMultiplier As Double = CDbl(Self.TameResistanceField.Text)
+		    Dim DamageMultiplier As Double = CDbl(Self.WildDamageField.Value)
+		    Dim ResistanceMultiplier As Double = CDbl(Self.WildResistanceField.Value)
+		    Dim TamedDamageMultiplier As Double = CDbl(Self.TameDamageField.Value)
+		    Dim TamedResistanceMultiplier As Double = CDbl(Self.TameResistanceField.Value)
 		    
 		    If DamageMultiplier < 0 Or ResistanceMultiplier < 0 Or TamedDamageMultiplier < 0 Or TamedResistanceMultiplier < 0 Then
 		      Self.ShowAlert("You have a multiplier that doesn't make sense", "It's ok to make the multipliers really small, but they must be at least zero.")
@@ -1267,7 +1275,7 @@ End
 #tag EndEvents
 #tag Events CancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.Cancelled = True
 		  Self.Hide
 		End Sub
@@ -1275,18 +1283,18 @@ End
 #tag EndEvents
 #tag Events ChooseTargetButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Dim Exclude() As Beacon.Creature
-		  For Each ClassString As Text In Self.ConfiguredClasses
+		  For Each ClassString As String In Self.ConfiguredClasses
 		    Dim Creature As Beacon.Creature = Beacon.Data.GetCreatureByClass(ClassString)
 		    If Creature <> Nil Then
-		      Exclude.Append(Creature)
+		      Exclude.AddRow(Creature)
 		    End If
 		  Next
 		  
 		  // Do not include the mods list here, we intentionally want all creatures available
 		  Dim Creatures() As Beacon.Creature = EngramSelectorDialog.Present(Self, "", Exclude, False)
-		  If Creatures <> Nil And Creatures.Ubound = 0 Then
+		  If Creatures <> Nil And Creatures.LastRowIndex = 0 Then
 		    Self.SelectedClass = Creatures(0).ClassString
 		  End If
 		End Sub
@@ -1294,74 +1302,59 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="Name"
+		Name="Resizeable"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Interfaces"
+		Name="MenuBarVisible"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Deprecated"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Super"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Width"
-		Visible=true
-		Group="Size"
-		InitialValue="600"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinWidth"
+		Name="MinimumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinHeight"
+		Name="MinimumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
+		Name="MaximumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxHeight"
+		Name="MaximumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -1378,78 +1371,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Title"
-		Visible=true
-		Group="Frame"
-		InitialValue="Untitled"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasMinimizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinimizeButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
+		Name="HasFullScreenButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -1460,61 +1418,123 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Super"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Width"
+		Visible=true
+		Group="Size"
+		InitialValue="600"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Title"
+		Visible=true
+		Group="Frame"
+		InitialValue="Untitled"
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Visible"
 		Visible=true
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
+		Visible=false
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MenuBar"
 		Visible=true
 		Group="Menus"
+		InitialValue=""
 		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Visible=true
-		Group="Deprecated"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

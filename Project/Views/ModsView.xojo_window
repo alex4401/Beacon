@@ -5,7 +5,6 @@ Begin BeaconSubview ModsView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -58,7 +57,7 @@ Begin BeaconSubview ModsView
       LockRight       =   False
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
+      RowCount        =   "0"
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -87,7 +86,7 @@ Begin BeaconSubview ModsView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   379
       HelpTag         =   ""
       Index           =   -2147483648
@@ -147,7 +146,7 @@ Begin BeaconSubview ModsView
       Caption         =   "Mods"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -178,7 +177,7 @@ Begin BeaconSubview ModsView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -207,7 +206,7 @@ Begin BeaconSubview ModsView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -234,13 +233,13 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.ToolbarCaption = "Mods"
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Shown(UserData As Auto = Nil)
+		Sub Shown(UserData As Variant = Nil)
 		  #Pragma Unused UserData
 		  
 		  Self.RefreshMods()
@@ -251,6 +250,11 @@ End
 	#tag Method, Flags = &h21
 		Private Sub APICallback_DeleteMod(Request As BeaconAPI.Request, Response As BeaconAPI.Response)
 		  #Pragma Unused Request
+		  
+		  If Self.ModList = Nil Then
+		    // This view already closed
+		    Return
+		  End If
 		  
 		  If Response.Success Then
 		    Self.RefreshMods
@@ -265,31 +269,36 @@ End
 		Private Sub APICallback_ListMods(Request As BeaconAPI.Request, Response As BeaconAPI.Response)
 		  #Pragma Unused Request
 		  
+		  If Self.ModList = Nil Then
+		    // This view already closed
+		    Return
+		  End If
+		  
 		  If Not Response.Success Then
-		    MsgBox("Unable to load mods: " + Response.Message)
+		    MessageBox("Unable to load mods: " + Response.Message)
 		    Return
 		  End If
 		  
 		  Dim SelectedMod As BeaconAPI.WorkshopMod
-		  If ModList.ListIndex > -1 Then
+		  If Self.ModList.SelectedRowIndex > -1 Then
 		    SelectedMod = Self.SelectedMod()
 		  End If
 		  
-		  ModList.DeleteAllRows()
+		  Self.ModList.RemoveAllRows()
 		  
-		  Dim Arr() As Auto = Response.JSON
-		  For Each Dict As Xojo.Core.Dictionary In Arr
+		  Dim Arr() As Variant = Response.JSON
+		  For Each Dict As Dictionary In Arr
 		    Dim UserMod As New BeaconAPI.WorkshopMod(Dict)
 		    
-		    ModList.AddRow(UserMod.Name)
-		    ModList.RowTag(ModList.LastIndex) = UserMod
+		    Self.ModList.AddRow(UserMod.Name)
+		    Self.ModList.RowTagAt(Self.ModList.LastAddedRowIndex) = UserMod
 		    
 		    If Not UserMod.Confirmed Then
-		      ModList.CellItalic(ModList.LastIndex, 0) = True
+		      Self.ModList.CellItalic(Self.ModList.LastAddedRowIndex, 0) = True
 		    End If
 		    
 		    If UserMod = SelectedMod Then
-		      ModList.ListIndex = ModList.LastIndex
+		      Self.ModList.SelectedRowIndex = Self.ModList.LastAddedRowIndex
 		    End If
 		  Next
 		End Sub
@@ -298,18 +307,18 @@ End
 	#tag Method, Flags = &h21
 		Private Sub RefreshMods()
 		  Dim Request As New BeaconAPI.Request("mod", "GET", AddressOf APICallback_ListMods)
-		  Request.Sign(App.IdentityManager.CurrentIdentity)
+		  Request.Authenticate(Preferences.OnlineToken)
 		  BeaconAPI.Send(Request)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Function SelectedMod() As BeaconAPI.WorkshopMod
-		  If ModList.ListIndex = -1 Then
+		  If ModList.SelectedRowIndex = -1 Then
 		    Return Nil
 		  End If
 		  
-		  Return ModList.RowTag(ModList.ListIndex)
+		  Return ModList.RowTagAt(ModList.SelectedRowIndex)
 		End Function
 	#tag EndMethod
 
@@ -318,9 +327,9 @@ End
 
 #tag Events ModList
 	#tag Event
-		Sub Change()
-		  Header.RemoveButton.Enabled = Me.ListIndex > -1
-		  Header.SettingsButton.Enabled = Me.ListIndex > -1
+		Sub SelectionChanged()
+		  Header.RemoveButton.Enabled = Me.SelectedRowIndex > -1
+		  Header.SettingsButton.Enabled = Me.SelectedRowIndex > -1
 		  ModView.CurrentMod = Self.SelectedMod()
 		End Sub
 	#tag EndEvent
@@ -339,7 +348,7 @@ End
 #tag EndEvents
 #tag Events Header
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddButton"
 		    If DeveloperAddModDialog.Present(Self) Then
@@ -356,7 +365,7 @@ End
 		    Dim Choice As MessageDialogButton = Dialog.ShowModalWithin(Self.TrueWindow)
 		    If Choice = Dialog.ActionButton Then
 		      Dim Request As New BeaconAPI.Request(Self.SelectedMod.ResourceURL, "DELETE", AddressOf APICallback_DeleteMod)
-		      Request.Sign(App.IdentityManager.CurrentIdentity)
+		      Request.Authenticate(Preferences.OnlineToken)
 		      BeaconAPI.Send(Request)
 		    End If
 		  Case "SettingsButton"
@@ -368,8 +377,8 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
-		  Me.LeftItems.Append(New BeaconToolbarItem("AddButton", IconAdd, "Register a new mod."))
+		Sub Opening()
+		  Me.LeftItems.Append(New BeaconToolbarItem("AddButton", IconToolbarAdd, "Register a new mod."))
 		  Me.LeftItems.Append(New BeaconToolbarItem("RemoveButton", IconRemove, False, "Remove the selected mod."))
 		  
 		  Me.RightItems.Append(New BeaconToolbarItem("SettingsButton", IconSettings, False, "Change settings for the selected mod."))
@@ -401,10 +410,76 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -412,6 +487,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -419,6 +495,7 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -426,44 +503,15 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -471,22 +519,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -494,61 +527,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -556,12 +599,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -569,11 +615,13 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -581,7 +629,9 @@ End
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -589,15 +639,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -605,7 +647,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -613,5 +655,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

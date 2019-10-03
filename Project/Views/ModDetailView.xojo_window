@@ -5,7 +5,6 @@ Begin BeaconContainer ModDetailView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -44,7 +43,7 @@ Begin BeaconContainer ModDetailView
       Scope           =   2
       TabIndex        =   0
       TabPanelIndex   =   0
-      TabStop         =   True
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   3
@@ -97,7 +96,7 @@ Begin BeaconContainer ModDetailView
       Begin ReactionButton CopyButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Copy To Clipboard"
          Default         =   False
@@ -164,7 +163,7 @@ Begin BeaconContainer ModDetailView
       Begin UITweaks.ResizedPushButton ConfirmButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Confirm Ownership"
          Default         =   False
@@ -233,6 +232,7 @@ Begin BeaconContainer ModDetailView
          Enabled         =   True
          Height          =   20
          HelpTag         =   ""
+         Indeterminate   =   False
          Index           =   -2147483648
          InitialParent   =   "Panel"
          Left            =   262
@@ -245,10 +245,10 @@ Begin BeaconContainer ModDetailView
          Scope           =   2
          TabIndex        =   1
          TabPanelIndex   =   2
-         TabStop         =   True
+         TabStop         =   "True"
          Top             =   199
          Transparent     =   False
-         Value           =   0
+         Value           =   0.0
          Visible         =   True
          Width           =   340
       End
@@ -257,9 +257,9 @@ Begin BeaconContainer ModDetailView
          AutoHideScrollbars=   True
          Bold            =   False
          Border          =   False
-         ColumnCount     =   10
+         ColumnCount     =   11
          ColumnsResizable=   False
-         ColumnWidths    =   "*,*,100,75,75,75,75,75,75,75"
+         ColumnWidths    =   "*,*,100,75,75,75,75,75,75,75,75"
          DataField       =   ""
          DataSource      =   ""
          DefaultRowHeight=   22
@@ -275,7 +275,7 @@ Begin BeaconContainer ModDetailView
          Hierarchical    =   False
          Index           =   -2147483648
          InitialParent   =   "Panel"
-         InitialValue    =   "Path	Label	Blueprintable	Island	Scorched	Center	Ragnarok	Aberration	Extinction	Valguero"
+         InitialValue    =   "Path	Label	Blueprintable	Island	Scorched	Aberration	Extinction	Genesis	Center	Ragnarok	Valguero"
          Italic          =   False
          Left            =   0
          LockBottom      =   True
@@ -284,7 +284,6 @@ Begin BeaconContainer ModDetailView
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -314,7 +313,6 @@ Begin BeaconContainer ModDetailView
          Caption         =   "Mod Detail"
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   False
          Height          =   40
          HelpTag         =   ""
          Index           =   -2147483648
@@ -346,7 +344,6 @@ Begin BeaconContainer ModDetailView
          Caption         =   "No Mod Selected"
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   False
          Height          =   41
          HelpTag         =   ""
          Index           =   -2147483648
@@ -378,7 +375,6 @@ Begin BeaconContainer ModDetailView
          Caption         =   "Mod Detail"
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   False
          Height          =   41
          HelpTag         =   ""
          Index           =   -2147483648
@@ -410,7 +406,6 @@ Begin BeaconContainer ModDetailView
          Caption         =   "Untitled"
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   False
          Height          =   41
          HelpTag         =   ""
          Index           =   -2147483648
@@ -449,7 +444,6 @@ Begin BeaconContainer ModDetailView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -478,7 +472,6 @@ Begin BeaconContainer ModDetailView
       Priority        =   5
       Scope           =   2
       StackSize       =   0
-      State           =   ""
       TabPanelIndex   =   0
    End
 End
@@ -486,14 +479,14 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
+		Sub Closing()
 		  Self.Searcher.Cancel
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
-		  Self.mEngramSets = New Xojo.Core.Dictionary
+		Sub Opening()
+		  Self.mEngramSets = New Dictionary
 		End Sub
 	#tag EndEvent
 
@@ -526,14 +519,14 @@ End
 		  If Response.Success Then
 		    Self.CurrentMod.Constructor(Response.JSON)
 		    If Self.CurrentMod.Confirmed Then
-		      Panel.Value = PageEngrams
+		      Panel.SelectedPanelIndex = PageEngrams
 		      Self.ShowAlert("Mod ownership confirmed.", "You may now remove the confirmation code from your Steam page.")
 		    Else
-		      Panel.Value = PageNeedsConfirmation
+		      Panel.SelectedPanelIndex = PageNeedsConfirmation
 		      Self.ShowAlert("Mod ownership has not been confirmed.", "The confirmation code was not found on mod's Steam page.")
 		    End If
 		  Else
-		    Panel.Value = PageNeedsConfirmation
+		    Panel.SelectedPanelIndex = PageNeedsConfirmation
 		    Self.ShowAlert("Mod ownership has not been confirmed.", Response.Message)
 		  End If
 		End Sub
@@ -544,12 +537,12 @@ End
 		  #Pragma Unused Request
 		  
 		  If Not Response.Success Then
-		    Panel.Value = PageEngrams
+		    Panel.SelectedPanelIndex = PageEngrams
 		    Self.ShowAlert("Unable to delete engrams.", Response.Message)
 		    Return
 		  End If
 		  
-		  Panel.Value = PageEngrams
+		  Panel.SelectedPanelIndex = PageEngrams
 		  Self.EngramSet.ClearModifications(False)
 		  Header.PublishButton.Enabled = False
 		  Self.ShowAlert("Engrams published.", "Your changes are now live.")
@@ -563,7 +556,7 @@ End
 		  
 		  Self.mEngramSets.Value(Self.CurrentMod.ModID) = New BeaconAPI.EngramSet(Response.JSON)
 		  Self.ShowCurrentEngrams()
-		  Panel.Value = PageEngrams
+		  Panel.SelectedPanelIndex = PageEngrams
 		End Sub
 	#tag EndMethod
 
@@ -572,7 +565,7 @@ End
 		  #Pragma Unused Request
 		  
 		  If Not Response.Success Then
-		    Panel.Value = PageEngrams
+		    Panel.SelectedPanelIndex = PageEngrams
 		    Self.ShowAlert("Unable to save engrams.", Response.Message)
 		    Return
 		  End If
@@ -581,7 +574,7 @@ End
 		    Return
 		  End If
 		  
-		  Panel.Value = PageEngrams
+		  Panel.SelectedPanelIndex = PageEngrams
 		  Self.EngramSet.ClearModifications(False)
 		  Header.PublishButton.Enabled = False
 		  Self.ShowAlert("Engrams published.", "Your changes are now live.")
@@ -598,19 +591,19 @@ End
 	#tag Method, Flags = &h21
 		Private Function DeletePendingEngrams() As Boolean
 		  Dim DeletedEngrams() As BeaconAPI.Engram = Self.EngramSet.EngramsToDelete
-		  If UBound(DeletedEngrams) = -1 Then
+		  If DeletedEngrams.LastRowIndex = -1 Then
 		    Return False
 		  End If
 		  
-		  Panel.Value = PageLoading
+		  Panel.SelectedPanelIndex = PageLoading
 		  
-		  Dim UIDs() As Text
+		  Dim UIDs() As String
 		  For Each Engram As BeaconAPI.Engram In DeletedEngrams
-		    UIDs.Append(Engram.UID)
+		    UIDs.AddRow(Engram.UID)
 		  Next
 		  
 		  Dim Request As New BeaconAPI.Request("engram.php", "DELETE", UIDs.Join(","), "text/plain", AddressOf APICallback_EngramsDelete)
-		  Request.Sign(App.IdentityManager.CurrentIdentity)
+		  Request.Authenticate(Preferences.OnlineToken)
 		  Self.Socket.Start(Request)
 		  
 		  Return True
@@ -624,11 +617,11 @@ End
 		  End If
 		  
 		  If Self.mEngramSets = Nil Then
-		    Self.mEngramSets = New Xojo.Core.Dictionary
+		    Self.mEngramSets = New Dictionary
 		  End If
 		  
 		  If Not Self.mEngramSets.HasKey(Self.mCurrentMod.ModID) Then
-		    Dim Placeholder() As Auto
+		    Dim Placeholder() As Variant
 		    Self.mEngramSets.Value(Self.mCurrentMod.ModID) = New BeaconAPI.EngramSet(Placeholder)
 		  End If
 		  
@@ -670,8 +663,8 @@ End
 		  Dim Dict As Dictionary = Self.mStates.Value(ModID)
 		  
 		  Dim Selected() As String = Dict.Value("Selected")
-		  For I As Integer = 0 To Self.EngramList.ListCount - 1
-		    Dim Engram As BeaconAPI.Engram = Self.EngramList.RowTag(I)
+		  For I As Integer = 0 To Self.EngramList.RowCount - 1
+		    Dim Engram As BeaconAPI.Engram = Self.EngramList.RowTagAt(I)
 		    Self.EngramList.Selected(I) = Selected.IndexOf(Engram.ID) > -1
 		  Next
 		  
@@ -686,10 +679,10 @@ End
 		  End If
 		  
 		  Dim Selected() As String
-		  For I As Integer = 0 To Self.EngramList.ListCount - 1
-		    Dim Engram As BeaconAPI.Engram = Self.EngramList.RowTag(I)
+		  For I As Integer = 0 To Self.EngramList.RowCount - 1
+		    Dim Engram As BeaconAPI.Engram = Self.EngramList.RowTagAt(I)
 		    If Self.EngramList.Selected(I) Then
-		      Selected.Append(Engram.ID)
+		      Selected.AddRow(Engram.ID)
 		    End If
 		  Next
 		  
@@ -705,20 +698,20 @@ End
 	#tag Method, Flags = &h21
 		Private Function SavePendingEngrams() As Boolean
 		  Dim NewEngrams() As BeaconAPI.Engram = Self.EngramSet.EngramsToSave
-		  If UBound(NewEngrams) = -1 Then
+		  If NewEngrams.LastRowIndex = -1 Then
 		    Return False
 		  End If
 		  
-		  Panel.Value = PageLoading
+		  Panel.SelectedPanelIndex = PageLoading
 		  
-		  Dim Dicts() As Xojo.Core.Dictionary
+		  Dim Dicts() As Dictionary
 		  For Each Engram As BeaconAPI.Engram In NewEngrams
-		    Dicts.Append(Engram.AsDictionary)
+		    Dicts.AddRow(Engram.AsDictionary)
 		  Next
 		  
-		  Dim Content As Text = Xojo.Data.GenerateJSON(Dicts)
+		  Dim Content As String = Beacon.GenerateJSON(Dicts, False)
 		  Dim Request As New BeaconAPI.Request("engram.php", "POST", Content, "application/json", AddressOf APICallback_EngramsPost)
-		  Request.Sign(App.IdentityManager.CurrentIdentity)
+		  Request.Authenticate(Preferences.OnlineToken)
 		  Self.Socket.Start(Request)
 		  
 		  Return True
@@ -727,7 +720,7 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub ShowCurrentEngrams()
-		  Self.EngramList.DeleteAllRows
+		  Self.EngramList.RemoveAllRows
 		  
 		  If Self.mCurrentMod = Nil Or Self.mEngramSets.HasKey(Self.mCurrentMod.ModID) = False Then
 		    Return
@@ -737,7 +730,7 @@ End
 		  Dim Engrams() As BeaconAPI.Engram = EngramSet.ActiveEngrams
 		  For Each Engram As BeaconAPI.Engram In Engrams
 		    Self.EngramList.AddRow("")
-		    Self.ShowEngramInRow(Self.EngramList.LastIndex, Engram)
+		    Self.ShowEngramInRow(Self.EngramList.LastAddedRowIndex, Engram)
 		  Next
 		  Self.EngramList.Sort
 		  Self.RestoreListState()
@@ -748,24 +741,25 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub ShowEngramInRow(Index As Integer, Engram As BeaconAPI.Engram)
-		  EngramList.Cell(Index, 0) = Engram.Path
-		  EngramList.Cell(Index, 1) = Engram.Label
-		  EngramList.CellCheck(Index, 2) = Engram.CanBeBlueprint
-		  EngramList.CellCheck(Index, 3) = Engram.ValidForMap(Beacon.Maps.TheIsland)
-		  EngramList.CellCheck(Index, 4) = Engram.ValidForMap(Beacon.Maps.ScorchedEarth)
-		  EngramList.CellCheck(Index, 5) = Engram.ValidForMap(Beacon.Maps.TheCenter)
-		  EngramList.CellCheck(Index, 6) = Engram.ValidForMap(Beacon.Maps.Ragnarok)
-		  EngramList.CellCheck(Index, 7) = Engram.ValidForMap(Beacon.Maps.Aberration)
-		  EngramList.CellCheck(Index, 8) = Engram.ValidForMap(Beacon.Maps.Extinction)
-		  EngramList.CellCheck(Index, 9) = Engram.ValidForMap(Beacon.Maps.Valguero)
+		  EngramList.CellValueAt(Index, 0) = Engram.Path
+		  EngramList.CellValueAt(Index, 1) = Engram.Label
+		  EngramList.CellCheckBoxValueAt(Index, 2) = Engram.CanBeBlueprint
+		  EngramList.CellCheckBoxValueAt(Index, Self.ColumnIsland) = Engram.ValidForMap(Beacon.Maps.TheIsland)
+		  EngramList.CellCheckBoxValueAt(Index, Self.ColumnScorched) = Engram.ValidForMap(Beacon.Maps.ScorchedEarth)
+		  EngramList.CellCheckBoxValueAt(Index, Self.ColumnCenter) = Engram.ValidForMap(Beacon.Maps.TheCenter)
+		  EngramList.CellCheckBoxValueAt(Index, Self.ColumnRagnarok) = Engram.ValidForMap(Beacon.Maps.Ragnarok)
+		  EngramList.CellCheckBoxValueAt(Index, Self.ColumnAberration) = Engram.ValidForMap(Beacon.Maps.Aberration)
+		  EngramList.CellCheckBoxValueAt(Index, Self.ColumnExtinction) = Engram.ValidForMap(Beacon.Maps.Extinction)
+		  EngramList.CellCheckBoxValueAt(Index, Self.ColumnValguero) = Engram.ValidForMap(Beacon.Maps.Valguero)
+		  EngramList.CellCheckBoxValueAt(Index, Self.ColumnGenesis) = Engram.ValidForMap(Beacon.Maps.Genesis)
 		  
-		  EngramList.RowTag(Index) = Engram
+		  EngramList.RowTagAt(Index) = Engram
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub ShowFileImport()
-		  Dim Dialog As New OpenDialog
+		  Dim Dialog As New OpenFileDialog
 		  Dialog.Filter = BeaconFileTypes.Text
 		  
 		  Dim File As FolderItem = Dialog.ShowModalWithin(Self.TrueWindow)
@@ -783,7 +777,7 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub ShowURLImport()
-		  Dim Contents As Text = DeveloperImportURLDialog.Present(Self)
+		  Dim Contents As String = DeveloperImportURLDialog.Present(Self)
 		  If Contents <> "" Then
 		    Self.ImportText(Contents)
 		  End If
@@ -818,7 +812,7 @@ End
 			  Self.mCurrentMod = Value
 			  
 			  If Self.mCurrentMod = Nil Then
-			    Panel.Value = Self.PageNoSelection
+			    Panel.SelectedPanelIndex = Self.PageNoSelection
 			    Return
 			  End If
 			  
@@ -827,17 +821,17 @@ End
 			  Self.Header.Caption = Value.Name
 			  
 			  If Not Self.mCurrentMod.Confirmed Then
-			    ConfirmField.Text = Self.mCurrentMod.ConfirmationCode
-			    Panel.Value = PageNeedsConfirmation
+			    ConfirmField.Value = Self.mCurrentMod.ConfirmationCode
+			    Panel.SelectedPanelIndex = PageNeedsConfirmation
 			    Return
 			  End If
 			  
 			  If Self.mEngramSets.HasKey(Self.mCurrentMod.ModID) Then
 			    Self.ShowCurrentEngrams()
-			    Panel.Value = PageEngrams
+			    Panel.SelectedPanelIndex = PageEngrams
 			  Else
 			    // Load engrams
-			    Panel.Value = PageLoading
+			    Panel.SelectedPanelIndex = PageLoading
 			    Dim Request As New BeaconAPI.Request(Self.mCurrentMod.EngramsURL, "GET", AddressOf APICallback_EngramsLoad)
 			    Self.Socket.Start(Request)
 			  End If
@@ -851,13 +845,37 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mEngramSets As Xojo.Core.Dictionary
+		Private mEngramSets As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
 		Private mStates As Dictionary
 	#tag EndProperty
 
+
+	#tag Constant, Name = ColumnAberration, Type = Double, Dynamic = False, Default = \"5", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = ColumnCenter, Type = Double, Dynamic = False, Default = \"8", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = ColumnExtinction, Type = Double, Dynamic = False, Default = \"6", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = ColumnGenesis, Type = Double, Dynamic = False, Default = \"7", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = ColumnIsland, Type = Double, Dynamic = False, Default = \"3", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = ColumnRagnarok, Type = Double, Dynamic = False, Default = \"9", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = ColumnScorched, Type = Double, Dynamic = False, Default = \"4", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = ColumnValguero, Type = Double, Dynamic = False, Default = \"10", Scope = Private
+	#tag EndConstant
 
 	#tag Constant, Name = PageEngrams, Type = Double, Dynamic = False, Default = \"3", Scope = Private
 	#tag EndConstant
@@ -876,9 +894,9 @@ End
 
 #tag Events CopyButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Dim C As New Clipboard
-		  C.Text = ConfirmField.Text
+		  C.Text = ConfirmField.Value
 		  
 		  Me.Caption = "Copied!"
 		  Me.Enabled = False
@@ -887,64 +905,43 @@ End
 #tag EndEvents
 #tag Events ConfirmButton
 	#tag Event
-		Sub Action()
-		  Panel.Value = PageLoading
+		Sub Pressed()
+		  Panel.SelectedPanelIndex = PageLoading
 		  
 		  Dim Request As New BeaconAPI.Request(Self.CurrentMod.ConfirmURL, "GET", AddressOf APICallback_ConfirmMod)
-		  Request.Sign(App.IdentityManager.CurrentIdentity)
+		  Request.Authenticate(Preferences.OnlineToken)
 		  Self.Socket.Start(Request)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events EngramList
 	#tag Event
-		Sub Open()
-		  Me.ColumnType(0) = Listbox.TypeEditableTextField
-		  Me.ColumnType(1) = Listbox.TypeEditableTextField
-		  Me.ColumnType(2) = Listbox.TypeCheckbox
-		  Me.ColumnType(3) = Listbox.TypeCheckbox
-		  Me.ColumnType(4) = Listbox.TypeCheckbox
-		  Me.ColumnType(5) = Listbox.TypeCheckbox
-		  Me.ColumnType(6) = Listbox.TypeCheckbox
-		  Me.ColumnType(7) = Listbox.TypeCheckbox
-		  Me.ColumnType(8) = Listbox.TypeCheckbox
-		  Me.ColumnType(9) = Listbox.TypeCheckbox
-		  
-		  Me.ColumnAlignment(2) = Listbox.AlignCenter
-		  Me.ColumnAlignment(3) = Listbox.AlignCenter
-		  Me.ColumnAlignment(4) = Listbox.AlignCenter
-		  Me.ColumnAlignment(5) = Listbox.AlignCenter
-		  Me.ColumnAlignment(6) = Listbox.AlignCenter
-		  Me.ColumnAlignment(7) = Listbox.AlignCenter
-		  Me.ColumnAlignment(8) = Listbox.AlignCenter
-		  Me.ColumnAlignment(9) = Listbox.AlignCenter
-		End Sub
-	#tag EndEvent
-	#tag Event
 		Sub CellAction(row As Integer, column As Integer)
-		  Dim Engram As BeaconAPI.Engram = Me.RowTag(Row)
+		  Dim Engram As BeaconAPI.Engram = Me.RowTagAt(Row)
 		  
 		  Select Case Column
 		  Case 0
-		    Engram.Path = Me.Cell(Row, Column).ToText
+		    Engram.Path = Me.CellValueAt(Row, Column)
 		  Case 1
-		    Engram.Label = Me.Cell(Row, Column).ToText
+		    Engram.Label = Me.CellValueAt(Row, Column)
 		  Case 2
-		    Engram.CanBeBlueprint = Me.CellCheck(Row, Column)
-		  Case 3
-		    Engram.ValidForMap(Beacon.Maps.TheIsland) = Me.CellCheck(Row, Column)
-		  Case 4
-		    Engram.ValidForMap(Beacon.Maps.ScorchedEarth) = Me.CellCheck(Row, Column)
-		  Case 5
-		    Engram.ValidForMap(Beacon.Maps.TheCenter) = Me.CellCheck(Row, Column)
-		  Case 6
-		    Engram.ValidForMap(Beacon.Maps.Ragnarok) = Me.CellCheck(Row, Column)
-		  Case 7
-		    Engram.ValidForMap(Beacon.Maps.Aberration) = Me.CellCheck(Row, Column)
-		  Case 8
-		    Engram.ValidForMap(Beacon.Maps.Extinction) = Me.CellCheck(Row, Column)
-		  Case 9
-		    Engram.ValidForMap(Beacon.Maps.Valguero) = Me.CellCheck(Row, Column)
+		    Engram.CanBeBlueprint = Me.CellCheckBoxValueAt(Row, Column)
+		  Case Self.ColumnIsland
+		    Engram.ValidForMap(Beacon.Maps.TheIsland) = Me.CellCheckBoxValueAt(Row, Column)
+		  Case Self.ColumnScorched
+		    Engram.ValidForMap(Beacon.Maps.ScorchedEarth) = Me.CellCheckBoxValueAt(Row, Column)
+		  Case Self.ColumnCenter
+		    Engram.ValidForMap(Beacon.Maps.TheCenter) = Me.CellCheckBoxValueAt(Row, Column)
+		  Case Self.ColumnRagnarok
+		    Engram.ValidForMap(Beacon.Maps.Ragnarok) = Me.CellCheckBoxValueAt(Row, Column)
+		  Case Self.ColumnAberration
+		    Engram.ValidForMap(Beacon.Maps.Aberration) = Me.CellCheckBoxValueAt(Row, Column)
+		  Case Self.ColumnExtinction
+		    Engram.ValidForMap(Beacon.Maps.Extinction) = Me.CellCheckBoxValueAt(Row, Column)
+		  Case Self.ColumnValguero
+		    Engram.ValidForMap(Beacon.Maps.Valguero) = Me.CellCheckBoxValueAt(Row, Column)
+		  Case Self.ColumnGenesis
+		    Engram.ValidForMap(Beacon.Maps.Genesis) = Me.CellCheckBoxValueAt(Row, Column)
 		  End Select
 		  
 		  Self.EngramSet.Add(Engram)
@@ -952,28 +949,40 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
-		  Header.RemoveButton.Enabled = Me.ListIndex > -1
+		Sub SelectionChanged()
+		  Header.RemoveButton.Enabled = Me.SelectedRowIndex > -1
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub Opening()
+		  Me.ColumnTypeAt(0) = Listbox.CellTypes.TextField
+		  Me.ColumnTypeAt(1) = Listbox.CellTypes.TextField
+		  Me.ColumnTypeAt(2) = Listbox.CellTypes.CheckBox
+		  Me.ColumnAlignmentAt(2) = Listbox.Alignments.Center
+		  For I As Integer = Self.ColumnIsland To Self.ColumnValguero
+		    Me.ColumnTypeAt(I) = Listbox.CellTypes.CheckBox
+		    Me.ColumnAlignmentAt(I) = Listbox.Alignments.Center
+		  Next
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Header
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddButton"
 		    Dim Engram As New BeaconAPI.Engram
 		    Engram.ModID = Self.CurrentMod.ModID
 		    EngramList.AddRow("")
-		    Self.ShowEngramInRow(EngramList.LastIndex, Engram)
-		    EngramList.EditCell(EngramList.LastIndex, 0)
+		    Self.ShowEngramInRow(EngramList.LastAddedRowIndex, Engram)
+		    EngramList.EditCellAt(EngramList.LastAddedRowIndex, 0)
 		    Self.EngramSet.Add(Engram)
 		  Case "RemoveButton"
-		    For I As Integer = EngramList.ListCount -1 DownTo 0
+		    For I As Integer = EngramList.RowCount -1 DownTo 0
 		      If EngramList.Selected(I) Then
-		        Dim Engram As BeaconAPI.Engram = EngramList.RowTag(I)
+		        Dim Engram As BeaconAPI.Engram = EngramList.RowTagAt(I)
 		        Self.EngramSet.Remove(Engram)
-		        EngramList.RemoveRow(I)
+		        EngramList.RemoveRowAt(I)
 		      End If
 		    Next
 		    Me.PublishButton.Enabled = Self.EngramSet.Modified
@@ -987,8 +996,8 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
-		  Me.LeftItems.Append(New BeaconToolbarItem("AddButton", IconAdd, "Add new engram."))
+		Sub Opening()
+		  Me.LeftItems.Append(New BeaconToolbarItem("AddButton", IconToolbarAdd, "Add new engram."))
 		  Me.LeftItems.Append(New BeaconToolbarItem("RemoveButton", IconRemove, False, "Delete selected engrams."))
 		  
 		  Me.LeftItems.Append(New BeaconToolbarItem("PublishButton", IconToolbarPublish, False, "Publish changes to make them live."))
@@ -1014,13 +1023,13 @@ End
 		  Dim Blueprints() As Beacon.Blueprint = Me.Blueprints(True)
 		  Dim Engrams() As Beacon.Engram = Blueprints.Engrams
 		  
-		  If Engrams.Ubound = -1 Then
+		  If Engrams.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
 		  Dim Set As BeaconAPI.EngramSet = Self.EngramSet
 		  Dim CurrentEngrams() As BeaconAPI.Engram = Set.ActiveEngrams
-		  Dim EngramDict As New Xojo.Core.Dictionary
+		  Dim EngramDict As New Dictionary
 		  For Each Engram As BeaconAPI.Engram In CurrentEngrams
 		    EngramDict.Value(Engram.Path) = True
 		  Next
@@ -1034,7 +1043,7 @@ End
 		    APIEngram.ModID = Self.mCurrentMod.ModID
 		    Set.Add(APIEngram)
 		    EngramList.AddRow("")
-		    Self.ShowEngramInRow(EngramList.LastIndex, APIEngram)
+		    Self.ShowEngramInRow(EngramList.LastAddedRowIndex, APIEngram)
 		    EngramDict.Value(Engram.Path) = True
 		  Next
 		  
@@ -1044,49 +1053,84 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="DoubleBuffer"
 		Visible=true
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -1094,22 +1138,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -1117,61 +1146,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -1179,12 +1218,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -1192,13 +1234,15 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -1206,15 +1250,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1222,7 +1258,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1230,5 +1266,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

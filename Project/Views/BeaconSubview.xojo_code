@@ -3,8 +3,8 @@ Protected Class BeaconSubview
 Inherits BeaconContainer
 Implements ObservationKit.Observable
 	#tag Event
-		Sub Close()
-		  RaiseEvent Close
+		Sub Closing()
+		  RaiseEvent Closing
 		  Self.mClosed = True
 		End Sub
 	#tag EndEvent
@@ -17,22 +17,22 @@ Implements ObservationKit.Observable
 	#tag EndEvent
 
 	#tag Event
-		Sub EnableMenuItems()
-		  // The parent view will call down to the EnableMenuItems method
+		Sub MenuSelected()
+		  // The parent view will call down to the MenuSelected method
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.Progress = Self.ProgressNone
-		  RaiseEvent Open
+		  RaiseEvent Opening
 		End Sub
 	#tag EndEvent
 
 
 	#tag MenuHandler
 		Function FileSave() As Boolean Handles FileSave.Action
-			If Self.ContentsChanged Then
+			If Self.Changed Then
 			Return RaiseEvent ShouldSave
 			End If
 		End Function
@@ -40,21 +40,21 @@ Implements ObservationKit.Observable
 
 
 	#tag Method, Flags = &h0
-		Sub AddObserver(Observer As ObservationKit.Observer, Key As Text)
+		Sub AddObserver(Observer As ObservationKit.Observer, Key As String)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		    
@@ -64,9 +64,8 @@ Implements ObservationKit.Observable
 		    End If
 		  Next
 		  
-		  Refs.Append(Xojo.Core.WeakRef.Create(Observer))
+		  Refs.AddRow(New WeakRef(Observer))
 		  Self.mObservers.Value(Key) = Refs
-		  
 		End Sub
 	#tag EndMethod
 
@@ -88,7 +87,7 @@ Implements ObservationKit.Observable
 
 	#tag Method, Flags = &h0
 		Function ConfirmClose(Callback As BeaconSubview.BringToFrontDelegate) As Boolean
-		  If Not Self.ContentsChanged Then
+		  If Not Self.Changed Then
 		    Return True
 		  End If
 		  
@@ -120,30 +119,30 @@ Implements ObservationKit.Observable
 
 	#tag Method, Flags = &h0
 		Sub EnableMenuItems()
-		  If Self.ContentsChanged Then
+		  If Self.Changed Then
 		    FileSave.Enable
 		  End If
 		  
-		  RaiseEvent EnableMenuItems()
+		  RaiseEvent MenuSelected()
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub NotifyObservers(Key As Text, Value As Auto)
+		Sub NotifyObservers(Key As String, Value As Variant)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		    
@@ -154,21 +153,21 @@ Implements ObservationKit.Observable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub RemoveObserver(Observer As ObservationKit.Observer, Key As Text)
+		Sub RemoveObserver(Observer As ObservationKit.Observer, Key As String)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Or Refs(I).Value = Observer Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		  Next
@@ -185,14 +184,14 @@ Implements ObservationKit.Observable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub SwitchedTo(UserData As Auto = Nil)
+		Sub SwitchedTo(UserData As Variant = Nil)
 		  RaiseEvent Shown(UserData)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ViewID() As Text
-		  Dim Info As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Self)
+		Function ViewID() As String
+		  Dim Info As Introspection.TypeInfo = Introspection.GetType(Self)
 		  Return Info.Name
 		End Function
 	#tag EndMethod
@@ -203,7 +202,7 @@ Implements ObservationKit.Observable
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Close()
+		Event Closing()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -211,15 +210,15 @@ Implements ObservationKit.Observable
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event EnableMenuItems()
-	#tag EndHook
-
-	#tag Hook, Flags = &h0
 		Event Hidden()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event MenuSelected()
+	#tag EndHook
+
+	#tag Hook, Flags = &h0
+		Event Opening()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -231,7 +230,7 @@ Implements ObservationKit.Observable
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Shown(UserData As Auto = Nil)
+		Event Shown(UserData As Variant = Nil)
 	#tag EndHook
 
 
@@ -284,7 +283,7 @@ Implements ObservationKit.Observable
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mObservers As Xojo.Core.Dictionary
+		Private mObservers As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -351,18 +350,84 @@ Implements ObservationKit.Observable
 
 	#tag ViewBehavior
 		#tag ViewProperty
+			Name="EraseBackground"
+			Visible=false
+			Group="Behavior"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Tooltip"
+			Visible=true
+			Group="Appearance"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowAutoDeactivate"
+			Visible=true
+			Group="Appearance"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowFocusRing"
+			Visible=true
+			Group="Appearance"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="BackgroundColor"
+			Visible=true
+			Group="Background"
+			InitialValue="&hFFFFFF"
+			Type="Color"
+			EditorType="Color"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="HasBackgroundColor"
+			Visible=true
+			Group="Background"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowFocus"
+			Visible=true
+			Group="Behavior"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowTabs"
+			Visible=true
+			Group="Behavior"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Height"
@@ -370,6 +435,7 @@ Implements ObservationKit.Observable
 			Group="Size"
 			InitialValue="500"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Width"
@@ -377,41 +443,55 @@ Implements ObservationKit.Observable
 			Group="Size"
 			InitialValue="300"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="InitialParent"
+			Visible=false
 			Group="Position"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockBottom"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockLeft"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockRight"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockTop"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabIndex"
@@ -419,12 +499,15 @@ Implements ObservationKit.Observable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabPanelIndex"
+			Visible=false
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabStop"
@@ -432,20 +515,15 @@ Implements ObservationKit.Observable
 			Group="Position"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AutoDeactivate"
-			Visible=true
-			Group="Appearance"
-			InitialValue="True"
-			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Enabled"
@@ -453,21 +531,7 @@ Implements ObservationKit.Observable
 			Group="Appearance"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="HelpTag"
-			Visible=true
-			Group="Appearance"
-			Type="String"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="UseFocusRing"
-			Visible=true
-			Group="Appearance"
-			InitialValue="False"
-			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Visible"
@@ -475,56 +539,21 @@ Implements ObservationKit.Observable
 			Group="Appearance"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="BackColor"
-			Visible=true
-			Group="Background"
-			InitialValue="&hFFFFFF"
-			Type="Color"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Backdrop"
 			Visible=true
 			Group="Background"
+			InitialValue=""
 			Type="Picture"
-			EditorType="Picture"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="HasBackColor"
-			Visible=true
-			Group="Background"
-			InitialValue="False"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AcceptFocus"
-			Visible=true
-			Group="Behavior"
-			InitialValue="False"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AcceptTabs"
-			Visible=true
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="EraseBackground"
-			Visible=true
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="ToolbarCaption"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
@@ -534,7 +563,7 @@ Implements ObservationKit.Observable
 			Group="Behavior"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="MinimumWidth"
@@ -542,6 +571,7 @@ Implements ObservationKit.Observable
 			Group="Behavior"
 			InitialValue="400"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="MinimumHeight"
@@ -549,12 +579,15 @@ Implements ObservationKit.Observable
 			Group="Behavior"
 			InitialValue="300"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Progress"
+			Visible=false
 			Group="Behavior"
 			InitialValue="ProgressNone"
 			Type="Double"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="DoubleBuffer"
@@ -562,7 +595,7 @@ Implements ObservationKit.Observable
 			Group="Windows Behavior"
 			InitialValue="False"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

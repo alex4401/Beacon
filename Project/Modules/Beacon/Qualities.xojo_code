@@ -20,7 +20,7 @@ Protected Module Qualities
 	#tag Method, Flags = &h1
 		Protected Function ForBaseValue(BaseValue As Double) As Beacon.Quality
 		  Dim List() As Beacon.Quality = All
-		  For I As Integer = 0 To UBound(List)
+		  For I As Integer = 0 To List.LastRowIndex
 		    If BaseValue < List(I).BaseValue Then
 		      If I = 0 Then
 		        Return List(0)
@@ -29,12 +29,12 @@ Protected Module Qualities
 		      End If
 		    End If
 		  Next
-		  Return List(UBound(List))
+		  Return List(List.LastRowIndex)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
-		Protected Function ForKey(Key As Text) As Beacon.Quality
+		Protected Function ForKey(Key As String) As Beacon.Quality
 		  Dim List() As Beacon.Quality = All
 		  For Each Quality As Beacon.Quality In List
 		    If Quality.Key = Key Then
@@ -46,13 +46,13 @@ Protected Module Qualities
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
-		Protected Function ForValue(Value As Double, CrateQualityMultiplier As Double, DifficultyValue As Double) As Beacon.Quality
+		Protected Function ForValue(Value As Double, CrateQualityMultiplier As Double, Difficulty As BeaconConfigs.Difficulty) As Beacon.Quality
 		  Dim CrateArbitraryQuality As Double = CrateQualityMultiplier + ((CrateQualityMultiplier - 1) * 0.2)
-		  Dim Multiplier As Double = CrateArbitraryQuality * DifficultyValue
+		  Dim Multiplier As Double = CrateArbitraryQuality * Difficulty.BaseArbitraryQuality
 		  Dim Quality As Double = Value * Multiplier
 		  
 		  // Thanks to math, we can get the quality as 15.99999 instead of 16. So rounding it is.
-		  Quality = Xojo.Math.Round(Quality * 10000) / 10000
+		  Quality = Round(Quality * 10000) / 10000
 		  
 		  Return ForBaseValue(Quality)
 		End Function
@@ -72,49 +72,49 @@ Protected Module Qualities
 
 	#tag Method, Flags = &h1
 		Protected Function Tier2() As Beacon.Quality
-		  Return New Beacon.Quality(1.92, "Tier2")
+		  Return New Beacon.Quality(3.0, "Tier2")
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
 		Protected Function Tier3() As Beacon.Quality
-		  Return New Beacon.Quality(3.84, "Tier3")
+		  Return New Beacon.Quality(5.0, "Tier3")
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
 		Protected Function Tier4() As Beacon.Quality
-		  Return New Beacon.Quality(5.76, "Tier4")
+		  Return New Beacon.Quality(8.7, "Tier4")
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
 		Protected Function Tier5() As Beacon.Quality
-		  Return New Beacon.Quality(7.68, "Tier5")
+		  Return New Beacon.Quality(12.5, "Tier5")
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
 		Protected Function Tier6() As Beacon.Quality
-		  Return New Beacon.Quality(9.6, "Tier6")
+		  Return New Beacon.Quality(20.0, "Tier6")
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
 		Protected Function Tier7() As Beacon.Quality
-		  Return New Beacon.Quality(32.2, "Tier7")
+		  Return New Beacon.Quality(40.0, "Tier7")
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
 		Protected Function Tier8() As Beacon.Quality
-		  Return New Beacon.Quality(54.8, "Tier8")
+		  Return New Beacon.Quality(60.0, "Tier8")
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
 		Protected Function Tier9() As Beacon.Quality
-		  Return New Beacon.Quality(77.4, "Tier9")
+		  Return New Beacon.Quality(80.0, "Tier9")
 		End Function
 	#tag EndMethod
 

@@ -2,7 +2,7 @@
 Protected Class DocumentController
 	#tag Method, Flags = &h0
 		Function Busy() As Boolean
-		  Return Self.mActiveThread <> Nil And Self.mActiveThread.State <> Thread.NotRunning
+		  Return Self.mActiveThread <> Nil And Self.mActiveThread.ThreadState <> Thread.ThreadStates.NotRunning
 		End Function
 	#tag EndMethod
 
@@ -18,7 +18,7 @@ Protected Class DocumentController
 
 	#tag Method, Flags = &h0
 		Sub Constructor(Document As Beacon.Document, WithIdentity As Beacon.Identity)
-		  Self.mDocumentURL = Beacon.DocumentURL.TypeTransient + "://" + Document.DocumentID + "?name=" + Beacon.EncodeURLComponent(Document.Title)
+		  Self.mDocumentURL = Beacon.DocumentURL.TypeTransient + "://" + Document.DocumentID + "?name=" + EncodeURLComponent(Document.Title)
 		  Self.mLoaded = True
 		  Self.mDocument = Document
 		  Self.mIdentity = WithIdentity
@@ -34,7 +34,7 @@ Protected Class DocumentController
 
 	#tag Method, Flags = &h0
 		Sub Constructor(WithIdentity As Beacon.Identity)
-		  Self.Constructor(Beacon.DocumentURL.TypeTransient + "://" + Beacon.CreateUUID, WithIdentity)
+		  Self.Constructor(Beacon.DocumentURL.TypeTransient + "://" + v4UUID.Create, WithIdentity)
 		End Sub
 	#tag EndMethod
 
@@ -45,9 +45,9 @@ Protected Class DocumentController
 		  End If
 		  
 		  Self.mActiveThread = New Thread
-		  Self.mActiveThread.Priority = Thread.HighPriority
+		  Self.mActiveThread.Priority = 10
 		  AddHandler Self.mActiveThread.Run, WeakAddressOf Thread_Delete
-		  Self.mActiveThread.Run
+		  Self.mActiveThread.Start
 		End Sub
 	#tag EndMethod
 
@@ -71,12 +71,12 @@ Protected Class DocumentController
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Shared Function ErrorMessageFromSocket(Socket As SimpleHTTP.SynchronousHTTPSocket) As Text
-		  Dim Message As Text = "The error reason is unknown"
+		Private Shared Function ErrorMessageFromSocket(Socket As SimpleHTTP.SynchronousHTTPSocket) As String
+		  Dim Message As String = "The error reason is unknown"
 		  If Socket.LastContent <> Nil Then
 		    Try
-		      Message = Xojo.Core.TextEncoding.UTF8.ConvertDataToText(Socket.LastContent, True)
-		      Dim Dict As Xojo.Core.Dictionary = Xojo.Data.ParseJSON(Message)
+		      Message = Socket.LastContent
+		      Dim Dict As Dictionary = Beacon.ParseJSON(Message)
 		      If Dict.HasKey("message") Then
 		        Message = Dict.Value("message")
 		      ElseIf Dict.HasKey("description") Then
@@ -105,7 +105,7 @@ Protected Class DocumentController
 		  
 		  Self.mActiveThread = New Thread
 		  AddHandler Self.mActiveThread.Run, WeakAddressOf Thread_Load
-		  Self.mActiveThread.Run
+		  Self.mActiveThread.Start
 		  
 		  Self.mLoadStartedCallbackKey = CallLater.Schedule(1500, WeakAddressOf TriggerLoadStarted)
 		End Sub
@@ -118,7 +118,7 @@ Protected Class DocumentController
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Name() As Text
+		Function Name() As String
 		  If Self.mDocument <> Nil Then
 		    Return Self.mDocument.Title
 		  Else
@@ -185,30 +185,20 @@ Protected Class DocumentController
 		    If Socket.LastHTTPStatus = 200 Then
 		      Call CallLater.Schedule(0, AddressOf TriggerDeleteSuccess)
 		    Else
-		      Dim Message As Text = Self.ErrorMessageFromSocket(Socket)
+		      Dim Message As String = Self.ErrorMessageFromSocket(Socket)
 		      Call CallLater.Schedule(0, AddressOf TriggerDeleteError, Message)
 		    End If
 		  Case Beacon.DocumentURL.TypeLocal
 		    Try
-		      Dim File As New Beacon.FolderItem(Self.mDocumentURL.Path)
-		      If File.Exists Then
-		        File.Delete  
+		      If Self.mFileRef <> Nil And Self.mFileRef.Exists Then
+		        Self.mFileRef.Remove
 		      End If
 		      Call CallLater.Schedule(0, AddressOf TriggerDeleteSuccess)
 		    Catch Err As RuntimeException
 		      Call CallLater.Schedule(0, AddressOf TriggerDeleteError, Err.Explanation)
 		    End Try
 		  Case Beacon.DocumentURL.TypeTransient
-		    Dim Path As Text = Self.mDocumentURL.URL.Mid(Beacon.DocumentURL.TypeTransient.Length + 3)
-		    Try
-		      Dim File As Beacon.FolderItem = Beacon.FolderItem.Temporary.Child(Path + BeaconFileTypes.BeaconDocument.PrimaryExtension.ToText)
-		      If File.Exists Then
-		        File.Delete
-		      End If
-		      Call CallLater.Schedule(0, AddressOf TriggerDeleteSuccess)
-		    Catch Err As RuntimeException
-		      Call CallLater.Schedule(0, AddressOf TriggerDeleteError, Err.Explanation)
-		    End Try
+		    Call CallLater.Schedule(0, AddressOf TriggerDeleteSuccess)
 		  Else
 		    Call CallLater.Schedule(0, AddressOf TriggerDeleteError, "Unknown storage scheme " + Self.mDocumentURL.Scheme)
 		  End Select
@@ -219,7 +209,7 @@ Protected Class DocumentController
 		Private Sub Thread_Load(Sender As Thread)
 		  #Pragma Unused Sender
 		  
-		  Dim FileContent As Xojo.Core.MemoryBlock
+		  Dim FileContent As MemoryBlock
 		  Dim ClearPublishStatus As Boolean
 		  
 		  Select Case Self.mDocumentURL.Scheme
@@ -228,36 +218,33 @@ Protected Class DocumentController
 		    Dim Socket As New SimpleHTTP.SynchronousHTTPSocket
 		    Socket.RequestHeader("Accept-Encoding") = "gzip"
 		    Socket.RequestHeader("Authorization") = "Session " + Preferences.OnlineToken
+		    Socket.RequestHeader("Cache-Control") = "no-cache"
 		    Socket.Send("GET", Self.mDocumentURL.WithScheme("https").URL)
 		    If Socket.LastHTTPStatus >= 200 Then
 		      FileContent = Socket.LastContent
 		    Else
-		      Dim Message As Text = Self.ErrorMessageFromSocket(Socket)
+		      Dim Message As String = Self.ErrorMessageFromSocket(Socket)
 		      Call CallLater.Schedule(0, AddressOf TriggerLoadError, Message)
 		    End If
 		  Case Beacon.DocumentURL.TypeWeb
 		    // basic https request
 		    Dim Socket As New SimpleHTTP.SynchronousHTTPSocket
 		    Socket.RequestHeader("Accept-Encoding") = "gzip"
+		    Socket.RequestHeader("Cache-Control") = "no-cache"
 		    Socket.Send("GET", Self.mDocumentURL.URL)
 		    If Socket.LastHTTPStatus >= 200 Then
 		      FileContent = Socket.LastContent
 		      ClearPublishStatus = True
 		    Else
-		      Dim Message As Text = Self.ErrorMessageFromSocket(Socket)
+		      Dim Message As String = Self.ErrorMessageFromSocket(Socket)
 		      Call CallLater.Schedule(0, AddressOf TriggerLoadError, Message)
 		    End If
 		  Case Beacon.DocumentURL.TypeLocal
 		    // just a local file
 		    Dim Success As Boolean
-		    Dim Message As Text = "Could not load data from file"
+		    Dim Message As String = "Could not load data from file"
 		    Try
-		      Dim File As Beacon.FolderItem
-		      If Self.mDocumentURL.HasParam("saveinfo") Then
-		        File = Beacon.FolderItem.FromSaveInfo(Self.mDocumentURL.Param("saveinfo"))
-		      Else
-		        File = New Beacon.FolderItem(Self.mDocumentURL.Path)
-		      End If
+		      Dim File As BookmarkedFolderItem = Self.mDocumentURL.File
 		      If File <> Nil And File.Exists Then
 		        FileContent = File.Read()
 		        Self.mFileRef = File // Just to keep the security scoped bookmark open
@@ -272,14 +259,8 @@ Protected Class DocumentController
 		      Return
 		    End If
 		  Case Beacon.DocumentURL.TypeTransient
-		    // just a local file stored in the the temp directory
-		    Dim File As Beacon.FolderItem = Beacon.FolderItem.Temporary.Child(Self.mDocumentURL.Path + BeaconFileTypes.BeaconDocument.PrimaryExtension.ToText)
-		    If File.Exists Then
-		      FileContent = File.Read()
-		    Else
-		      Dim Temp As New Beacon.Document
-		      FileContent = Xojo.Core.TextEncoding.UTF8.ConvertTextToData(Xojo.Data.GenerateJSON(Temp.ToDictionary(Self.mIdentity)))
-		    End If
+		    Dim Temp As New Beacon.Document
+		    FileContent = Beacon.GenerateJSON(Temp.ToDictionary(Self.mIdentity), False)
 		  Else
 		    Return
 		  End Select
@@ -289,13 +270,12 @@ Protected Class DocumentController
 		    Return
 		  End If
 		  
-		  Dim TextContent As Text
 		  If FileContent.Size > 2 And FileContent.UInt8Value(0) = &h1F And FileContent.UInt8Value(1) = &h8B Then
 		    #if Not TargetiOS
 		      Dim Compressor As New _GZipString
-		      Dim Decompressed As String = Compressor.Decompress(Beacon.ConvertMemoryBlock(FileContent))
+		      Dim Decompressed As String = Compressor.Decompress(FileContent)
 		      If Decompressed <> "" Then
-		        TextContent = Decompressed.DefineEncoding(Encodings.UTF8).ToText
+		        FileContent = Decompressed.DefineEncoding(Encodings.UTF8)
 		      Else
 		        Call CallLater.Schedule(0, AddressOf TriggerLoadError, "Unable to decompress file")
 		        Return
@@ -304,11 +284,9 @@ Protected Class DocumentController
 		      Call CallLater.Schedule(0, AddressOf TriggerLoadError, "Compressed files are not supported in this version")
 		      Return
 		    #endif
-		  Else
-		    TextContent = Xojo.Core.TextEncoding.UTF8.ConvertDataToText(FileContent)
 		  End If
 		  
-		  Dim Document As Beacon.Document = Beacon.Document.FromText(TextContent, Self.mIdentity)
+		  Dim Document As Beacon.Document = Beacon.Document.FromString(FileContent, Self.mIdentity)
 		  If Document = Nil Then
 		    Call CallLater.Schedule(0, AddressOf TriggerLoadError, "Unable to parse document")
 		    Return
@@ -331,23 +309,18 @@ Protected Class DocumentController
 		Private Sub Thread_Upload(Sender As Thread)
 		  #Pragma Unused Sender
 		  
-		  Dim JSON As Text = Xojo.Data.GenerateJSON(Self.mDocument.ToDictionary(Self.mIdentity))
-		  Dim Body As Xojo.Core.MemoryBlock
-		  Dim Headers As New Xojo.Core.Dictionary
+		  Dim JSON As String = Beacon.GenerateJSON(Self.mDocument.ToDictionary(Self.mIdentity), False)
+		  Dim Headers As New Dictionary
 		  Headers.Value("Authorization") = "Session " + Preferences.OnlineToken
-		  #if Not TargetiOS
-		    Dim Compressor As New _GZipString
-		    Compressor.UseHeaders = True
-		    
-		    Dim Bytes As Global.MemoryBlock = Compressor.Compress(JSON, _GZipString.DefaultCompression)
-		    Headers.Value("Content-Encoding") = "gzip"
-		    Body = Beacon.ConvertMemoryBlock(Bytes)
-		  #else
-		    Body = Xojo.Core.TextEncoding.UTF8.ConvertTextToData(JSON)
-		  #endif
+		  
+		  Dim Compressor As New _GZipString
+		  Compressor.UseHeaders = True
+		  
+		  Dim Body As MemoryBlock = Compressor.Compress(JSON, _GZipString.DefaultCompression)
+		  Headers.Value("Content-Encoding") = "gzip"
 		  
 		  Dim Socket As New SimpleHTTP.SynchronousHTTPSocket
-		  For Each Entry As Xojo.Core.DictionaryEntry In Headers
+		  For Each Entry As DictionaryEntry In Headers
 		    Socket.RequestHeader(Entry.Key) = Entry.Value
 		  Next
 		  Socket.SetRequestContent(Body, "application/json")
@@ -358,14 +331,14 @@ Protected Class DocumentController
 		    End If
 		    Call CallLater.Schedule(0, AddressOf TriggerWriteSuccess)
 		  Else
-		    Dim Message As Text = Self.ErrorMessageFromSocket(Socket)
+		    Dim Message As String = Self.ErrorMessageFromSocket(Socket)
 		    Call CallLater.Schedule(0, AddressOf TriggerWriteError, Message)
 		  End If
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub TriggerDeleteError(Reason As Auto)
+		Private Sub TriggerDeleteError(Reason As Variant)
 		  RaiseEvent DeleteError(Reason)
 		End Sub
 	#tag EndMethod
@@ -377,7 +350,7 @@ Protected Class DocumentController
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub TriggerLoadError(Reason As Auto)
+		Private Sub TriggerLoadError(Reason As Variant)
 		  CallLater.Cancel(Self.mLoadStartedCallbackKey)
 		  
 		  RaiseEvent LoadError(Reason)
@@ -399,7 +372,7 @@ Protected Class DocumentController
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub TriggerWriteError(Reason As Auto)
+		Private Sub TriggerWriteError(Reason As Variant)
 		  RaiseEvent WriteError(Reason)
 		End Sub
 	#tag EndMethod
@@ -417,7 +390,7 @@ Protected Class DocumentController
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Writer_Finished(Sender As Beacon.JSONWriter, Destination As Beacon.FolderItem)
+		Private Sub Writer_Finished(Sender As Beacon.JSONWriter, Destination As FolderItem)
 		  If Sender = Nil Or Destination = Nil Then
 		    Return
 		  End If
@@ -428,16 +401,20 @@ Protected Class DocumentController
 		    End If
 		    
 		    // Update the document url to regenerate saveinfo/bookmarks
-		    Self.mDocumentURL = Beacon.DocumentURL.URLForFile(Destination)
+		    If Destination IsA BookmarkedFolderItem Then
+		      Self.mDocumentURL = Beacon.DocumentURL.URLForFile(BookmarkedFolderItem(Destination))
+		    Else
+		      Self.mDocumentURL = Beacon.DocumentURL.URLForFile(New BookmarkedFolderItem(Destination))
+		    End If
 		    
 		    RaiseEvent WriteSuccess()
 		  Else
-		    Dim Reason As Text
+		    Dim Reason As String
 		    Dim Err As RuntimeException = Sender.Error
 		    If Err <> Nil Then
 		      Reason = Err.Explanation
 		      If Reason = "" Then
-		        Dim Info As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Err)
+		        Dim Info As Introspection.TypeInfo = Introspection.GetType(Err)
 		        If Info <> Nil Then
 		          Reason = Info.Name + " from JSONWriter"
 		        End If
@@ -463,20 +440,20 @@ Protected Class DocumentController
 		  Select Case Destination.Scheme
 		  Case Beacon.DocumentURL.TypeCloud
 		    Self.mActiveThread = New Thread
-		    Self.mActiveThread.Priority = Thread.LowestPriority
+		    Self.mActiveThread.Priority = 1
 		    AddHandler Self.mActiveThread.Run, WeakAddressOf Thread_Upload
-		    Self.mActiveThread.Run
+		    Self.mActiveThread.Start
 		  Case Beacon.DocumentURL.TypeLocal
-		    Dim Writer As New Beacon.JSONWriter(Self.mDocument, Self.mIdentity, New Beacon.FolderItem(Destination.Path))
+		    Dim Writer As New Beacon.JSONWriter(Self.mDocument, Self.mIdentity, Destination.File)
 		    AddHandler Writer.Finished, AddressOf Writer_Finished
-		    Writer.Run
+		    Writer.Start
 		  End Select
 		End Sub
 	#tag EndMethod
 
 
 	#tag Hook, Flags = &h0
-		Event DeleteError(Reason As Text)
+		Event DeleteError(Reason As String)
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -488,7 +465,7 @@ Protected Class DocumentController
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event LoadError(Reason As Text)
+		Event LoadError(Reason As String)
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -500,7 +477,7 @@ Protected Class DocumentController
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event WriteError(Reason As Text)
+		Event WriteError(Reason As String)
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -525,7 +502,7 @@ Protected Class DocumentController
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mFileRef As Beacon.FolderItem
+		Private mFileRef As BookmarkedFolderItem
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -552,6 +529,7 @@ Protected Class DocumentController
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -559,18 +537,23 @@ Protected Class DocumentController
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -578,6 +561,7 @@ Protected Class DocumentController
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

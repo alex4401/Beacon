@@ -2,33 +2,38 @@
 Protected Class LootScale
 Inherits Beacon.ConfigGroup
 	#tag Event
-		Sub GameIniValues(SourceDocument As Beacon.Document, Values() As Beacon.ConfigValue, Mask As UInt64)
-		  #Pragma Unused Mask
+		Sub GameIniValues(SourceDocument As Beacon.Document, Values() As Beacon.ConfigValue, Profile As Beacon.ServerProfile)
+		  #Pragma Unused Profile
 		  #Pragma Unused SourceDocument
 		  
-		  Values.Append(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "SupplyCrateLootQualityMultiplier", Self.mMultiplier.PrettyText))
+		  Values.AddRow(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "SupplyCrateLootQualityMultiplier", Self.mMultiplier.PrettyText))
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub ReadDictionary(Dict As Xojo.Core.Dictionary, Identity As Beacon.Identity)
+		Sub ReadDictionary(Dict As Dictionary, Identity As Beacon.Identity, Document As Beacon.Document)
 		  #Pragma Unused Identity
-		  
-		  If Dict.Lookup("App Version", 40) < Self.DiscardBeforeVersion Then
-		    App.Log("Discarding loot scale config because saved version " + App.NonReleaseVersion.ToText + " < " + Self.DiscardBeforeVersion.ToText + ".")
-		    Self.mMultiplier = 1.0
-		    Return
-		  End If
+		  #Pragma Unused Document
 		  
 		  If Dict.HasKey("Multiplier") Then
 		    Self.mMultiplier = Dict.Value("Multiplier")
 		  End If
+		  
+		  If Self.mMultiplier <> 1.0 And Dict.Lookup("App Version", 40) < Self.DiscardBeforeVersion Then
+		    App.Log("Discarding loot scale config because saved version " + App.NonReleaseVersion.ToString + " < " + Self.DiscardBeforeVersion.ToString + ".")
+		    
+		    Dim Notification As New Beacon.UserNotification("Loot Quality Scale of " + Format(Self.mMultiplier, "0%") + " has been reset to default.", Beacon.UserNotification.Severities.Elevated)
+		    Notification.SecondaryMessage = "Since the last time you used this file, Beacon's quality formulas have changed. To prevent unintended quality changes, Beacon has reset your Loot Quality Scale. You are welcome to set it back to " + Format(Self.mMultiplier, "0%") + " if you like, but you may find that value to be too high or low for the new quality values."
+		    LocalData.SharedInstance.SaveNotification(Notification)
+		    
+		    Self.mMultiplier = 1.0
+		  End If
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub WriteDictionary(Dict As Xojo.Core.DIctionary, Identity As Beacon.Identity)
-		  #Pragma Unused Identity
+		Sub WriteDictionary(Dict As Dictionary, Document As Beacon.Document)
+		  #Pragma Unused Document
 		  
 		  Dict.Value("Multiplier") = Self.mMultiplier
 		  Dict.Value("App Version") = App.BuildNumber
@@ -37,7 +42,7 @@ Inherits Beacon.ConfigGroup
 
 
 	#tag Method, Flags = &h0
-		Shared Function ConfigName() As Text
+		Shared Function ConfigName() As String
 		  Return "LootScale"
 		End Function
 	#tag EndMethod
@@ -51,10 +56,10 @@ Inherits Beacon.ConfigGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function FromImport(ParsedData As Xojo.Core.Dictionary, CommandLineOptions As Xojo.Core.Dictionary, MapCompatibility As UInt64, QualityMultiplier As Double) As BeaconConfigs.LootScale
+		Shared Function FromImport(ParsedData As Dictionary, CommandLineOptions As Dictionary, MapCompatibility As UInt64, Difficulty As BeaconConfigs.Difficulty) As BeaconConfigs.LootScale
 		  #Pragma Unused CommandLineOptions
 		  #Pragma Unused MapCompatibility
-		  #Pragma Unused QualityMultiplier
+		  #Pragma Unused Difficulty
 		  
 		  If ParsedData.HasKey("SupplyCrateLootQualityMultiplier") Then
 		    Return New BeaconConfigs.LootScale(ParsedData.DoubleValue("SupplyCrateLootQualityMultiplier"))
@@ -91,21 +96,26 @@ Inherits Beacon.ConfigGroup
 	#tag EndComputedProperty
 
 
-	#tag Constant, Name = DiscardBeforeVersion, Type = Double, Dynamic = False, Default = \"40", Scope = Private
+	#tag Constant, Name = DiscardBeforeVersion, Type = Double, Dynamic = False, Default = \"10209300", Scope = Private
 	#tag EndConstant
 
 
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="IsImplicit"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -113,12 +123,15 @@ Inherits Beacon.ConfigGroup
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -126,6 +139,7 @@ Inherits Beacon.ConfigGroup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -133,11 +147,15 @@ Inherits Beacon.ConfigGroup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Multiplier"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Double"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

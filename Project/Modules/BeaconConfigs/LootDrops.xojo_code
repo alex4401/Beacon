@@ -1,9 +1,61 @@
 #tag Class
 Protected Class LootDrops
 Inherits Beacon.ConfigGroup
-Implements Xojo.Core.Iterable
+Implements Iterable
 	#tag Event
-		Sub GameIniValues(SourceDocument As Beacon.Document, Values() As Beacon.ConfigValue, Mask As UInt64)
+		Sub DetectIssues(Document As Beacon.Document, Issues() As Beacon.Issue)
+		  Dim ConfigName As String = ConfigKey
+		  
+		  For Each Source As Beacon.LootSource In Self.mSources
+		    If Source.IsValid(Document) Then
+		      Continue
+		    End If
+		    
+		    If Source.Count < Source.RequiredItemSets Then
+		      Issues.AddRow(New Beacon.Issue(ConfigName, "Loot source " + Source.Label + " needs at least " +Source.RequiredItemSets.ToString + " " + if(Source.RequiredItemSets = 1, "item set", "item sets") + " to work correctly.", Source))
+		    Else
+		      For Each Set As Beacon.ItemSet In Source
+		        If Set.IsValid(Document) Then
+		          Continue
+		        End If
+		        
+		        If Set.Count = 0 Then
+		          Issues.AddRow(New Beacon.Issue(ConfigName, "Item set " + Set.Label + " of loot source " + Source.Label + " is empty.", Self.AssembleLocationDict(Source, Set)))
+		        Else
+		          For Each Entry As Beacon.SetEntry In Set
+		            If Entry.IsValid(Document) Then
+		              Continue
+		            End If
+		            
+		            If Entry.Count = 0 Then
+		              Issues.AddRow(New Beacon.Issue(ConfigName, "An entry in item set " + Set.Label + " of loot source " + Source.Label + " has no engrams selected.", Self.AssembleLocationDict(Source, Set, Entry)))
+		            Else
+		              For Each Option As Beacon.SetEntryOption In Entry
+		                If Option.IsValid(Document) Then
+		                  Continue
+		                End If
+		                
+		                If Option.Engram = Nil Then
+		                  Issues.AddRow(New Beacon.Issue(ConfigName, "The engram is missing for an option of an entry in " + Set.Label + " of loot source " + Source.Label + ".", Self.AssembleLocationDict(Source, Set, Entry, Option)))
+		                ElseIf Document.Mods.Count > 0 And Document.Mods.IndexOf(Option.Engram.ModID) = -1 Then
+		                  Issues.AddRow(New Beacon.Issue(ConfigName, Option.Engram.Label + " is provided by a mod that is currently disabled.", Self.AssembleLocationDict(Source, Set, Entry, Option)))
+		                ElseIf Option.Engram.IsTagged("Generic") Or Option.Engram.IsTagged("Blueprint") Then
+		                  Issues.AddRow(New Beacon.Issue(ConfigName, Option.Engram.Label + " is a generic item intended for crafting recipes. It cannot spawn in a drop.", Self.AssembleLocationDict(Source, Set, Entry, Option)))
+		                Else
+		                  Issues.AddRow(New Beacon.Issue(ConfigName, "Beacon does not know the blueprint for " + Option.Engram.ClassString + ".", Self.AssembleLocationDict(Source, Set, Entry, Option)))
+		                End If
+		              Next
+		            End If
+		          Next
+		        End If
+		      Next
+		    End If
+		  Next
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Sub GameIniValues(SourceDocument As Beacon.Document, Values() As Beacon.ConfigValue, Profile As Beacon.ServerProfile)
 		  Dim DifficultyConfig As BeaconConfigs.Difficulty = SourceDocument.Difficulty
 		  If DifficultyConfig = Nil Then
 		    DifficultyConfig = New BeaconConfigs.Difficulty
@@ -11,31 +63,32 @@ Implements Xojo.Core.Iterable
 		  End If
 		  
 		  For Each Source As Beacon.LootSource In Self.mSources
-		    If Not Source.ValidForMask(Mask) Then
+		    If Not Source.ValidForMask(Profile.Mask) Then
 		      Continue
 		    End If
 		    
-		    Dim TextValue As Text = Source.TextValue(DifficultyConfig)
-		    Values.Append(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "ConfigOverrideSupplyCrateItems", TextValue))
+		    Dim StringValue As String = Source.StringValue(DifficultyConfig)
+		    Values.AddRow(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "ConfigOverrideSupplyCrateItems", StringValue))
 		  Next
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub ReadDictionary(Dict As Xojo.Core.Dictionary, Identity As Beacon.Identity)
+		Sub ReadDictionary(Dict As Dictionary, Identity As Beacon.Identity, Document As Beacon.Document)
 		  #Pragma Unused Identity
+		  #Pragma Unused Document
 		  
 		  If Dict.HasKey("Contents") Then
 		    // Only keep the most recent of the duplicates
-		    Dim Contents() As Auto = Dict.Value("Contents")
-		    Dim UniqueClasses As New Xojo.Core.Dictionary
-		    For Each DropDict As Xojo.Core.Dictionary In Contents
+		    Dim Contents() As Variant = Dict.Value("Contents")
+		    Dim UniqueClasses As New Dictionary
+		    For Each DropDict As Dictionary In Contents
 		      Dim Source As Beacon.LootSource = Beacon.LootSource.ImportFromBeacon(DropDict)
 		      If Source <> Nil Then
 		        Dim Idx As Integer = UniqueClasses.Lookup(Source.ClassString, -1)
 		        If Idx = -1 Then
-		          Self.mSources.Append(Source)
-		          UniqueClasses.Value(Source.ClassString) = Self.mSources.Ubound
+		          Self.mSources.AddRow(Source)
+		          UniqueClasses.Value(Source.ClassString) = Self.mSources.LastRowIndex
 		        Else
 		          Self.mSources(Idx) = Source
 		        End If
@@ -46,12 +99,12 @@ Implements Xojo.Core.Iterable
 	#tag EndEvent
 
 	#tag Event
-		Sub WriteDictionary(Dict As Xojo.Core.DIctionary, Identity As Beacon.Identity)
-		  #Pragma Unused Identity
+		Sub WriteDictionary(Dict As Dictionary, Document As Beacon.Document)
+		  #Pragma Unused Document
 		  
-		  Dim Contents() As Xojo.Core.Dictionary
+		  Dim Contents() As Dictionary
 		  For Each Source As Beacon.LootSource In Self.mSources
-		    Contents.Append(Source.Export)
+		    Contents.AddRow(Source.Export)
 		  Next
 		  Dict.Value("Contents") = Contents
 		End Sub
@@ -60,14 +113,14 @@ Implements Xojo.Core.Iterable
 
 	#tag Method, Flags = &h0
 		Sub Append(Source As Beacon.LootSource)
-		  Self.mSources.Append(Source)
+		  Self.mSources.AddRow(Source)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Shared Function AssembleLocationDict(Source As Beacon.LootSource, ItemSet As Beacon.ItemSet = Nil, Entry As Beacon.SetEntry = Nil, Option As Beacon.SetEntryOption = Nil) As Xojo.Core.Dictionary
-		  Dim Dict As New Xojo.Core.Dictionary
+		Private Shared Function AssembleLocationDict(Source As Beacon.LootSource, ItemSet As Beacon.ItemSet = Nil, Entry As Beacon.SetEntry = Nil, Option As Beacon.SetEntryOption = Nil) As Dictionary
+		  Dim Dict As New Dictionary
 		  Dict.Value("LootSource") = Source
 		  If ItemSet <> Nil Then
 		    Dict.Value("ItemSet") = ItemSet
@@ -83,13 +136,23 @@ Implements Xojo.Core.Iterable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function ConfigName() As Text
-		  Return "LootDrops"
+		Shared Function ConfigName() As String
+		  Return ConfigKey
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function FromImport(ParsedData As Xojo.Core.Dictionary, CommandLineOptions As Xojo.Core.Dictionary, MapCompatibility As UInt64, QualityMultiplier As Double) As BeaconConfigs.LootDrops
+		Function DefinedSources() As Beacon.LootSourceCollection
+		  Dim Results As New Beacon.LootSourceCollection
+		  For Each LootSource As Beacon.LootSource In Self.mSources
+		    Results.Append(LootSource)
+		  Next
+		  Return Results
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Shared Function FromImport(ParsedData As Dictionary, CommandLineOptions As Dictionary, MapCompatibility As UInt64, Difficulty As BeaconConfigs.Difficulty) As BeaconConfigs.LootDrops
 		  #Pragma Unused CommandLineOptions
 		  #Pragma Unused MapCompatibility
 		  
@@ -97,45 +160,43 @@ Implements Xojo.Core.Iterable
 		    Return Nil
 		  End If
 		  
-		  Dim Dicts() As Auto
+		  Dim Dicts() As Variant
 		  Try
 		    Dicts = ParsedData.Value("ConfigOverrideSupplyCrateItems")
 		  Catch Err As TypeMismatchException
-		    Dicts.Append(ParsedData.Value("ConfigOverrideSupplyCrateItems"))
+		    Dicts.AddRow(ParsedData.Value("ConfigOverrideSupplyCrateItems"))
 		  End Try
 		  
 		  // Only keep the most recent of the duplicates
 		  Dim LootDrops As New BeaconConfigs.LootDrops
-		  Dim UniqueClasses As New Xojo.Core.Dictionary
-		  For Each ConfigDict As Xojo.Core.Dictionary In Dicts
-		    Dim Source As Beacon.LootSource = Beacon.LootSource.ImportFromConfig(ConfigDict, QualityMultiplier)
+		  Dim UniqueClasses As New Dictionary
+		  For Each ConfigDict As Dictionary In Dicts
+		    Dim Source As Beacon.LootSource = Beacon.LootSource.ImportFromConfig(ConfigDict, Difficulty)
 		    If Source <> Nil Then
 		      Dim Idx As Integer = UniqueClasses.Lookup(Source.ClassString, -1)
 		      If Idx = -1 Then
 		        LootDrops.Append(Source)
-		        UniqueClasses.Value(Source.ClassString) = LootDrops.UBound
+		        UniqueClasses.Value(Source.ClassString) = LootDrops.LastRowIndex
 		      Else
 		        LootDrops(Idx) = Source
 		      End If
 		    End If
 		  Next
-		  If LootDrops.UBound > -1 Then
+		  If LootDrops.LastRowIndex > -1 Then
 		    Return LootDrops
 		  End If
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetIterator() As Xojo.Core.Iterator
-		  // Part of the Xojo.Core.Iterable interface.
-		  
-		  Return New BeaconConfigs.LootDropIterator(Self)
+		Function HasLootSource(Source As Beacon.LootSource) As Boolean
+		  Return Self.IndexOf(Source) > -1
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function IndexOf(Source As Beacon.LootSource) As Integer
-		  For I As Integer = 0 To Self.mSources.Ubound
+		  For I As Integer = 0 To Self.mSources.LastRowIndex
 		    If Self.mSources(I).ClassString = Source.ClassString Then
 		      Return I
 		    End If
@@ -146,63 +207,28 @@ Implements Xojo.Core.Iterable
 
 	#tag Method, Flags = &h0
 		Sub Insert(Index As Integer, Source As Beacon.LootSource)
-		  Self.mSources.Insert(Index, Source)
+		  Self.mSources.AddRowAt(Index, Source)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Issues(Document As Beacon.Document) As Beacon.Issue()
-		  Dim Issues() As Beacon.Issue
-		  Dim ConfigName As Text = "LootDrops"
+		Function Iterator() As Iterator
+		  // Part of the Iterable interface.
 		  
-		  For Each Source As Beacon.LootSource In Self.mSources
-		    If Source.IsValid(Document) Then
-		      Continue
-		    End If
-		    
-		    If Source.Count < Source.RequiredItemSets Then
-		      Issues.Append(New Beacon.Issue(ConfigName, "Loot source " + Source.Label + " needs at least " +Source.RequiredItemSets.ToText + " " + if(Source.RequiredItemSets = 1, "item set", "item sets") + " to work correctly.", Source))
-		    Else
-		      For Each Set As Beacon.ItemSet In Source
-		        If Set.IsValid(Document) Then
-		          Continue
-		        End If
-		        
-		        If Set.Count = 0 Then
-		          Issues.Append(New Beacon.Issue(ConfigName, "Item set " + Set.Label + " of loot source " + Source.Label + " is empty.", Self.AssembleLocationDict(Source, Set)))
-		        Else
-		          For Each Entry As Beacon.SetEntry In Set
-		            If Entry.IsValid(Document) Then
-		              Continue
-		            End If
-		            
-		            If Entry.Count = 0 Then
-		              Issues.Append(New Beacon.Issue(ConfigName, "An entry in item set " + Set.Label + " of loot source " + Source.Label + " has no engrams selected.", Self.AssembleLocationDict(Source, Set, Entry)))
-		            Else
-		              For Each Option As Beacon.SetEntryOption In Entry
-		                If Option.IsValid(Document) Then
-		                  Continue
-		                End If
-		                
-		                If Option.Engram = Nil Then
-		                  Issues.Append(New Beacon.Issue(ConfigName, "The engram is missing for an option of an entry in " + Set.Label + " of loot source " + Source.Label + ".", Self.AssembleLocationDict(Source, Set, Entry, Option)))
-		                ElseIf Document.Mods.Count > 0 And Document.Mods.IndexOf(Option.Engram.ModID) = -1 Then
-		                  Issues.Append(New Beacon.Issue(ConfigName, Option.Engram.Label + " is provided by a mod that is currently disabled.", Self.AssembleLocationDict(Source, Set, Entry, Option)))
-		                ElseIf Option.Engram.IsTagged("Generic") Or Option.Engram.IsTagged("Blueprint") Then
-		                  Issues.Append(New Beacon.Issue(ConfigName, Option.Engram.Label + " is a generic item intended for crafting recipes. It cannot spawn in a drop.", Self.AssembleLocationDict(Source, Set, Entry, Option)))
-		                Else
-		                  Issues.Append(New Beacon.Issue(ConfigName, "Beacon does not know the blueprint for " + Option.Engram.ClassString + ".", Self.AssembleLocationDict(Source, Set, Entry, Option)))
-		                End If
-		              Next
-		            End If
-		          Next
-		        End If
-		      Next
-		    End If
+		  Dim Items() As Variant
+		  Redim Items(Self.mSources.LastRowIndex)
+		  For I As Integer = Items.FirstRowIndex To Items.LastRowIndex
+		    Items(I) = Self.mSources(I)
 		  Next
 		  
-		  Return Issues
+		  Return New Beacon.GenericIterator(Items)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function LastRowIndex() As Integer
+		  Return Self.mSources.LastRowIndex
 		End Function
 	#tag EndMethod
 
@@ -234,7 +260,7 @@ Implements Xojo.Core.Iterable
 
 	#tag Method, Flags = &h0
 		Sub Operator_Redim(NewUBound As Integer)
-		  If NewUBound <> Self.mSources.Ubound Then
+		  If NewUBound <> Self.mSources.LastRowIndex Then
 		    Redim Self.mSources(NewUBound)
 		    Self.Modified = True
 		  End If
@@ -255,6 +281,20 @@ Implements Xojo.Core.Iterable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function ReconfigurePresets(Mask As UInt64, Mods As Beacon.StringList) As UInteger
+		  If Mask = 0 Then
+		    Return 0
+		  End If
+		  
+		  Dim NumChanged As UInteger
+		  For Each Source As Beacon.LootSource In Self.mSources
+		    NumChanged = NumChanged + Source.ReconfigurePresets(Mask, Mods)
+		  Next
+		  Return NumChanged
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub Remove(Source As Beacon.LootSource)
 		  Dim Idx As Integer = Self.IndexOf(Source)
 		  If Idx > -1 Then
@@ -265,7 +305,7 @@ Implements Xojo.Core.Iterable
 
 	#tag Method, Flags = &h0
 		Sub Remove(Index As Integer)
-		  Self.mSources.Remove(Index)
+		  Self.mSources.RemoveRowAt(Index)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
@@ -299,7 +339,7 @@ Implements Xojo.Core.Iterable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub TryToResolveIssues(InputContent As Text, Callback As Beacon.ConfigGroup.ResolveIssuesCallback)
+		Sub TryToResolveIssues(InputContent As String, Callback As Beacon.ConfigGroup.ResolveIssuesCallback)
 		  Self.mResolveIssuesCallback = Callback
 		  
 		  Dim Searcher As New Beacon.EngramSearcherThread
@@ -307,18 +347,6 @@ Implements Xojo.Core.Iterable
 		  AddHandler Searcher.Finished, AddressOf Searcher_Finished
 		  Searcher.Search(InputContent, False)
 		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function UBound() As Integer
-		  Return Self.mSources.Ubound
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function WasPerfectImport() As Boolean
-		  Return False
-		End Function
 	#tag EndMethod
 
 
@@ -331,17 +359,26 @@ Implements Xojo.Core.Iterable
 	#tag EndProperty
 
 
+	#tag Constant, Name = ConfigKey, Type = Text, Dynamic = False, Default = \"LootDrops", Scope = Private
+	#tag EndConstant
+
+
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="IsImplicit"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -349,12 +386,15 @@ Implements Xojo.Core.Iterable
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -362,6 +402,7 @@ Implements Xojo.Core.Iterable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -369,6 +410,7 @@ Implements Xojo.Core.Iterable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

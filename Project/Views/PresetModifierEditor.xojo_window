@@ -3,7 +3,6 @@ Begin BeaconDialog PresetModifierEditor
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   8
    FullScreen      =   False
@@ -11,18 +10,20 @@ Begin BeaconDialog PresetModifierEditor
    HasBackColor    =   False
    Height          =   466
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
    MaxHeight       =   32000
    MaximizeButton  =   False
    MaxWidth        =   32000
    MenuBar         =   0
    MenuBarVisible  =   True
-   MinHeight       =   64
+   MinHeight       =   466
    MinimizeButton  =   False
-   MinWidth        =   64
+   MinWidth        =   600
    Placement       =   1
+   Resizable       =   "True"
    Resizeable      =   False
+   SystemUIVisible =   "True"
    Title           =   "Modifier"
    Visible         =   True
    Width           =   600
@@ -69,6 +70,7 @@ Begin BeaconDialog PresetModifierEditor
       CueText         =   ""
       DataField       =   ""
       DataSource      =   ""
+      DoubleValue     =   0.0
       Enabled         =   True
       Format          =   ""
       Height          =   22
@@ -98,7 +100,6 @@ Begin BeaconDialog PresetModifierEditor
       Transparent     =   False
       Underline       =   False
       UseFocusRing    =   True
-      Value           =   0.0
       Visible         =   True
       Width           =   80
    End
@@ -438,7 +439,6 @@ Begin BeaconDialog PresetModifierEditor
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -498,7 +498,7 @@ Begin BeaconDialog PresetModifierEditor
    Begin UITweaks.ResizedPushButton ActionButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "OK"
       Default         =   True
@@ -530,7 +530,7 @@ Begin BeaconDialog PresetModifierEditor
    Begin UITweaks.ResizedPushButton CancelButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Cancel"
       Default         =   False
@@ -683,6 +683,7 @@ Begin BeaconDialog PresetModifierEditor
       CueText         =   ""
       DataField       =   ""
       DataSource      =   ""
+      DoubleValue     =   0.0
       Enabled         =   True
       Format          =   ""
       Height          =   22
@@ -712,7 +713,6 @@ Begin BeaconDialog PresetModifierEditor
       Transparent     =   False
       Underline       =   False
       UseFocusRing    =   True
-      Value           =   0.0
       Visible         =   True
       Width           =   80
    End
@@ -721,30 +721,30 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.SwapButtons()
 		  
-		  Self.MinQualityField.Value = Self.mPreset.MinQualityModifier(Self.mEditID)
-		  Self.MaxQualityField.Value = Self.mPreset.MaxQualityModifier(Self.mEditID)
-		  Self.QuantityField.Text = Format(Self.mPreset.QuantityMultiplier(Self.mEditID), "0.00")
-		  Self.BlueprintField.Text = Format(Self.mPreset.BlueprintMultiplier(Self.mEditID), "0.00")
+		  Self.MinQualityField.DoubleValue = Self.mPreset.MinQualityModifier(Self.mEditID)
+		  Self.MaxQualityField.DoubleValue = Self.mPreset.MaxQualityModifier(Self.mEditID)
+		  Self.QuantityField.Value = Format(Self.mPreset.QuantityMultiplier(Self.mEditID), "0.00")
+		  Self.BlueprintField.Value = Format(Self.mPreset.BlueprintMultiplier(Self.mEditID), "0.00")
 		End Sub
 	#tag EndEvent
 
 
 	#tag Method, Flags = &h21
-		Private Sub Constructor(Preset As Beacon.MutablePreset, EditModifierID As Text)
+		Private Sub Constructor(Preset As Beacon.MutablePreset, EditModifierID As String)
 		  // Calling the overridden superclass constructor.
 		  Self.mPreset = Preset
 		  Self.mEditID = EditModifierID
 		  
-		  Self.mSources = LocalData.SharedInstance.SearchForLootSources("", New Beacon.TextList, Preferences.ShowExperimentalLootSources)
+		  Self.mSources = LocalData.SharedInstance.SearchForLootSources("", New Beacon.StringList, Preferences.ShowExperimentalLootSources)
 		  
 		  Dim Win As MainWindow = MainWindow
 		  If Win <> Nil Then
-		    Dim Classes() As Text
+		    Dim Classes() As String
 		    For Each Source As Beacon.LootSource In Self.mSources
-		      Classes.Append(Source.ClassString)
+		      Classes.AddRow(Source.ClassString)
 		    Next
 		    
 		    Dim Bound As UInteger = Win.ViewCount - 1
@@ -755,15 +755,18 @@ End
 		      End If
 		      
 		      Dim Document As Beacon.Document = DocumentEditorView(View).Document
-		      Dim Sources As Beacon.LootSourceCollection = Document.LootSources
-		      Dim SourcesBound As Integer = Sources.UBound
-		      For X As Integer = 0 To SourcesBound
-		        Dim Source As Beacon.LootSource = Sources(X)
-		        If Source.IsOfficial = False And Classes.IndexOf(Source.ClassString) = -1 Then
-		          Classes.Append(Source.ClassString)
-		          Self.mSources.Append(Source)
-		        End If
-		      Next
+		      If Document.HasConfigGroup(BeaconConfigs.LootDrops.ConfigName) Then
+		        Dim Config As BeaconConfigs.LootDrops = BeaconConfigs.LootDrops(Document.ConfigGroup(BeaconConfigs.LootDrops.ConfigName))
+		        Dim Sources As Beacon.LootSourceCollection = Config.DefinedSources
+		        Dim SourcesBound As Integer = Sources.LastRowIndex
+		        For X As Integer = 0 To SourcesBound
+		          Dim Source As Beacon.LootSource = Sources(X)
+		          If Source.IsOfficial = False And Classes.IndexOf(Source.ClassString) = -1 Then
+		            Classes.AddRow(Source.ClassString)
+		            Self.mSources.AddRow(Source)
+		          End If
+		        Next
+		      End If
 		    Next
 		  End If
 		  
@@ -772,7 +775,7 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Present(Parent As Window, Preset As Beacon.MutablePreset, EditModifierID As Text = "") As Boolean
+		Shared Function Present(Parent As Window, Preset As Beacon.MutablePreset, EditModifierID As String = "") As Boolean
 		  If Parent = Nil Then
 		    Return False
 		  End If
@@ -813,7 +816,7 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mEditID As Text
+		Private mEditID As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -833,37 +836,37 @@ End
 
 #tag Events GroupMenu
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Dim Modifiers() As Beacon.PresetModifier = LocalData.SharedInstance.AllPresetModifiers
-		  Dim Actives() As Text = Self.mPreset.ActiveModifierIDs()
+		  Dim Actives() As String = Self.mPreset.ActiveModifierIDs()
 		  For Each Modifier As Beacon.PresetModifier In Modifiers
 		    Dim Editing As Boolean = Modifier.ModifierID = Self.mEditID
 		    If Editing = True Or Actives.IndexOf(Modifier.ModifierID) = -1 Then
 		      Me.AddRow(Modifier.Label, Modifier)
 		      If Editing Then
-		        Me.ListIndex = Me.ListCount - 1
+		        Me.SelectedRowIndex = Me.RowCount - 1
 		      End If
 		    End If
 		  Next
 		  
-		  If Me.ListCount > 0 Then
+		  If Me.RowCount > 0 Then
 		    Me.AddSeparator
 		  End If
 		  
 		  Me.AddRow("New Group…")
 		  
-		  If Me.ListIndex = -1 Then
-		    Me.ListIndex = 0
+		  If Me.SelectedRowIndex = -1 Then
+		    Me.SelectedRowIndex = 0
 		  End If
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
-		  If Me.ListIndex = -1 Then
+		Sub SelectionChanged()
+		  If Me.SelectedRowIndex = -1 Then
 		    Return
 		  End If
 		  
-		  Dim Modifier As Beacon.PresetModifier = Me.RowTag(Me.ListIndex)
+		  Dim Modifier As Beacon.PresetModifier = Me.RowTagAt(Me.SelectedRowIndex)
 		  If Modifier = Nil Then
 		    // Create a new one
 		    Self.SetEditorVisible(True)
@@ -883,11 +886,11 @@ End
 #tag EndEvents
 #tag Events GroupPatternField
 	#tag Event
-		Sub TextChange()
-		  Dim Modifier As New Beacon.PresetModifier("", Self.GroupPatternField.Text.ToText)
+		Sub TextChanged()
+		  Dim Modifier As New Beacon.PresetModifier("", Self.GroupPatternField.Value)
 		  Dim Matches() As Beacon.LootSource = Modifier.Matches(Self.mSources)
 		  
-		  Self.MatchesList.DeleteAllRows()
+		  Self.MatchesList.RemoveAllRows()
 		  For Each Match As Beacon.LootSource In Matches
 		    Self.MatchesList.AddRow(Match.Label)
 		  Next
@@ -896,35 +899,35 @@ End
 #tag EndEvents
 #tag Events ActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.MinQualityField.CheckValue
 		  Self.MaxQualityField.CheckValue
-		  Dim MinQualityModifier As Integer = Self.MinQualityField.Value
-		  Dim MaxQualityModifier As Integer = Self.MaxQualityField.Value
-		  Dim QuantityMultiplier As Double = CDbl(Self.QuantityField.Text)
-		  Dim BlueprintMultiplier As Double = CDbl(Self.BlueprintField.Text)
+		  Dim MinQualityModifier As Integer = Self.MinQualityField.DoubleValue
+		  Dim MaxQualityModifier As Integer = Self.MaxQualityField.DoubleValue
+		  Dim QuantityMultiplier As Double = CDbl(Self.QuantityField.Value)
+		  Dim BlueprintMultiplier As Double = CDbl(Self.BlueprintField.Value)
 		  
 		  If MinQualityModifier = 0 And MaxQualityModifier = 0 And QuantityMultiplier = 1 And BlueprintMultiplier = 1 Then
 		    BeaconUI.ShowAlert("This modifier has no effect", "There's no reason to add this modifier, because it does not change the quality or quantity of items.")
 		    Return
 		  End If
 		  
-		  If Self.GroupMenu.ListIndex = -1 Then
+		  If Self.GroupMenu.SelectedRowIndex = -1 Then
 		    BeaconUI.ShowAlert("No group selected", "Beacon can't set a modifier without selecting a group.")
 		    Return
 		  End If
 		  
-		  Dim Modifier As Beacon.PresetModifier = Self.GroupMenu.RowTag(Self.GroupMenu.ListIndex)
+		  Dim Modifier As Beacon.PresetModifier = Self.GroupMenu.RowTagAt(Self.GroupMenu.SelectedRowIndex)
 		  If Modifier = Nil Then
-		    If Self.GroupNameField.Text.Trim = "" Or Self.GroupPatternField.Text.Trim = "" Then
+		    If Self.GroupNameField.Value.Trim = "" Or Self.GroupPatternField.Value.Trim = "" Then
 		      BeaconUI.ShowAlert("Group definition is not complete", "A new group must have both a name and pattern.")
 		      Return
 		    End If
-		    If Self.MatchesList.ListCount = 0 And BeaconUI.ShowConfirm("The pattern does not appear to match any loot sources", "A pattern that doesn't match any loot sources isn't very useful. Would you like to make changes?", "Change", "Save Anyway") Then
+		    If Self.MatchesList.RowCount = 0 And BeaconUI.ShowConfirm("The pattern does not appear to match any loot sources", "A pattern that doesn't match any loot sources isn't very useful. Would you like to make changes?", "Change", "Save Anyway") Then
 		      Return
 		    End If
 		    
-		    Modifier = New Beacon.PresetModifier(Self.GroupNameField.Text.ToText, Self.GroupPatternField.Text.ToText)
+		    Modifier = New Beacon.PresetModifier(Self.GroupNameField.Value, Self.GroupPatternField.Value)
 		    LocalData.SharedInstance.AddPresetModifier(Modifier)
 		  End If
 		  
@@ -941,7 +944,7 @@ End
 #tag EndEvents
 #tag Events CancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.mCancelled = True
 		  Self.Hide
 		End Sub
@@ -957,74 +960,59 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="Name"
+		Name="Resizeable"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Interfaces"
+		Name="MenuBarVisible"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Deprecated"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Super"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Width"
-		Visible=true
-		Group="Size"
-		InitialValue="600"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinWidth"
+		Name="MinimumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinHeight"
+		Name="MinimumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
+		Name="MaximumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxHeight"
+		Name="MaximumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -1041,78 +1029,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Title"
-		Visible=true
-		Group="Frame"
-		InitialValue="Untitled"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasMinimizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinimizeButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
+		Name="HasFullScreenButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -1123,61 +1076,123 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Super"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Width"
+		Visible=true
+		Group="Size"
+		InitialValue="600"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Title"
+		Visible=true
+		Group="Frame"
+		InitialValue="Untitled"
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Visible"
 		Visible=true
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
+		Visible=false
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MenuBar"
 		Visible=true
 		Group="Menus"
+		InitialValue=""
 		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Visible=true
-		Group="Deprecated"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

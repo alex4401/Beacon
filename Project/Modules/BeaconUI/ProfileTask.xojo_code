@@ -36,7 +36,7 @@ Inherits AnimationKit.Task
 	#tag EndMethod
 
 	#tag Method, Flags = &h1000
-		Sub Constructor(Target As BeaconUI.ProfileAnimator, Identifier As Text, StartProfile As BeaconUI.ColorProfile, EndProfile As BeaconUI.ColorProfile)
+		Sub Constructor(Target As BeaconUI.ProfileAnimator, Identifier As String, StartProfile As BeaconUI.ColorProfile, EndProfile As BeaconUI.ColorProfile)
 		  Self.Constructor()
 		  Self.StartProfile = StartProfile
 		  Self.EndProfile = EndProfile
@@ -59,7 +59,7 @@ Inherits AnimationKit.Task
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		Identifier As Text
+		Identifier As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
@@ -70,19 +70,27 @@ Inherits AnimationKit.Task
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="Cancelled"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="DurationInSeconds"
+			Visible=false
 			Group="Behavior"
 			InitialValue="1"
 			Type="Double"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Identifier"
+			Visible=false
 			Group="Behavior"
-			Type="Text"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -90,11 +98,15 @@ Inherits AnimationKit.Task
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LastFrameTime"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Double"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -102,23 +114,31 @@ Inherits AnimationKit.Task
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Started"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -126,6 +146,7 @@ Inherits AnimationKit.Task
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

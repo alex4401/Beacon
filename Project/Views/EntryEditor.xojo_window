@@ -3,7 +3,6 @@ Begin BeaconDialog EntryEditor
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   8
    FullScreen      =   False
@@ -11,7 +10,7 @@ Begin BeaconDialog EntryEditor
    HasBackColor    =   False
    Height          =   534
    ImplicitInstance=   False
-   LiveResize      =   False
+   LiveResize      =   "False"
    MacProcID       =   0
    MaxHeight       =   32000
    MaximizeButton  =   False
@@ -22,7 +21,9 @@ Begin BeaconDialog EntryEditor
    MinimizeButton  =   False
    MinWidth        =   900
    Placement       =   1
+   Resizable       =   "True"
    Resizeable      =   True
+   SystemUIVisible =   "True"
    Title           =   "Set Entry"
    Visible         =   True
    Width           =   900
@@ -130,7 +131,6 @@ Begin BeaconDialog EntryEditor
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -181,7 +181,7 @@ Begin BeaconDialog EntryEditor
          Top             =   442
          Transparent     =   False
          Underline       =   False
-         Value           =   False
+         Value           =   "False"
          Visible         =   True
          Width           =   340
       End
@@ -215,7 +215,6 @@ Begin BeaconDialog EntryEditor
          Border          =   15
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   True
          Height          =   67
          HelpTag         =   ""
          Index           =   -2147483648
@@ -358,7 +357,6 @@ Begin BeaconDialog EntryEditor
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -383,7 +381,7 @@ Begin BeaconDialog EntryEditor
       Begin UITweaks.ResizedPushButton SimulateButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Refresh"
          Default         =   False
@@ -416,7 +414,7 @@ Begin BeaconDialog EntryEditor
    Begin UITweaks.ResizedPushButton ActionButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "OK"
       Default         =   True
@@ -448,7 +446,7 @@ Begin BeaconDialog EntryEditor
    Begin UITweaks.ResizedPushButton CancelButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Cancel"
       Default         =   False
@@ -483,8 +481,7 @@ Begin BeaconDialog EntryEditor
       LockedInPosition=   False
       Priority        =   5
       Scope           =   2
-      StackSize       =   "0"
-      State           =   ""
+      StackSize       =   0
       TabPanelIndex   =   0
    End
 End
@@ -492,19 +489,19 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
+		Sub Closing()
 		  Self.EngramSearcher.Cancel
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
-		  Dim PreferredSize As Xojo.Core.Size = Preferences.EntryEditorSize
+		Sub Opening()
+		  Dim PreferredSize As Size = Preferences.EntryEditorSize
 		  
 		  Self.Picker.Tags = LocalData.SharedInstance.AllTags(Beacon.CategoryEngrams)
 		  Self.Picker.Spec = Preferences.SelectedTag(Beacon.CategoryEngrams, "Looting")
-		  Self.Width = Max(PreferredSize.Width, Self.MinWidth)
-		  Self.Height = Max(PreferredSize.Height, Self.MinHeight)
+		  Self.Width = Max(PreferredSize.Width, Self.MinimumWidth)
+		  Self.Height = Max(PreferredSize.Height, Self.MinimumHeight)
 		  Self.SearchSpinnerVisible = False
 		  
 		  Self.SwapButtons()
@@ -514,7 +511,7 @@ End
 
 	#tag Event
 		Sub Resized()
-		  Preferences.EntryEditorSize = New Xojo.Core.Size(Self.Width, Self.Height)
+		  Preferences.EntryEditorSize = New Size(Self.Width, Self.Height)
 		End Sub
 	#tag EndEvent
 
@@ -526,8 +523,8 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Constructor(Mods As Beacon.TextList)
-		  Self.mSelectedEngrams = New Xojo.Core.Dictionary
+		Private Sub Constructor(Mods As Beacon.StringList)
+		  Self.mSelectedEngrams = New Dictionary
 		  Self.mMods = Mods
 		  Self.mSettingUp = True
 		  Super.Constructor
@@ -536,16 +533,16 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub EnableButtons()
-		  Dim Enabled As Boolean = Self.EngramSearcher.State = Thread.NotRunning
-		  Self.ActionButton.Enabled = Enabled And Self.mSelectedEngrams.Count >= 1
+		  Dim Enabled As Boolean = Self.EngramSearcher.ThreadState = Thread.ThreadStates.NotRunning
+		  Self.ActionButton.Enabled = Enabled And Self.mSelectedEngrams.KeyCount >= 1
 		  Self.CancelButton.Enabled = Enabled
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub ListUnknownEngrams()
-		  For Each Entry As Xojo.Core.DictionaryEntry In Self.mSelectedEngrams
-		    Dim Path As Text = Entry.Key
+		  For Each Entry As DictionaryEntry In Self.mSelectedEngrams
+		    Dim Path As String = Entry.Key
 		    Dim Option As Beacon.SetEntryOption = Entry.Value
 		    
 		    Dim Idx As Integer = Self.mEngramRowIndexes.Lookup(Path, -1)
@@ -554,25 +551,25 @@ End
 		      Dim Weight As String = WeightValue.PrettyText
 		      
 		      EngramList.AddRow("", Option.Engram.Label, Option.Engram.ModName, Weight)
-		      EngramList.RowTag(EngramList.LastIndex) = Option.Engram
-		      Self.mEngramRowIndexes.Value(Path) = EngramList.LastIndex
-		      Idx = EngramList.LastIndex
-		      EngramList.CellCheck(Idx, Self.ColumnIncluded) = True
+		      EngramList.RowTagAt(EngramList.LastAddedRowIndex) = Option.Engram
+		      Self.mEngramRowIndexes.Value(Path) = EngramList.LastAddedRowIndex
+		      Idx = EngramList.LastAddedRowIndex
+		      EngramList.CellCheckBoxValueAt(Idx, Self.ColumnIncluded) = True
 		    End If
 		  Next
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Present(Parent As Window, Mods As Beacon.TextList, Sources() As Beacon.SetEntry = Nil, Prefilter As String = "") As Beacon.SetEntry()
-		  If Sources <> Nil And UBound(Sources) > 0 Then
+		Shared Function Present(Parent As Window, Mods As Beacon.StringList, Sources() As Beacon.SetEntry = Nil, Prefilter As String = "") As Beacon.SetEntry()
+		  If Sources <> Nil And Sources.LastRowIndex > 0 Then
 		    // Need to use the multi-edit window
 		    Return EntryMultiEditor.Present(Parent, Sources)
 		  End If
 		  
 		  Dim Win As New EntryEditor(Mods)
 		  
-		  If Sources <> Nil And UBound(Sources) = 0 Then
+		  If Sources <> Nil And Sources.LastRowIndex = 0 Then
 		    Win.mOriginalEntry = New Beacon.SetEntry(Sources(0))
 		  End If
 		  
@@ -582,7 +579,7 @@ End
 		  
 		  Dim Entries() As Beacon.SetEntry = Win.mCreatedEntries
 		  Win.Close
-		  If UBound(Entries) = -1 Then
+		  If Entries.LastRowIndex = -1 Then
 		    Return Nil
 		  Else
 		    Return Entries
@@ -598,12 +595,12 @@ End
 		    Next
 		  End If
 		  
-		  Self.FilterField.Text = Prefilter
+		  Self.FilterField.Value = Prefilter
 		  Self.UpdateFilter()
-		  SingleEntryCheck.Value = Self.mSelectedEngrams.Count > 1
+		  SingleEntryCheck.Value = Self.mSelectedEngrams.KeyCount > 1
 		  
-		  For I As Integer = 0 To EngramList.ListCount - 1
-		    If EngramList.CellCheck(I, 0) Then
+		  For I As Integer = 0 To EngramList.RowCount - 1
+		    If EngramList.CellCheckBoxValueAt(I, 0) Then
 		      EngramList.ScrollPosition = I
 		      Exit For I
 		    End If
@@ -616,14 +613,14 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateFilter()
-		  Dim SearchText As String = Self.FilterField.Text
-		  Dim Tags As Text = Self.Picker.Spec.ToText
+		  Dim SearchText As String = Self.FilterField.Value
+		  Dim Tags As String = Self.Picker.Spec
 		  
-		  Dim Engrams() As Beacon.Engram = Beacon.Data.SearchForEngrams(SearchText.ToText, Self.mMods, Tags)
-		  EngramList.DeleteAllRows
+		  Dim Engrams() As Beacon.Engram = Beacon.Data.SearchForEngrams(SearchText, Self.mMods, Tags)
+		  EngramList.RemoveAllRows
 		  
 		  Dim PerfectMatch As Boolean
-		  Self.mEngramRowIndexes = New Xojo.Core.Dictionary
+		  Self.mEngramRowIndexes = New Dictionary
 		  For Each Engram As Beacon.Engram In Engrams
 		    Dim Weight As String = ""
 		    If Self.mSelectedEngrams.HasKey(Engram.Path) Then
@@ -632,9 +629,9 @@ End
 		    End If
 		    
 		    EngramList.AddRow("", Engram.Label, Engram.ModName, Weight)
-		    EngramList.RowTag(EngramList.LastIndex) = Engram
-		    Self.mEngramRowIndexes.Value(Engram.Path) = EngramList.LastIndex
-		    EngramList.CellCheck(EngramList.LastIndex, Self.ColumnIncluded) = Self.mSelectedEngrams.HasKey(Engram.Path)
+		    EngramList.RowTagAt(EngramList.LastAddedRowIndex) = Engram
+		    Self.mEngramRowIndexes.Value(Engram.Path) = EngramList.LastAddedRowIndex
+		    EngramList.CellCheckBoxValueAt(EngramList.LastAddedRowIndex, Self.ColumnIncluded) = Self.mSelectedEngrams.HasKey(Engram.Path)
 		    If Engram.Path = SearchText Or Engram.Label = SearchText Then
 		      PerfectMatch = True
 		    End If
@@ -651,7 +648,7 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateSelectionUI()
-		  If Self.mSelectedEngrams.Count > 1 And Self.AllowMultipleEntries Then
+		  If Self.mSelectedEngrams.KeyCount > 1 And Self.AllowMultipleEntries Then
 		    Self.SingleEntryCheck.Visible = True
 		    Self.EngramList.Height = Self.SingleEntryCheck.Top - (12 + Self.EngramList.Top)
 		  Else
@@ -665,15 +662,15 @@ End
 	#tag Method, Flags = &h21
 		Private Sub UpdateSimulation()
 		  SimulationGroup.Caption = "Simulation"
-		  SimulatedResultsList.DeleteAllRows
-		  If Self.mSelectedEngrams.Count = 0 Then
+		  SimulatedResultsList.RemoveAllRows
+		  If Self.mSelectedEngrams.KeyCount = 0 Then
 		    Return
 		  End If
 		  
-		  Dim FullSimulation As Boolean = Self.mSelectedEngrams.Count = 1 Or Self.AllowMultipleEntries = False Or (Self.SingleEntryCheck.Value And Self.SingleEntryCheck.Visible)
+		  Dim FullSimulation As Boolean = Self.mSelectedEngrams.KeyCount = 1 Or Self.AllowMultipleEntries = False Or (Self.SingleEntryCheck.Value And Self.SingleEntryCheck.Visible)
 		  
 		  Dim Entry As New Beacon.SetEntry
-		  For Each Item As Xojo.Core.DictionaryEntry In Self.mSelectedEngrams
+		  For Each Item As DictionaryEntry In Self.mSelectedEngrams
 		    Dim Option As Beacon.SetEntryOption = Item.Value
 		    Entry.Append(Option)
 		    If Not FullSimulation Then
@@ -685,9 +682,9 @@ End
 		  EntryPropertiesEditor1.ApplyTo(Entry)
 		  
 		  Dim Selections() As Beacon.SimulatedSelection = Entry.Simulate
-		  Dim GroupedItems As New Xojo.Core.Dictionary
+		  Dim GroupedItems As New Dictionary
 		  For Each Selection As Beacon.SimulatedSelection In Selections
-		    Dim Description As Text = Selection.Description
+		    Dim Description As String = Selection.Description
 		    Dim Quantity As Integer
 		    If GroupedItems.HasKey(Description) Then
 		      Quantity = GroupedItems.Value(Description)
@@ -695,8 +692,8 @@ End
 		    GroupedItems.Value(Description) = Quantity + 1
 		  Next
 		  
-		  For Each Item As Xojo.Core.DictionaryEntry In GroupedItems
-		    Dim Description As Text = Item.Key
+		  For Each Item As DictionaryEntry In GroupedItems
+		    Dim Description As String = Item.Key
 		    Dim Quantity As Integer = Item.Value
 		    SimulatedResultsList.AddRow(Str(Quantity, "0") + "x " + Description)
 		  Next
@@ -709,11 +706,11 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		mEngramRowIndexes As Xojo.Core.Dictionary
+		mEngramRowIndexes As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mMods As Beacon.TextList
+		Private mMods As Beacon.StringList
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -721,7 +718,7 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mSelectedEngrams As Xojo.Core.Dictionary
+		Private mSelectedEngrams As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -770,7 +767,7 @@ End
 
 #tag Events FilterField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  Self.UpdateFilter()
 		End Sub
 	#tag EndEvent
@@ -778,16 +775,16 @@ End
 #tag Events EngramList
 	#tag Event
 		Sub CellAction(row As Integer, column As Integer)
-		  Dim Engram As Beacon.Engram = Me.RowTag(Row)
+		  Dim Engram As Beacon.Engram = Me.RowTagAt(Row)
 		  
 		  Select Case Column
 		  Case Self.ColumnIncluded
-		    Dim Checked As Boolean = Me.CellCheck(Row, Column)
+		    Dim Checked As Boolean = Me.CellCheckBoxValueAt(Row, Column)
 		    If Checked And Not Self.mSelectedEngrams.HasKey(Engram.Path) Then
-		      Dim WeightString As String = Me.Cell(Row, Self.ColumnWeight)
+		      Dim WeightString As String = Me.CellValueAt(Row, Self.ColumnWeight)
 		      If WeightString = "" Then
 		        WeightString = "50"
-		        Me.Cell(Row, Self.ColumnWeight) = WeightString
+		        Me.CellValueAt(Row, Self.ColumnWeight) = WeightString
 		      End
 		      Dim Weight As Double = Max(Min(Val(WeightString) / 100, 1), 0)
 		      Self.mSelectedEngrams.Value(Engram.Path) = New Beacon.SetEntryOption(Engram, Weight)
@@ -800,7 +797,7 @@ End
 		    Self.UpdateSimulation()
 		  Case Self.ColumnWeight
 		    If Self.mSelectedEngrams.HasKey(Engram.Path) Then
-		      Dim Weight As Double = Max(Min(Val(Me.Cell(Row, Column)) / 100, 1), 0)
+		      Dim Weight As Double = Max(Min(Val(Me.CellValueAt(Row, Column)) / 100, 1), 0)
 		      Self.mSelectedEngrams.Value(Engram.Path) = New Beacon.SetEntryOption(Engram, Weight)
 		      Self.UpdateSelectionUI()
 		      Self.UpdateSimulation()
@@ -811,29 +808,22 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
-		  Me.ColumnType(Self.ColumnIncluded) = Listbox.TypeCheckbox
-		  Me.ColumnType(Self.ColumnWeight) = Listbox.TypeEditable
-		  Me.ColumnAlignment(Self.ColumnWeight) = Listbox.AlignRight
-		End Sub
-	#tag EndEvent
-	#tag Event
-		Function CompareRows(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
+		Function RowComparison(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
 		  Select Case Column
 		  Case Self.ColumnIncluded
-		    If Me.CellCheck(Row1, Column) = True And Me.CellCheck(Row2, Column) = False Then
+		    If Me.CellCheckBoxValueAt(Row1, Column) = True And Me.CellCheckBoxValueAt(Row2, Column) = False Then
 		      Result = -1
-		    ElseIf Me.CellCheck(Row1, Column) = False And Me.CellCheck(Row2, Column) = True Then
+		    ElseIf Me.CellCheckBoxValueAt(Row1, Column) = False And Me.CellCheckBoxValueAt(Row2, Column) = True Then
 		      Result = 1
 		    Else
-		      Dim Engram1 As Beacon.Engram = Me.RowTag(Row1)
-		      Dim Engram2 As Beacon.Engram = Me.RowTag(Row2)
+		      Dim Engram1 As Beacon.Engram = Me.RowTagAt(Row1)
+		      Dim Engram2 As Beacon.Engram = Me.RowTagAt(Row2)
 		      
 		      Result = StrComp(Engram1.Label, Engram2.Label, 0)
 		    End If
 		  Case Self.ColumnWeight
-		    Dim Weight1 As Double = Val(Me.Cell(Row1, Column))
-		    Dim Weight2 As Double = Val(Me.Cell(Row2, Column))
+		    Dim Weight1 As Double = Val(Me.CellValueAt(Row1, Column))
+		    Dim Weight2 As Double = Val(Me.CellValueAt(Row2, Column))
 		    If Weight1 > Weight2 Then
 		      Result = 1
 		    ElseIf Weight2 > Weight1 Then
@@ -848,22 +838,29 @@ End
 		  Return True
 		End Function
 	#tag EndEvent
+	#tag Event
+		Sub Opening()
+		  Me.ColumnTypeAt(Self.ColumnIncluded) = Listbox.CellTypes.CheckBox
+		  Me.ColumnTypeAt(Self.ColumnWeight) = Listbox.CellTypes.TextField
+		  Me.ColumnAlignmentAt(Self.ColumnWeight) = Listbox.Alignments.Center
+		End Sub
+	#tag EndEvent
 #tag EndEvents
 #tag Events SingleEntryCheck
 	#tag Event
-		Sub Action()
+		Sub ValueChanged()
 		  Self.UpdateSimulation()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Picker
 	#tag Event
-		Sub Change()
+		Sub TagsChanged()
 		  If Self.mSettingUp Then
 		    Return
 		  End If
 		  
-		  Preferences.SelectedTag(Beacon.CategoryEngrams, "Looting") = Me.Spec.ToText
+		  Preferences.SelectedTag(Beacon.CategoryEngrams, "Looting") = Me.Spec
 		  Self.UpdateFilter
 		End Sub
 	#tag EndEvent
@@ -888,21 +885,22 @@ End
 #tag EndEvents
 #tag Events SimulateButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.UpdateSimulation()
+		  
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ActionButton
 	#tag Event
-		Sub Action()
-		  If Self.mSelectedEngrams.Count = 0 Then
+		Sub Pressed()
+		  If Self.mSelectedEngrams.KeyCount = 0 Then
 		    Return
 		  End If
 		  
 		  Dim Options() As Beacon.SetEntryOption
-		  For Each Entry As Xojo.Core.DictionaryEntry In Self.mSelectedEngrams
-		    Options.Append(Entry.Value)
+		  For Each Entry As DictionaryEntry In Self.mSelectedEngrams
+		    Options.AddRow(Entry.Value)
 		  Next
 		  
 		  Dim Entries() As Beacon.SetEntry
@@ -912,29 +910,29 @@ End
 		    For Each Option As Beacon.SetEntryOption In Options
 		      Entry.Append(Option)
 		    Next
-		    Entries.Append(Entry)
-		  ElseIf UBound(Options) > 0 Then
+		    Entries.AddRow(Entry)
+		  ElseIf Options.LastRowIndex > 0 Then
 		    If SingleEntryCheck.Value Then
 		      // Merge all into one
 		      Dim Entry As New Beacon.SetEntry
 		      For Each Option As Beacon.SetEntryOption In Options
 		        Entry.Append(Option)
 		      Next
-		      Entries.Append(Entry)
+		      Entries.AddRow(Entry)
 		    Else
 		      // Multiple entries
 		      For Each Option As Beacon.SetEntryOption In Options
 		        Dim Entry As New Beacon.SetEntry
 		        Entry.Append(Option)    
-		        Entries.Append(Entry)
+		        Entries.AddRow(Entry)
 		      Next
 		    End If
-		  ElseIf UBound(Options) = 0 Then
+		  ElseIf Options.LastRowIndex = 0 Then
 		    Dim Entry As New Beacon.SetEntry
 		    Entry.Append(Options(0))
-		    Entries.Append(Entry)
+		    Entries.AddRow(Entry)
 		  Else
-		    Beep
+		    System.Beep
 		    Return
 		  End If
 		  
@@ -946,7 +944,7 @@ End
 #tag EndEvents
 #tag Events CancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.Hide
 		End Sub
 	#tag EndEvent
@@ -980,9 +978,9 @@ End
 		    End If
 		    
 		    EngramList.AddRow("", Engram.Label, Engram.ModName, Weight)
-		    EngramList.RowTag(EngramList.LastIndex) = Engram
-		    Self.mEngramRowIndexes.Value(Engram.Path) = EngramList.LastIndex
-		    EngramList.CellCheck(EngramList.LastIndex, Self.ColumnIncluded) = Self.mSelectedEngrams.HasKey(Engram.Path)
+		    EngramList.RowTagAt(EngramList.SelectedRowIndex) = Engram
+		    Self.mEngramRowIndexes.Value(Engram.Path) = EngramList.SelectedRowIndex
+		    EngramList.CellCheckBoxValueAt(EngramList.SelectedRowIndex, Self.ColumnIncluded) = Self.mSelectedEngrams.HasKey(Engram.Path)
 		  Next
 		  Self.ListUnknownEngrams()
 		End Sub
@@ -990,39 +988,59 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Backdrop"
-		Visible=true
-		Group="Background"
-		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="Resizeable"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
+		Name="MenuBarVisible"
+		Visible=true
+		Group="Deprecated"
+		InitialValue="True"
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="MinimumWidth"
+		Visible=true
+		Group="Size"
+		InitialValue="64"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MinimumHeight"
+		Visible=true
+		Group="Size"
+		InitialValue="64"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MaximumWidth"
+		Visible=true
+		Group="Size"
+		InitialValue="32000"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MaximumHeight"
+		Visible=true
+		Group="Size"
+		InitialValue="32000"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -1039,134 +1057,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="FullScreen"
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Interfaces"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MaxHeight"
-		Visible=true
-		Group="Size"
-		InitialValue="32000"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
-		Visible=true
-		Group="Size"
-		InitialValue="32000"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBar"
-		Visible=true
-		Group="Menus"
-		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinHeight"
-		Visible=true
-		Group="Size"
-		InitialValue="64"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinimizeButton"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinWidth"
+		Name="HasMinimizeButton"
 		Visible=true
-		Group="Size"
-		InitialValue="64"
-		Type="Integer"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Name"
+		Name="HasFullScreenButton"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -1177,19 +1104,100 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasBackgroundColor"
 		Visible=true
-		Group="Frame"
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Backdrop"
+		Visible=true
+		Group="Background"
+		InitialValue=""
+		Type="Picture"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="FullScreen"
+		Visible=false
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MenuBar"
+		Visible=true
+		Group="Menus"
+		InitialValue=""
+		Type="MenuBar"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Title"
@@ -1197,6 +1205,7 @@ End
 		Group="Frame"
 		InitialValue="Untitled"
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1204,7 +1213,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1212,5 +1221,6 @@ End
 		Group="Size"
 		InitialValue="600"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

@@ -3,7 +3,6 @@ Begin BeaconDialog DocumentDeployWindow
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   0
    FullScreen      =   False
@@ -11,7 +10,7 @@ Begin BeaconDialog DocumentDeployWindow
    HasBackColor    =   False
    Height          =   400
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
    MaxHeight       =   32000
    MaximizeButton  =   False
@@ -22,7 +21,9 @@ Begin BeaconDialog DocumentDeployWindow
    MinimizeButton  =   False
    MinWidth        =   600
    Placement       =   1
+   Resizable       =   "True"
    Resizeable      =   True
+   SystemUIVisible =   "True"
    Title           =   "Deploy"
    Visible         =   True
    Width           =   600
@@ -44,7 +45,7 @@ Begin BeaconDialog DocumentDeployWindow
       Scope           =   2
       TabIndex        =   0
       TabPanelIndex   =   0
-      TabStop         =   True
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   0
@@ -117,7 +118,6 @@ Begin BeaconDialog DocumentDeployWindow
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -142,7 +142,7 @@ Begin BeaconDialog DocumentDeployWindow
       Begin UITweaks.ResizedPushButton ServerSelectionActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Begin"
          Default         =   True
@@ -174,7 +174,7 @@ Begin BeaconDialog DocumentDeployWindow
       Begin UITweaks.ResizedPushButton ServerSelectionCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -276,7 +276,7 @@ Begin BeaconDialog DocumentDeployWindow
       Begin UITweaks.ResizedPushButton FinishedButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Done"
          Default         =   False
@@ -337,7 +337,6 @@ Begin BeaconDialog DocumentDeployWindow
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -362,7 +361,7 @@ Begin BeaconDialog DocumentDeployWindow
       Begin UITweaks.ResizedPushButton DeployingCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -449,17 +448,17 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.SwapButtons()
 		  
-		  Self.ServerSelectionList.ColumnType(0) = Listbox.TypeCheckbox
+		  Self.ServerSelectionList.ColumnTypeAt(0) = Listbox.CellTypes.CheckBox
 		  
 		  For I As Integer = 0 To Self.mDocument.ServerProfileCount - 1
 		    Dim Profile As Beacon.ServerProfile = Self.mDocument.ServerProfile(I)
 		    
 		    Self.ServerSelectionList.AddRow("", Profile.Name, Profile.SecondaryName)
-		    Self.ServerSelectionList.RowTag(Self.ServerSelectionList.LastIndex) = Profile
-		    Self.ServerSelectionList.CellCheck(Self.ServerSelectionList.LastIndex, 0) = Profile.Enabled
+		    Self.ServerSelectionList.RowTagAt(Self.ServerSelectionList.LastAddedRowIndex) = Profile
+		    Self.ServerSelectionList.CellCheckBoxValueAt(Self.ServerSelectionList.LastAddedRowIndex, 0) = Profile.Enabled
 		  Next
 		  Self.ServerSelectionList.Sort
 		End Sub
@@ -468,14 +467,12 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub AuthenticateNext()
-		  If Self.mOAuthQueue.Ubound = -1 Then
+		  If Self.mOAuthQueue.LastRowIndex = -1 Then
 		    // Move to the next step
-		    Self.DeployingList.DeleteAllRows
+		    Self.DeployingList.RemoveAllRows
 		    
-		    Dim Now As New Xojo.Core.Date(Xojo.Core.Date.Now.SecondsFrom1970, New Xojo.Core.TimeZone(0))
-		    Dim Locale As Xojo.Core.Locale = Xojo.Core.Locale.Raw
-		    Self.mDeployLabel = Now.Year.ToText(Locale, "0000") + "-" + Now.Month.ToText(Locale, "00") + "-" + Now.Day.ToText(Locale, "00") + " " + Now.Hour.ToText(Locale, "00") + "." + Now.Minute.ToText(Locale, "00") + "." + Now.Second.ToText(Locale, "00") + " GMT"
-		    
+		    Dim Now As New DateTime(DateTime.Now.SecondsFrom1970, New TimeZone(0))
+		    Self.mDeployLabel = Str(Now.Year, "0000") + "-" + Str(Now.Month, "00") + "-" + Str(Now.Day, "00") + " " + Str(Now.Hour, "00") + "." + Str(Now.Minute, "00") + "." + Str(Now.Second, "00") + " GMT"
 		    
 		    For I As Integer = 0 To Self.mDocument.ServerProfileCount - 1
 		      Dim Profile As Beacon.ServerProfile = Self.mDocument.ServerProfile(I)
@@ -488,26 +485,28 @@ End
 		      Case IsA Beacon.NitradoServerProfile
 		        DeploymentEngine = New Beacon.NitradoDeploymentEngine(Beacon.NitradoServerProfile(Profile), Self.mDocument.OAuthData(Profile.OAuthProvider))
 		      Case IsA Beacon.FTPServerProfile
-		        DeploymentEngine = New Beacon.FTPDeploymentEngine(Beacon.FTPServerProfile(Profile), App.IdentityManager.CurrentIdentity)
+		        DeploymentEngine = New Beacon.FTPDeploymentEngine(Beacon.FTPServerProfile(Profile))
+		      Case IsA Beacon.ConnectorServerProfile
+		        DeploymentEngine = New Beacon.ConnectorDeploymentEngine(Beacon.ConnectorServerProfile(Profile))
 		      Else
 		        Continue
 		      End Select
 		      
-		      Self.mDeploymentEngines.Append(DeploymentEngine)
+		      Self.mDeploymentEngines.AddRow(DeploymentEngine)
 		      Self.DeployingList.AddRow(DeploymentEngine.Name + EndOfLine + DeploymentEngine.Status)
-		      Self.DeployingList.RowTag(DeployingList.LastIndex) = DeploymentEngine
+		      Self.DeployingList.RowTagAt(DeployingList.LastAddedRowIndex) = DeploymentEngine
 		    Next
 		    
 		    For Each DeploymentEngine As Beacon.DeploymentEngine In Self.mDeploymentEngines
-		      DeploymentEngine.Begin(Self.mDeployLabel, Self.mDocument, App.IdentityManager.CurrentIdentity)
+		      DeploymentEngine.Begin(Self.mDeployLabel, Self.mDocument, App.IdentityManager.CurrentIdentity, Self.mStopMessage)
 		    Next
 		    
-		    Self.DeployingWatchTimer.Mode = Timer.ModeMultiple
+		    Self.DeployingWatchTimer.RunMode = Timer.RunModes.Multiple
 		    Return
 		  End If
 		  
-		  Dim Provider As Text = Self.mOAuthQueue(0)
-		  Self.mOAuthQueue.Remove(0)
+		  Dim Provider As String = Self.mOAuthQueue(0)
+		  Self.mOAuthQueue.RemoveRowAt(0)
 		  
 		  Self.Auth.Provider = Provider
 		  If Self.Auth.Provider <> Provider Then
@@ -518,48 +517,87 @@ End
 		  Self.Auth.AuthData = Self.mDocument.OAuthData(Provider)
 		  
 		  Self.mCurrentProvider = Provider
-		  Self.Auth.Authenticate()
+		  Self.Auth.Authenticate(App.IdentityManager.CurrentIdentity)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Backup(Engine As Beacon.DeploymentEngine, Folder As Beacon.FolderItem)
+		Private Function Backup(Engine As Beacon.DeploymentEngine, Folder As FolderItem) As Boolean
+		  // Returning true means the backup either succeeded or should not complete
+		  // Returning false means there was an error and the process needs to stop
+		  
 		  If Engine.Errored Then
-		    Return
+		    Return True
 		  End If
 		  
-		  Dim GameIniContent As Text = Engine.BackupGameIni.Trim
-		  Dim GameUserSettingsIniContent As Text = Engine.BackupGameUserSettingsIni.Trim
+		  Dim GameIniContent As String = Engine.BackupGameIni.Trim
+		  Dim GameUserSettingsIniContent As String = Engine.BackupGameUserSettingsIni.Trim
 		  If GameIniContent = "" And GameUserSettingsIniContent = "" Then
-		    Return
+		    Return True
 		  End If
 		  
-		  Try
-		    Dim ServerFolder As Beacon.FolderItem = Folder.Child(Beacon.FolderItem.SanitizeFilename(Engine.Name))
-		    
-		    If Not ServerFolder.Exists Then
+		  If Folder = Nil Then
+		    App.Log("Unable to backup " + Engine.Name + ": No backup root folder")
+		    Return False
+		  End If
+		  
+		  Dim ServerFolder As FolderItem = Folder.Child(Beacon.SanitizeFilename(Engine.Name))
+		  If ServerFolder = Nil Then
+		    App.Log("Unable to backup " + Engine.Name + ": Could not to get path to server backup folder")
+		    Return False
+		  ElseIf ServerFolder.Exists = False Then
+		    Try
 		      ServerFolder.CreateAsFolder
-		    End If
-		    
-		    Dim Subfolder As Beacon.FolderItem = ServerFolder.Child(Self.mDeployLabel)
-		    Dim Counter As Integer = 1
-		    While Subfolder.Exists
-		      Subfolder = ServerFolder.Child(Self.mDeployLabel + "-" + Counter.ToText)
-		      Counter = Counter + 1
-		    Wend
-		    
+		    Catch Err As IOException
+		      App.Log("Unable to backup " + Engine.Name + ": Could not create server backup folder " + ServerFolder.NativePath + ": " + Err.Message)
+		      Return False
+		    End Try
+		  End If
+		  
+		  Dim Subfolder As FolderItem = ServerFolder.Child(Beacon.SanitizeFilename(Self.mDeployLabel))
+		  Dim Counter As Integer = 1
+		  While Subfolder <> Nil And Subfolder.Exists
+		    Subfolder = ServerFolder.Child(Beacon.SanitizeFilename(Self.mDeployLabel + "-" + Str(Counter, "-0")))
+		    Counter = Counter + 1
+		  Wend
+		  
+		  If Subfolder = Nil Then
+		    App.Log("Unable to backup " + Engine.Name + ": Could not to get path to deployment folder")
+		    Return False
+		  End If
+		  Try
 		    Subfolder.CreateAsFolder
-		    
-		    If GameIniContent <> "" Then
-		      Subfolder.Child("Game.ini").Write(GameIniContent, Xojo.Core.TextEncoding.UTF8)
-		    End If
-		    If GameUserSettingsIniContent <> "" Then
-		      Subfolder.Child("GameUserSettings.ini").Write(GameUserSettingsIniContent, Xojo.Core.TextEncoding.UTF8)
-		    End If
-		  Catch Err As RuntimeException
-		    LocalData.SharedInstance.SaveNotification(New Beacon.UserNotification("Beacon was unable to create a backup of your ini files for server " + Engine.Name + ", deploy label " + Self.mDeployLabel + "."))
+		  Catch Err As IOException
+		    App.Log("Unable to backup " + Engine.Name + ": Could not create deployment folder " + Subfolder.NativePath + ": " + Err.Message)
 		  End Try
-		End Sub
+		  
+		  Dim BackedUp As Boolean = True
+		  If GameIniContent <> "" Then
+		    Dim GameIniFile As FolderItem = Subfolder.Child("Game.ini")
+		    If GameIniFile = Nil Then
+		      App.Log("Unable to backup Game.ini for " + Engine.Name + ": Could not get path to Game.ini")
+		      BackedUp = False
+		    ElseIf GameIniFile.Write(GameIniContent) = False Then
+		      App.Log("Unable to backup Game.ini for " + Engine.Name + " to " + GameIniFile.NativePath)
+		      BackedUp = False
+		    End If
+		  End If
+		  If GameUserSettingsIniContent <> "" Then
+		    Dim GameUserSettingsIniFile As FolderItem = Subfolder.Child("GameUserSettings.ini")
+		    If GameUserSettingsIniFile = Nil Then
+		      App.Log("Unable to backup Game.ini for " + Engine.Name + ": Could not get path to GameUserSettings.ini")
+		      BackedUp = False
+		    ElseIf GameUserSettingsIniFile.Write(GameUserSettingsIniContent) = False Then
+		      App.Log("Unable to backup Game.ini for " + Engine.Name + " to " + GameUserSettingsIniFile.NativePath)
+		      BackedUp = False
+		    End If
+		  End If
+		  
+		  Return BackedUp
+		  
+		  Exception Err As RuntimeException
+		    Return False
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
@@ -592,41 +630,41 @@ End
 		  Dim SuccessCount, TotalCount As Integer
 		  For Each DeploymentEngine As Beacon.DeploymentEngine In Self.mDeploymentEngines
 		    If DeploymentEngine.Errored Then
-		      Report.Append(DeploymentEngine.Name + ": " + DeploymentEngine.Status)
+		      Report.AddRow(DeploymentEngine.Name + ": " + DeploymentEngine.Status)
 		    Else
 		      SuccessCount = SuccessCount + 1
-		      Report.Append(DeploymentEngine.Name + ": Finished successfully. " + If(DeploymentEngine.ServerIsStarting, "The server is starting up now.", "You may start the server when you are ready."))
+		      Report.AddRow(DeploymentEngine.Name + ": Finished successfully. " + If(DeploymentEngine.ServerIsStarting, "The server is starting up now.", "You may start the server when you are ready."))
 		    End If
 		  Next
-		  TotalCount = Self.mDeploymentEngines.Ubound + 1
+		  TotalCount = Self.mDeploymentEngines.LastRowIndex + 1
 		  
 		  If SuccessCount = 0 Then
 		    If TotalCount = 1 Then
-		      Report.Insert(0, "The deployment did not succeed!")
+		      Report.AddRowAt(0, "The deployment did not succeed!")
 		    Else
-		      Report.Insert(0, "No server completed the deployment successfully!")
+		      Report.AddRowAt(0, "No server completed the deployment successfully!")
 		    End If
 		  ElseIf SuccessCount = 1 And TotalCount = 1 Then
 		    Report(0) = "The deployment finished successfully. " + If(Self.mDeploymentEngines(0).ServerIsStarting, "The server is starting up now.", "You may start the server when you are ready.")
 		  ElseIf SuccessCount = TotalCount Then
-		    Report.Insert(0, "All servers updated successfully.")
+		    Report.AddRowAt(0, "All servers updated successfully.")
 		  Else
-		    Report.Insert(0, "Some servers successfully updated, but there were errors.")
+		    Report.AddRowAt(0, "Some servers successfully updated, but there were errors.")
 		  End If
 		  
-		  Self.FinishedReportLabel.Text = Join(Report, EndOfLine)
+		  Self.FinishedReportLabel.Value = Join(Report, EndOfLine)
 		  
-		  Self.Pages.Value = Self.PageFinished
+		  Self.Pages.SelectedPanelIndex = Self.PageFinished
 		End Sub
 	#tag EndMethod
 
 
 	#tag Property, Flags = &h21
-		Private mCurrentProvider As Text
+		Private mCurrentProvider As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mDeployLabel As Text
+		Private mDeployLabel As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -638,7 +676,15 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mOAuthQueue() As Text
+		Private mOAuthQueue() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mOAuthWindow As OAuthAuthorizationWindow
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mStopMessage As String
 	#tag EndProperty
 
 
@@ -658,11 +704,11 @@ End
 	#tag Event
 		Sub CellAction(row As Integer, column As Integer)
 		  If Column = 0 Then
-		    Beacon.ServerProfile(Me.RowTag(Row)).Enabled = Me.CellCheck(Row, Column)
+		    Beacon.ServerProfile(Me.RowTagAt(Row)).Enabled = Me.CellCheckBoxValueAt(Row, Column)
 		  End If
 		  
-		  For I As Integer = 0 To Me.ListCount - 1
-		    If Me.CellCheck(I, 0) Then
+		  For I As Integer = 0 To Me.RowCount - 1
+		    If Me.CellCheckBoxValueAt(I, 0) Then
 		      Self.ServerSelectionActionButton.Enabled = True
 		      Return
 		    End If
@@ -674,7 +720,7 @@ End
 #tag EndEvents
 #tag Events ServerSelectionActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Const RestartSupportedUnknown = -1
 		  Const RestartSupportedNone = 0
 		  Const RestartSupportedMixed = 1
@@ -682,6 +728,7 @@ End
 		  
 		  Dim SelectedCount As Integer
 		  Dim Supported As Integer = RestartSupportedUnknown
+		  Dim SupportsCustomStopMessage As Boolean
 		  For I As Integer = 0 To Self.mDocument.ServerProfileCount - 1
 		    Dim Profile As Beacon.ServerProfile = Self.mDocument.ServerProfile(I)
 		    If Not Profile.Enabled Then
@@ -698,6 +745,8 @@ End
 		    ElseIf (CanRestart = True And Supported = RestartSupportedNone) Or (CanRestart = False And Supported = RestartSupportedAll) Then
 		      Supported = RestartSupportedMixed
 		    End If
+		    
+		    SupportsCustomStopMessage = SupportsCustomStopMessage Or Profile.SupportsCustomStopMessage
 		  Next
 		  
 		  Dim Predicate As String = If(SelectedCount = 1, "server", "servers")
@@ -719,7 +768,19 @@ End
 		    End If
 		  End Select
 		  
-		  Self.Pages.Value = Self.PageDeploying
+		  // Prompt for server stop message here
+		  Dim StopMessage As String
+		  If SupportsCustomStopMessage Then
+		    StopMessage = StopMessageDialog.Present(Self)
+		    If StopMessage = "" Then
+		      Return
+		    End If
+		  Else
+		    StopMessage = Preferences.LastStopMessage
+		  End If
+		  Self.mStopMessage = StopMessage
+		  
+		  Self.Pages.SelectedPanelIndex = Self.PageDeploying
 		  
 		  For I As Integer = 0 To Self.mDocument.ServerProfileCount - 1
 		    Dim Profile As Beacon.ServerProfile = Self.mDocument.ServerProfile(I)
@@ -727,9 +788,9 @@ End
 		      Continue
 		    End If
 		    
-		    Dim Provider As Text = Profile.OAuthProvider
+		    Dim Provider As String = Profile.OAuthProvider
 		    If Provider <> "" And Self.mOAuthQueue.IndexOf(Provider) = -1 Then
-		      Self.mOAuthQueue.Append(Provider)
+		      Self.mOAuthQueue.AddRow(Provider)
 		    End If
 		  Next
 		  
@@ -739,21 +800,21 @@ End
 #tag EndEvents
 #tag Events ServerSelectionCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.Close
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events FinishedButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.CLose
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events DeployingCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Dim AnyFinished As Boolean
 		  
 		  For Each DeploymentEngine As Beacon.DeploymentEngine In Self.mDeploymentEngines
@@ -781,39 +842,60 @@ End
 	#tag Event
 		Sub AuthenticationError()
 		  Self.ShowAlert("Authorization failed", "The server provider " + Self.mCurrentProvider + " may be down at the moment, or there could be other problems.")
-		  Self.Pages.Value = Self.PageServerSelection
+		  Self.Pages.SelectedPanelIndex = Self.PageServerSelection
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Function ShowURL(URL As Text) As Beacon.WebView
-		  Return MiniBrowser.ShowURL(URL)
+		Function StartAuthentication(URL As String, Provider As String) As Boolean
+		  If Not Self.ShowConfirm("You must reauthorize " + Provider + " to allow Beacon to access your servers.", "The authorization tokens expires. If it has been a while since you've deployed, this can happen.", "Continue", "Cancel") Then
+		    Return False
+		  End If
+		  
+		  ShowURL(URL)
+		  Return True
 		End Function
+	#tag EndEvent
+	#tag Event
+		Sub DismissWaitingWindow()
+		  If Self.mOAuthWindow <> Nil Then
+		    Self.mOAuthWindow.Close
+		    Self.mOAuthWindow = Nil
+		  End If
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub ShowWaitingWindow()
+		  Self.mOAuthWindow = New OAuthAuthorizationWindow(Me)
+		  Self.mOAuthWindow.Show()
+		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events DeployingWatchTimer
 	#tag Event
-		Sub Action()
+		Sub Run()
 		  Dim Finished As Boolean = True
 		  For Each DeploymentEngine As Beacon.DeploymentEngine In Self.mDeploymentEngines
 		    Finished = Finished And DeploymentEngine.Finished
 		  Next
 		  
 		  If Finished Then
-		    Dim BackupsFolder As Beacon.FolderItem = App.ApplicationSupport.Child("Backups")
+		    Dim BackupsFolder As FolderItem = App.ApplicationSupport.Child("Backups")
 		    If Not BackupsFolder.Exists Then
 		      BackupsFolder.CreateAsFolder
 		    End If
 		    
 		    For Each Engine As Beacon.DeploymentEngine In Self.mDeploymentEngines
-		      Self.Backup(Engine, BackupsFolder)
+		      If Not Self.Backup(Engine, BackupsFolder) Then
+		        LocalData.SharedInstance.SaveNotification(New Beacon.UserNotification("Beacon was unable to create a backup of your ini files for server " + Engine.Name + ", deploy label " + Self.mDeployLabel + "."))
+		      End If
 		    Next
 		    
 		    Self.ShowResults()
-		    Me.Mode = Timer.ModeOff
+		    Me.RunMode = Timer.RunModes.Off
 		  Else
-		    For I As Integer = 0 To Self.DeployingList.ListCount - 1
-		      Dim DeploymentEngine As Beacon.DeploymentEngine = Self.DeployingList.RowTag(I)
-		      Self.DeployingList.Cell(I, 0) = DeploymentEngine.Name + EndOfLine + DeploymentEngine.Status
+		    For I As Integer = 0 To Self.DeployingList.RowCount - 1
+		      Dim DeploymentEngine As Beacon.DeploymentEngine = Self.DeployingList.RowTagAt(I)
+		      Self.DeployingList.CellValueAt(I, 0) = DeploymentEngine.Name + EndOfLine + DeploymentEngine.Status
 		    Next
 		  End If
 		End Sub
@@ -821,74 +903,59 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="Name"
+		Name="Resizeable"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Interfaces"
+		Name="MenuBarVisible"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Deprecated"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Super"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Width"
-		Visible=true
-		Group="Size"
-		InitialValue="600"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinWidth"
+		Name="MinimumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinHeight"
+		Name="MinimumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
+		Name="MaximumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxHeight"
+		Name="MaximumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -905,78 +972,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Title"
-		Visible=true
-		Group="Frame"
-		InitialValue="Untitled"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasMinimizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinimizeButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
+		Name="HasFullScreenButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -987,61 +1019,123 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Super"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Width"
+		Visible=true
+		Group="Size"
+		InitialValue="600"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Title"
+		Visible=true
+		Group="Frame"
+		InitialValue="Untitled"
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Visible"
 		Visible=true
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
+		Visible=false
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MenuBar"
 		Visible=true
 		Group="Menus"
+		InitialValue=""
 		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Visible=true
-		Group="Deprecated"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

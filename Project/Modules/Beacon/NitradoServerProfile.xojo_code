@@ -2,7 +2,7 @@
 Protected Class NitradoServerProfile
 Inherits Beacon.ServerProfile
 	#tag Event
-		Sub ReadFromDictionary(Dict As Xojo.Core.Dictionary)
+		Sub ReadFromDictionary(Dict As Dictionary)
 		  Self.Address = Dict.Value("Address")
 		  Self.ServiceID = Dict.Value("Service ID")
 		  Self.ConfigPath = Dict.Value("Path")
@@ -11,7 +11,7 @@ Inherits Beacon.ServerProfile
 	#tag EndEvent
 
 	#tag Event
-		Sub WriteToDictionary(Dict As Xojo.Core.Dictionary)
+		Sub WriteToDictionary(Dict As Dictionary)
 		  Dict.Value("Address") = Self.Address
 		  Dict.Value("Service ID") = Self.ServiceID
 		  Dict.Value("Path") = Self.ConfigPath
@@ -28,7 +28,7 @@ Inherits Beacon.ServerProfile
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function OAuthProvider() As Text
+		Function OAuthProvider() As String
 		  Return "Nitrado"
 		End Function
 	#tag EndMethod
@@ -55,8 +55,14 @@ Inherits Beacon.ServerProfile
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function SecondaryName() As Text
+		Function SecondaryName() As String
 		  Return Self.Address
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function SupportsCustomStopMessage() As Boolean
+		  Return True
 		End Function
 	#tag EndMethod
 
@@ -75,13 +81,13 @@ Inherits Beacon.ServerProfile
 		#tag EndGetter
 		#tag Setter
 			Set
-			  If Self.mAddress.Compare(Value, Text.CompareCaseSensitive) <> 0 Then
+			  If Self.mAddress.Compare(Value, ComparisonOptions.CaseSensitive) <> 0 Then
 			    Self.mAddress = Value
 			    Self.Modified = True
 			  End If
 			End Set
 		#tag EndSetter
-		Address As Text
+		Address As String
 	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
@@ -92,13 +98,13 @@ Inherits Beacon.ServerProfile
 		#tag EndGetter
 		#tag Setter
 			Set
-			  If Self.mConfigPath.Compare(Value, Text.CompareCaseSensitive) <> 0 Then
+			  If Self.mConfigPath.Compare(Value, ComparisonOptions.CaseSensitive) <> 0 Then
 			    Self.mConfigPath = Value
 			    Self.Modified = True
 			  End If
 			End Set
 		#tag EndSetter
-		ConfigPath As Text
+		ConfigPath As String
 	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
@@ -130,15 +136,15 @@ Inherits Beacon.ServerProfile
 			  End Select
 			End Set
 		#tag EndSetter
-		GameShortcode As Text
+		GameShortcode As String
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h21
-		Private mAddress As Text
+		Private mAddress As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mConfigPath As Text
+		Private mConfigPath As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -146,7 +152,7 @@ Inherits Beacon.ServerProfile
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mShortcode As Text
+		Private mShortcode As String
 	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h0
@@ -169,14 +175,28 @@ Inherits Beacon.ServerProfile
 
 	#tag ViewBehavior
 		#tag ViewProperty
-			Name="Enabled"
+			Name="IsConsole"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Enabled"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Modified"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -184,6 +204,7 @@ Inherits Beacon.ServerProfile
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -191,18 +212,23 @@ Inherits Beacon.ServerProfile
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -210,21 +236,39 @@ Inherits Beacon.ServerProfile
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Address"
+			Visible=false
 			Group="Behavior"
-			Type="Text"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="ConfigPath"
+			Visible=false
 			Group="Behavior"
-			Type="Text"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="ServiceID"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="GameShortcode"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

@@ -5,7 +5,6 @@ Begin LibrarySubview LibraryPanePresets Implements NotificationKit.Receiver
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,7 @@ Begin LibrarySubview LibraryPanePresets Implements NotificationKit.Receiver
       Caption         =   "Presets"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -90,7 +89,7 @@ Begin LibrarySubview LibraryPanePresets Implements NotificationKit.Receiver
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
+      RowCount        =   "0"
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -119,7 +118,7 @@ Begin LibrarySubview LibraryPanePresets Implements NotificationKit.Receiver
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -156,7 +155,7 @@ End
 		      Continue
 		    End If
 		    
-		    Dim File As Beacon.FolderItem = Obj.FolderItem
+		    Dim File As FolderItem = Obj.FolderItem
 		    If Not File.IsType(BeaconFileTypes.BeaconPreset) Then
 		      Continue
 		    End If
@@ -164,11 +163,11 @@ End
 		    Dim Preset As Beacon.Preset = Beacon.Preset.FromFile(File)
 		    If Preset <> Nil Then
 		      Beacon.Data.SavePreset(Preset)
-		      AddedPresets.Append(Preset)
+		      AddedPresets.AddRow(Preset)
 		    End If
 		  Loop Until Obj.NextItem = False
 		  
-		  If AddedPresets.Ubound > -1 Then
+		  If AddedPresets.LastRowIndex > -1 Then
 		    Self.UpdatePresets(AddedPresets)
 		  End If
 		End Sub
@@ -181,15 +180,15 @@ End
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.AcceptFileDrop(BeaconFileTypes.BeaconPreset)
 		  Self.ToolbarCaption = "Presets"
-		  RaiseEvent Open
+		  RaiseEvent Opening
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Shown(UserData As Auto = Nil)
+		Sub Shown(UserData As Variant = Nil)
 		  NotificationKit.Watch(Self, "Preset Saved")
 		  
 		  If UserData <> Nil Then
@@ -208,8 +207,8 @@ End
 		  Clone.Grouping = Source.Grouping
 		  Clone.MaxItems = Source.MaxItems
 		  Clone.MinItems = Source.MinItems
-		  Dim Modifiers() As Text = Clone.ActiveModifierIDs
-		  For Each ModifierID As Text In Modifiers
+		  Dim Modifiers() As String = Clone.ActiveModifierIDs
+		  For Each ModifierID As String In Modifiers
 		    Clone.MinQualityModifier(ModifierID) = Source.MinQualityModifier(ModifierID)
 		    Clone.MaxQualityModifier(ModifierID) = Source.MaxQualityModifier(ModifierID)
 		    Clone.QuantityMultiplier(ModifierID) = Source.QuantityMultiplier(ModifierID)
@@ -223,18 +222,18 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub CloneSelected()
-		  If List.SelCount = 0 Then
+		  If List.SelectedRowCount = 0 Then
 		    Return
 		  End If
 		  
 		  Dim Clones() As Beacon.Preset
-		  For I As Integer = 0 To List.ListCount - 1
+		  For I As Integer = 0 To List.RowCount - 1
 		    If List.Selected(I) Then
-		      Clones.Append(Self.ClonePreset(List.RowTag(I)))
+		      Clones.AddRow(Self.ClonePreset(List.RowTagAt(I)))
 		    End If
 		  Next
 		  
-		  If Clones.Ubound = -1 Then
+		  If Clones.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
@@ -244,7 +243,7 @@ End
 		  
 		  Self.UpdatePresets(Clones)
 		  
-		  If Clones.Ubound = 0 Then
+		  If Clones.LastRowIndex = 0 Then
 		    Self.OpenPreset(Clones(0))
 		  End If
 		End Sub
@@ -290,13 +289,13 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub DeleteSelected()
-		  If List.SelCount = 0 Then
+		  If List.SelectedRowCount = 0 Then
 		    Return
 		  End If
 		  
-		  For I As Integer = 0 To List.ListCount - 1
+		  For I As Integer = 0 To List.RowCount - 1
 		    If List.Selected(I) Then
-		      Dim Preset As Beacon.Preset = List.RowTag(I)
+		      Dim Preset As Beacon.Preset = List.RowTagAt(I)
 		      If Self.ClosePreset(Preset) Then
 		        Beacon.Data.DeletePreset(Preset)
 		      End If
@@ -308,13 +307,13 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub ExportSelected()
-		  If List.SelCount = 0 Then
+		  If List.SelectedRowCount = 0 Then
 		    Return
 		  End If
 		  
-		  If List.SelCount = 1 Then
-		    Dim Preset As Beacon.Preset = List.RowTag(List.ListIndex)
-		    Dim Dialog As New SaveAsDialog
+		  If List.SelectedRowCount = 1 Then
+		    Dim Preset As Beacon.Preset = List.RowTagAt(List.SelectedRowIndex)
+		    Dim Dialog As New SaveFileDialog
 		    Dialog.Filter = BeaconFileTypes.BeaconPreset
 		    Dialog.SuggestedFileName = Preset.Label + BeaconFileTypes.BeaconPreset.PrimaryExtension
 		    
@@ -334,12 +333,12 @@ End
 		    Return
 		  End If
 		  
-		  For I As Integer = 0 To List.ListCount - 1
+		  For I As Integer = 0 To List.RowCount - 1
 		    If Not List.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Preset As Beacon.Preset = List.RowTag(I)
+		    Dim Preset As Beacon.Preset = List.RowTagAt(I)
 		    Preset.ToFile(Folder.Child(Preset.Label + BeaconFileTypes.BeaconPreset.PrimaryExtension))
 		  Next
 		  
@@ -376,7 +375,7 @@ End
 		  End If
 		  Self.ShowView(View)
 		  If DefaultModified Then
-		    View.ContentsChanged = True
+		    View.Changed = True
 		  End If
 		End Sub
 	#tag EndMethod
@@ -395,14 +394,14 @@ End
 		    Return
 		  End If
 		  
-		  Dim ViewID As Text = EncodeHex(Crypto.MD5(File.NativePath)).ToText
+		  Dim ViewID As String = EncodeHex(Crypto.MD5(File.NativePath))
 		  Dim View As BeaconSubview = Self.View(ViewID)
 		  If View = Nil Then
 		    View = New PresetEditorView(Preset, File)
 		  End If
 		  Self.ShowView(View)
 		  If DefaultModified Then
-		    View.ContentsChanged = True
+		    View.Changed = True
 		  End If
 		End Sub
 	#tag EndMethod
@@ -410,45 +409,45 @@ End
 	#tag Method, Flags = &h21
 		Private Sub UpdatePresets(SelectPresets() As Beacon.Preset)
 		  Dim Presets() As Beacon.Preset = Beacon.Data.Presets
-		  Dim PresetCount As Integer = UBound(Presets) + 1
+		  Dim PresetCount As Integer = Presets.LastRowIndex + 1
 		  
-		  If SelectPresets.Ubound = -1 Then
-		    For I As Integer = 0 To List.ListCount - 1
+		  If SelectPresets.LastRowIndex = -1 Then
+		    For I As Integer = 0 To List.RowCount - 1
 		      If List.Selected(I) Then
-		        SelectPresets.Append(List.RowTag(I))
+		        SelectPresets.AddRow(List.RowTagAt(I))
 		      End If
 		    Next
 		  End If
 		  
-		  Dim SelectIDs() As Text
+		  Dim SelectIDs() As String
 		  For Each Preset As Beacon.Preset In SelectPresets
-		    SelectIDs.Append(Preset.PresetID)
+		    SelectIDs.AddRow(Preset.PresetID)
 		  Next
 		  
-		  While List.ListCount > PresetCount
-		    List.RemoveRow(0)
+		  While List.RowCount > PresetCount
+		    List.RemoveRowAt(0)
 		  Wend
-		  While List.ListCount < PresetCount
+		  While List.RowCount < PresetCount
 		    List.AddRow("")
 		  Wend
 		  
-		  For I As Integer = 0 To List.ListCount - 1
-		    List.Cell(I, 0) = Presets(I).Label
+		  For I As Integer = 0 To List.RowCount - 1
+		    List.CellValueAt(I, 0) = Presets(I).Label
 		    Select Case Presets(I).Type
 		    Case Beacon.Preset.Types.BuiltIn
-		      List.Cell(I, 1) = "Built-In"
+		      List.CellValueAt(I, 1) = "Built-In"
 		    Case Beacon.Preset.Types.Custom
-		      List.Cell(I, 1) = "Custom"
+		      List.CellValueAt(I, 1) = "Custom"
 		    Case Beacon.Preset.Types.CustomizedBuiltIn
-		      List.Cell(I, 1) = "Customized Built-In"
+		      List.CellValueAt(I, 1) = "Customized Built-In"
 		    End Select
-		    List.RowTag(I) = Presets(I)
+		    List.RowTagAt(I) = Presets(I)
 		  Next
 		  
 		  List.Sort
 		  
-		  For I As Integer = 0 To List.ListCount - 1
-		    List.Selected(I) = (SelectIDs.IndexOf(Beacon.Preset(List.RowTag(I)).PresetID) > -1)
+		  For I As Integer = 0 To List.RowCount - 1
+		    List.Selected(I) = (SelectIDs.IndexOf(Beacon.Preset(List.RowTagAt(I)).PresetID) > -1)
 		  Next
 		  List.EnsureSelectionIsVisible()
 		End Sub
@@ -462,7 +461,7 @@ End
 
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event Opening()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -474,7 +473,7 @@ End
 
 #tag Events Header
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.LeftItems.Append(New BeaconToolbarItem("Add", IconToolbarAdd))
 		  Me.LeftItems.Append(New BeaconToolbarItem("Duplicate", IconToolbarClone, False))
 		  Me.RightItems.Append(New BeaconToolbarItem("Export", IconToolbarExport, False))
@@ -490,7 +489,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "Export"
 		    Self.ExportSelected()
@@ -504,32 +503,32 @@ End
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Change()
-		  Header.Duplicate.Enabled = Me.SelCount > 0
-		  Header.Export.Enabled = Me.SelCount > 0
+		Sub SelectionChanged()
+		  Header.Duplicate.Enabled = Me.SelectedRowCount > 0
+		  Header.Export.Enabled = Me.SelectedRowCount > 0
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub DoubleClick()
-		  If Me.ListIndex > -1 Then
-		    Dim Preset As Beacon.Preset = Me.RowTag(Me.ListIndex)
+		Sub DoubleClicked()
+		  If Me.SelectedRowIndex > -1 Then
+		    Dim Preset As Beacon.Preset = Me.RowTagAt(Me.SelectedRowIndex)
 		    Self.OpenPreset(Preset)
 		  End If
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
-		  Me.ColumnAlignment(1) = Listbox.AlignRight
+		Sub Opening()
+		  Me.ColumnAlignmentAt(1) = Listbox.Alignments.Right
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  For I As Integer = Me.ListCount - 1 DownTo 0
+		  For I As Integer = Me.RowCount - 1 DownTo 0
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Preset As Beacon.Preset = Me.RowTag(I)
+		    Dim Preset As Beacon.Preset = Me.RowTagAt(I)
 		    If Preset.Type = Beacon.Preset.Types.BuiltIn Then
 		      Continue
 		    End If
@@ -543,12 +542,12 @@ End
 	#tag Event
 		Sub PerformClear(Warn As Boolean)
 		  Dim DeleteCount, RevertCount, DisallowCount As Integer
-		  For I As Integer = Me.ListCount - 1 DownTo 0
+		  For I As Integer = Me.RowCount - 1 DownTo 0
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Preset As Beacon.Preset = Me.RowTag(I)
+		    Dim Preset As Beacon.Preset = Me.RowTagAt(I)
 		    Select Case Preset.Type
 		    Case Beacon.Preset.Types.BuiltIn
 		      DisallowCount = DisallowCount + 1
@@ -594,10 +593,76 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -605,6 +670,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -612,6 +678,7 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -619,44 +686,15 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -664,22 +702,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -687,61 +710,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -749,12 +782,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -762,11 +798,13 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -774,7 +812,9 @@ End
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -782,15 +822,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -798,7 +830,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -806,5 +838,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

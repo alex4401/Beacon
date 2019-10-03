@@ -5,7 +5,6 @@ Begin DiscoveryView FTPDiscoveryView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -44,7 +43,7 @@ Begin DiscoveryView FTPDiscoveryView
       Scope           =   2
       TabIndex        =   17
       TabPanelIndex   =   0
-      TabStop         =   True
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   1
@@ -543,6 +542,7 @@ Begin DiscoveryView FTPDiscoveryView
          Enabled         =   True
          Height          =   20
          HelpTag         =   ""
+         Indeterminate   =   False
          Index           =   -2147483648
          InitialParent   =   "ViewPanel"
          Left            =   20
@@ -555,10 +555,10 @@ Begin DiscoveryView FTPDiscoveryView
          Scope           =   2
          TabIndex        =   1
          TabPanelIndex   =   2
-         TabStop         =   True
+         TabStop         =   "True"
          Top             =   161
          Transparent     =   False
-         Value           =   0
+         Value           =   0.0
          Visible         =   True
          Width           =   560
       End
@@ -600,7 +600,7 @@ Begin DiscoveryView FTPDiscoveryView
       Begin PushButton BrowseActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Next"
          Default         =   True
@@ -632,7 +632,7 @@ Begin DiscoveryView FTPDiscoveryView
       Begin PushButton BrowseCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -668,7 +668,7 @@ Begin DiscoveryView FTPDiscoveryView
          Backdrop        =   0
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   True
+         EraseBackground =   "True"
          Height          =   1
          HelpTag         =   ""
          Index           =   0
@@ -697,7 +697,7 @@ Begin DiscoveryView FTPDiscoveryView
          Backdrop        =   0
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   True
+         EraseBackground =   "True"
          Height          =   1
          HelpTag         =   ""
          Index           =   1
@@ -726,7 +726,7 @@ Begin DiscoveryView FTPDiscoveryView
          Backdrop        =   0
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   True
+         EraseBackground =   "True"
          Height          =   204
          HelpTag         =   ""
          Index           =   2
@@ -755,7 +755,7 @@ Begin DiscoveryView FTPDiscoveryView
          Backdrop        =   0
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   True
+         EraseBackground =   "True"
          Height          =   204
          HelpTag         =   ""
          Index           =   3
@@ -833,7 +833,7 @@ Begin DiscoveryView FTPDiscoveryView
       Begin UITweaks.ResizedPushButton ServerCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -865,7 +865,7 @@ Begin DiscoveryView FTPDiscoveryView
       Begin UITweaks.ResizedPushButton ServerActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Next"
          Default         =   True
@@ -913,8 +913,8 @@ End
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
-		  RaiseEvent Open
+		Sub Opening()
+		  RaiseEvent Opening
 		  Self.SwapButtons()
 		End Sub
 	#tag EndEvent
@@ -924,11 +924,11 @@ End
 		Private Sub APICallback_DetectPath(Request As BeaconAPI.Request, Response As BeaconAPI.Response)
 		  #Pragma Unused Request
 		  
-		  Dim Info As Xojo.Introspection.TypeInfo
-		  Dim Dict As Xojo.Core.Dictionary
+		  Dim Info As Introspection.TypeInfo
+		  Dim Dict As Dictionary
 		  If Response.JSON <> Nil Then
-		    Info = Xojo.Introspection.GetType(Response.JSON)
-		    If Info.FullName = "Xojo.Core.Dictionary" Then
+		    Info = Introspection.GetType(Response.JSON)
+		    If Info.FullName = "Dictionary" Then
 		      Dict = Response.JSON
 		    End If
 		  End If
@@ -939,7 +939,7 @@ End
 		  
 		  If Response.Success Then
 		    // Discovery was able to find the path and the user doesn't need to do any further work.
-		    Dim Path As Text = Dict.Value("path")
+		    Dim Path As String = Dict.Value("path")
 		    
 		    Dim Engines(0) As Beacon.DiscoveryEngine
 		    Engines(0) = New Beacon.FTPDiscoveryEngine(Self.mProfile, Path, App.IdentityManager.CurrentIdentity)
@@ -950,13 +950,13 @@ End
 		  
 		  If Response.HTTPStatus = 404 Then
 		    // Server was connected, but the path could not be determined, so time to show the browser.
-		    Self.ViewPanel.Value = Self.PageBrowse
+		    Self.ViewPanel.SelectedPanelIndex = Self.PageBrowse
 		    Self.Browser.Reset()
 		    Return
 		  End If
 		  
 		  // The connection was not succesful
-		  Self.ViewPanel.Value = Self.PageGeneral
+		  Self.ViewPanel.SelectedPanelIndex = Self.PageGeneral
 		  
 		  Self.ShowAlert("Beacon was unable to discover the server.", "Reason: " + Response.Message)
 		End Sub
@@ -971,11 +971,11 @@ End
 		    Return
 		  End If
 		  
-		  Dim Dict As Xojo.Core.Dictionary = Response.JSON
-		  Dim Files() As Auto = Dict.Value("files")
+		  Dim Dict As Dictionary = Response.JSON
+		  Dim Files() As Variant = Dict.Value("files")
 		  Dim Children() As String
-		  For Each Child As Text In Files
-		    Children.Append(Child)
+		  For Each Child As String In Files
+		    Children.AddRow(Child)
 		  Next
 		  Self.Browser.AppendChildren(Children)
 		End Sub
@@ -983,12 +983,12 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub CheckServerActionButton()
-		  Self.ServerActionButton.Enabled = ServerHostField.Text <> "" And Val(ServerPortField.Text) > 0 And ServerUserField.Text <> "" And ServerPassField.Text <> ""
+		  Self.ServerActionButton.Enabled = ServerHostField.Value <> "" And Val(ServerPortField.Value) > 0 And ServerUserField.Value <> "" And ServerPassField.Value <> ""
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function FormDataFromProfile() As Xojo.Core.Dictionary
+		Private Function FormDataFromProfile() As Dictionary
 		  If Self.mProfile = Nil Then
 		    Return Nil
 		  End If
@@ -999,7 +999,7 @@ End
 
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event Opening()
 	#tag EndHook
 
 
@@ -1022,75 +1022,75 @@ End
 
 #tag Events ServerHostField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  Self.CheckServerActionButton()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ServerPortField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  Self.CheckServerActionButton()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ServerUserField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  Self.CheckServerActionButton()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ServerPassField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  Self.CheckServerActionButton()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events BrowseActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Dim GameIniPath As String = Self.Browser.CurrentPath
 		  Dim Components() As String = GameIniPath.Split("/")
-		  If Components.Ubound <= 2 Then
+		  If Components.LastRowIndex <= 2 Then
 		    Self.ShowAlert("FTP Access Too Restrictive", "Beacon needs to be able to access this server's ""Logs"" folder too, to learn more about the server than the config files can provide. The path to this server's Game.ini does not allow access to other directories needed within Ark's ""Saved"" directory.")
 		    Return
 		  End If
-		  Components.Remove(Components.Ubound) // Remove Game.ini
-		  Components.Remove(Components.Ubound) // Remove WindowsServer
-		  Components(Components.Ubound) = "" // Remove Config but retain trailing slash
+		  Components.RemoveRowAt(Components.LastRowIndex) // Remove Game.ini
+		  Components.RemoveRowAt(Components.LastRowIndex) // Remove WindowsServer
+		  Components(Components.LastRowIndex) = "" // Remove Config but retain trailing slash
 		  
 		  // Should now equal the "Saved" directory
 		  Dim InitialPath As String = Components.Join("/")
 		  Dim Engines(0) As Beacon.DiscoveryEngine
-		  Engines(0) = New Beacon.FTPDiscoveryEngine(Self.mProfile, InitialPath.ToText, App.IdentityManager.CurrentIdentity)
+		  Engines(0) = New Beacon.FTPDiscoveryEngine(Self.mProfile, InitialPath, App.IdentityManager.CurrentIdentity)
 		  Self.ShouldFinish(Engines)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events BrowseCancelButton
 	#tag Event
-		Sub Action()
-		  Self.ViewPanel.Value = Self.PageGeneral
+		Sub Pressed()
+		  Self.ViewPanel.SelectedPanelIndex = Self.PageGeneral
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Browser
 	#tag Event
 		Sub NeedsChildrenForPath(Path As String)
-		  Dim Fields As Xojo.Core.Dictionary = Self.FormDataFromProfile()
+		  Dim Fields As Dictionary = Self.FormDataFromProfile()
 		  If Fields = Nil Then
 		    Return
 		  End If
-		  Fields.Value("path") = Path.ToText
+		  Fields.Value("path") = Path
 		  
 		  // For now, append an empty list
 		  Dim Empty() As String
 		  Me.AppendChildren(Empty)
 		  
 		  Dim Request As New BeaconAPI.Request("ftp", "GET", Fields, WeakAddressOf APICallback_ListPath)
-		  Request.Sign(App.IdentityManager.CurrentIdentity)
+		  Request.Authenticate(Preferences.OnlineToken)
 		  Self.BrowseSocket.Start(Request)
 		End Sub
 	#tag EndEvent
@@ -1102,21 +1102,21 @@ End
 #tag EndEvents
 #tag Events ServerCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.ShouldCancel()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ServerActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.mProfile = New Beacon.FTPServerProfile()
-		  Self.mProfile.Host = Self.ServerHostField.Text.ToText
-		  Self.mProfile.Port = Val(Self.ServerPortField.Text)
-		  Self.mProfile.Username = Self.ServerUserField.Text.ToText
-		  Self.mProfile.Password = Self.ServerPassField.Text.ToText
+		  Self.mProfile.Host = Self.ServerHostField.Value
+		  Self.mProfile.Port = Val(Self.ServerPortField.Value)
+		  Self.mProfile.Username = Self.ServerUserField.Value
+		  Self.mProfile.Password = Self.ServerPassField.Value
 		  
-		  Select Case Self.ServerModeMenu.ListIndex
+		  Select Case Self.ServerModeMenu.SelectedRowIndex
 		  Case 1
 		    Self.mProfile.Mode = Beacon.FTPServerProfile.ModeFTP
 		  Case 2
@@ -1127,11 +1127,11 @@ End
 		    Self.mProfile.Mode = Beacon.FTPServerProfile.ModeAuto
 		  End Select
 		  
-		  Self.ViewPanel.Value = Self.PageDiscovering
+		  Self.ViewPanel.SelectedPanelIndex = Self.PageDiscovering
 		  
-		  Dim Fields As Xojo.Core.Dictionary = Self.FormDataFromProfile()
+		  Dim Fields As Dictionary = Self.FormDataFromProfile()
 		  Dim Request As New BeaconAPI.Request("ftp/path", "GET", Fields, WeakAddressOf APICallback_DetectPath)
-		  Request.Sign(App.IdentityManager.CurrentIdentity)
+		  Request.Authenticate(Preferences.OnlineToken)
 		  BeaconAPI.Send(Request)
 		End Sub
 	#tag EndEvent
@@ -1152,49 +1152,84 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="DoubleBuffer"
 		Visible=true
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -1202,22 +1237,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -1225,61 +1245,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -1287,12 +1317,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -1300,13 +1333,15 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -1314,15 +1349,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1330,7 +1357,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1338,5 +1365,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

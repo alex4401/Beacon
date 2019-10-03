@@ -5,7 +5,6 @@ Begin ConfigEditor ServersConfigEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -58,10 +57,10 @@ Begin ConfigEditor ServersConfigEditor
       LockRight       =   False
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
+      SelectionChangeBlocked=   False
       SelectionType   =   0
       ShowDropIndicator=   False
       TabIndex        =   3
@@ -86,7 +85,6 @@ Begin ConfigEditor ServersConfigEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   506
       HelpTag         =   ""
       Index           =   -2147483648
@@ -115,7 +113,6 @@ Begin ConfigEditor ServersConfigEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -145,7 +142,6 @@ Begin ConfigEditor ServersConfigEditor
       Caption         =   "Servers"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -174,12 +170,12 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  For I As Integer = 0 To Self.Document.ServerProfileCount - 1
 		    Dim Profile As Beacon.ServerProfile = Self.Document.ServerProfile(I)
 		    
 		    Self.ServerList.AddRow(Profile.Name + EndOfLine + Profile.ProfileID.Left(8) + "  " + Profile.SecondaryName)
-		    Self.ServerList.RowTag(Self.ServerList.LastIndex) = Profile
+		    Self.ServerList.RowTagAt(Self.ServerList.LastAddedRowIndex) = Profile
 		  Next
 		End Sub
 	#tag EndEvent
@@ -197,7 +193,7 @@ End
 		  Dim SelectedProfiles() As Beacon.ServerProfile
 		  For I As Integer = 0 To Self.ServerList.RowCount - 1
 		    If Self.ServerList.Selected(I) Then
-		      SelectedProfiles.Append(Self.ServerList.RowTag(I))
+		      SelectedProfiles.AddRow(Self.ServerList.RowTagAt(I))
 		    End If
 		  Next
 		  
@@ -208,16 +204,16 @@ End
 		    
 		    // Don't use IndexOf as it doesn't utilize Operator_Compare
 		    Dim Selected As Boolean
-		    For X As Integer = 0 To SelectedProfiles.Ubound
+		    For X As Integer = 0 To SelectedProfiles.LastRowIndex
 		      If SelectedProfiles(X) = Profile Then
 		        Selected = True
-		        SelectedProfiles.Remove(X)
+		        SelectedProfiles.RemoveRowAt(X)
 		        Exit For X
 		      End If
 		    Next
 		    
-		    Self.ServerList.RowTag(I) = Profile
-		    Self.ServerList.Cell(I, 0) = Profile.Name + EndOfLine + Profile.ProfileID.Left(8) + "  " + Profile.SecondaryName
+		    Self.ServerList.RowTagAt(I) = Profile
+		    Self.ServerList.CellValueAt(I, 0) = Profile.Name + EndOfLine + Profile.ProfileID.Left(8) + "  " + Profile.SecondaryName
 		    Self.ServerList.Selected(I) = Selected
 		  Next
 		End Sub
@@ -225,27 +221,27 @@ End
 
 
 	#tag Method, Flags = &h0
-		Function ConfigLabel() As Text
+		Function ConfigLabel() As String
 		  Return "Servers"
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub Constructor(Controller As Beacon.DocumentController)
-		  Self.mViews = New Xojo.Core.Dictionary
+		  Self.mViews = New Dictionary
 		  Super.Constructor(Controller)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub View_ContentsChanged(Sender As ServerViewContainer)
-		  Self.ContentsChanged = Sender.ContentsChanged
+		  Self.Changed = Sender.Changed
 		  
-		  For I As Integer = 0 To Self.ServerList.ListCount - 1
-		    Dim Profile As Beacon.ServerProfile = Self.ServerList.RowTag(I)
+		  For I As Integer = 0 To Self.ServerList.RowCount - 1
+		    Dim Profile As Beacon.ServerProfile = Self.ServerList.RowTagAt(I)
 		    Dim Status As String = Profile.Name + EndOfLine + Profile.ProfileID.Left(8) + "  " + Profile.SecondaryName
-		    If Self.ServerList.Cell(I, 0) <> Status Then
-		      Self.ServerList.Cell(I, 0) = Status
+		    If Self.ServerList.CellValueAt(I, 0) <> Status Then
+		      Self.ServerList.CellValueAt(I, 0) = Status
 		    End If
 		  Next
 		End Sub
@@ -279,7 +275,7 @@ End
 			  Self.mCurrentProfileID = Value
 			End Set
 		#tag EndSetter
-		CurrentProfileID As Text
+		CurrentProfileID As String
 	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
@@ -294,11 +290,11 @@ End
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h21
-		Private mCurrentProfileID As Text
+		Private mCurrentProfileID As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mViews As Xojo.Core.Dictionary
+		Private mViews As Dictionary
 	#tag EndProperty
 
 
@@ -306,14 +302,14 @@ End
 
 #tag Events ServerList
 	#tag Event
-		Sub Change()
-		  If Me.ListIndex = -1 Then
+		Sub SelectionChanged()
+		  If Me.SelectedRowIndex = -1 Then
 		    Self.CurrentProfileID = ""
 		    Return
 		  End If
 		  
-		  Dim Profile As Beacon.ServerProfile = Me.RowTag(Me.ListIndex)
-		  Dim ProfileID As Text = Profile.ProfileID
+		  Dim Profile As Beacon.ServerProfile = Me.RowTagAt(Me.SelectedRowIndex)
+		  Dim ProfileID As String = Profile.ProfileID
 		  If Not Self.mViews.HasKey(ProfileID) Then
 		    // Create the view
 		    Dim View As ServerViewContainer
@@ -322,6 +318,8 @@ End
 		      View = New NitradoServerView(Self.Document, Beacon.NitradoServerProfile(Profile))
 		    Case IsA Beacon.FTPServerProfile
 		      View = New FTPServerView(Beacon.FTPServerProfile(Profile))
+		    Case IsA Beacon.ConnectorServerProfile
+		      View = New ConnectorServerView(Beacon.ConnectorServerProfile(Profile))
 		    Else
 		      Self.CurrentProfileID = ""
 		      Return
@@ -341,22 +339,22 @@ End
 	#tag EndEvent
 	#tag Event
 		Sub PerformClear(Warn As Boolean)
-		  Dim SelCount As Integer = Me.SelCount
+		  Dim SelCount As Integer = Me.SelectedRowCount
 		  If SelCount = 0 Then
 		    Return
 		  End If
 		  
 		  If Warn Then
 		    Dim Subject As String = If(SelCount = 1, "server", "servers")
-		    Dim DemonstrativeAdjective As String = If(SelCount = 1, "this", "these " + SelCount.ToText)
+		    Dim DemonstrativeAdjective As String = If(SelCount = 1, "this", "these " + SelCount.ToString)
 		    If Not Self.ShowConfirm("Are you sure you want to delete " + DemonstrativeAdjective + " " + Subject + "?", "The " + Subject + " can be added again later using the ""Import"" feature next to the ""Config Type"" menu.", "Delete", "Cancel") Then
 		      Return
 		    End If
 		  End If
 		  
-		  For I As Integer = 0 To Me.ListCount - 1
+		  For I As Integer = 0 To Me.RowCount - 1
 		    If Me.Selected(I) Then
-		      Dim Profile As Beacon.ServerProfile = Me.RowTag(I)
+		      Dim Profile As Beacon.ServerProfile = Me.RowTagAt(I)
 		      If Self.mViews.HasKey(Profile.ProfileID) Then
 		        If Self.CurrentProfileID = Profile.ProfileID Then
 		          Self.CurrentProfileID = ""
@@ -367,8 +365,8 @@ End
 		        Self.mViews.Remove(Profile.ProfileID)
 		      End If
 		      Self.Document.Remove(Profile)
-		      Self.ContentsChanged = True
-		      Me.RemoveRow(I)
+		      Self.Changed = True
+		      Me.RemoveRowAt(I)
 		    End If
 		  Next
 		End Sub
@@ -377,27 +375,27 @@ End
 		Function ConstructContextualMenu(Base As MenuItem, X As Integer, Y As Integer) As Boolean
 		  Dim CopyProfileMenuItem As New MenuItem("Copy Profile ID")
 		  CopyProfileMenuItem.Enabled = False
-		  Base.Append(CopyProfileMenuItem)
+		  Base.AddMenu(CopyProfileMenuItem)
 		  
-		  Dim BackupsRoot As Beacon.FolderItem = App.ApplicationSupport.Child("Backups")
+		  Dim BackupsRoot As FolderItem = App.ApplicationSupport.Child("Backups")
 		  
 		  Dim RowIndex As Integer = Me.RowFromXY(X, Y)
 		  If RowIndex = -1 Then
-		    Base.Append(New MenuItem("Show Config Backups", BackupsRoot))
+		    Base.AddMenu(New MenuItem("Show Config Backups", BackupsRoot))
 		    Return True
 		  End If
 		  
 		  Try
-		    Dim Profile As Beacon.ServerProfile = Me.RowTag(RowIndex)
+		    Dim Profile As Beacon.ServerProfile = Me.RowTagAt(RowIndex)
 		    CopyProfileMenuItem.Tag = Profile.ProfileID.Left(8)
 		    CopyProfileMenuItem.Enabled = True
 		    
-		    Dim Folder As Beacon.FolderItem = BackupsRoot.Child(Beacon.FolderItem.SanitizeFilename(Profile.Name))
-		    Base.Append(New MenuItem("Show Config Backups", Folder))
+		    Dim Folder As FolderItem = BackupsRoot.Child(Beacon.SanitizeFilename(Profile.Name))
+		    Base.AddMenu(New MenuItem("Show Config Backups", Folder))
 		  Catch Err As RuntimeException
 		    Dim Item As New MenuItem("Show Config Backups", BackupsRoot)
 		    Item.Enabled = False
-		    Base.Append(Item)
+		    Base.AddMenu(Item)
 		  End Try
 		  
 		  Return True
@@ -405,9 +403,9 @@ End
 	#tag EndEvent
 	#tag Event
 		Function ContextualMenuAction(HitItem As MenuItem) As Boolean
-		  Select Case HitItem.Text
+		  Select Case HitItem.Value
 		  Case "Show Config Backups"
-		    Dim Folder As Beacon.FolderItem = HitItem.Tag
+		    Dim Folder As FolderItem = HitItem.Tag
 		    If Folder = Nil Then
 		      Return True
 		    End If
@@ -416,7 +414,7 @@ End
 		    End If
 		    App.ShowFile(Folder)
 		  Case "Copy Profile ID"
-		    Dim ProfileID As Text = HitItem.Tag
+		    Dim ProfileID As String = HitItem.Tag
 		    Dim Board As New Clipboard
 		    Board.Text = ProfileID
 		  End Select
@@ -427,10 +425,76 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -438,6 +502,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -445,10 +510,13 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -456,15 +524,17 @@ End
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -472,6 +542,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -479,53 +550,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -533,6 +622,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -540,7 +630,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -548,7 +638,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -556,72 +646,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -629,7 +662,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -637,11 +670,14 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="CurrentProfileID"
+		Visible=false
 		Group="Behavior"
-		Type="Text"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
 	#tag EndViewProperty
 #tag EndViewBehavior

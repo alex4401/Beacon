@@ -5,7 +5,6 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -44,6 +43,7 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
       Scope           =   2
       TabIndex        =   0
       TabPanelIndex   =   0
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   1
@@ -61,6 +61,7 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
          HasBackColor    =   False
          Height          =   468
          HelpTag         =   ""
+         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -95,6 +96,7 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
          HasBackColor    =   False
          Height          =   468
          HelpTag         =   ""
+         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -128,6 +130,7 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
          HasBackColor    =   False
          Height          =   468
          HelpTag         =   ""
+         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -161,6 +164,7 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
          HasBackColor    =   False
          Height          =   468
          HelpTag         =   ""
+         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -194,6 +198,7 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
          HasBackColor    =   False
          Height          =   468
          HelpTag         =   ""
+         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -227,6 +232,7 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
          HasBackColor    =   False
          Height          =   468
          HelpTag         =   ""
+         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -260,6 +266,7 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
          HasBackColor    =   False
          Height          =   468
          HelpTag         =   ""
+         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -290,7 +297,6 @@ Begin ContainerControl LibraryPane Implements NotificationKit.Receiver
       DoubleBuffer    =   False
       DrawCaptions    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   468
       HelpTag         =   ""
       Index           =   -2147483648
@@ -319,14 +325,14 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
+		Sub Closing()
 		  NotificationKit.Ignore(Self, Self.Notification_CloseDrawer, Self.Notification_ShowPane)
-		  RaiseEvent Close
+		  RaiseEvent Closing
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub EnableMenuItems()
+		Sub MenuSelected()
 		  Self.CurrentView.EnableMenuItems()
 		End Sub
 	#tag EndEvent
@@ -341,9 +347,9 @@ End
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.CurrentView.SwitchedTo()
-		  RaiseEvent Open
+		  RaiseEvent Opening
 		  NotificationKit.Watch(Self, Self.Notification_CloseDrawer, Self.Notification_ShowPane)
 		End Sub
 	#tag EndEvent
@@ -352,12 +358,12 @@ End
 		Sub Paint(g As Graphics, areas() As REALbasic.Rect)
 		  #Pragma Unused Areas
 		  
-		  G.ForeColor = SystemColors.ControlBackgroundColor
-		  G.FillRect(0, 0, G.Width - 1, G.Height)
+		  G.DrawingColor = SystemColors.ControlBackgroundColor
+		  G.FillRectangle(0, 0, G.Width - 1, G.Height)
 		  
-		  G.ForeColor = SystemColors.SeparatorColor
-		  G.FillRect(Self.Views.Width, 0, 1, G.Height)
-		  G.FillRect(Self.ViewShelf.Left + Self.ViewShelf.Width, 0, 1, G.Height)
+		  G.DrawingColor = SystemColors.SeparatorColor
+		  G.FillRectangle(Self.Views.Width, 0, 1, G.Height)
+		  G.FillRectangle(Self.ViewShelf.Left + Self.ViewShelf.Width, 0, 1, G.Height)
 		End Sub
 	#tag EndEvent
 
@@ -383,13 +389,13 @@ End
 
 	#tag Method, Flags = &h0
 		Function CurrentPage() As Integer
-		  Return Self.Views.Value
+		  Return Self.Views.SelectedPanelIndex
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
 		Protected Function CurrentView() As LibrarySubview
-		  Return Self.ViewAtIndex(Self.Views.Value)
+		  Return Self.ViewAtIndex(Self.Views.SelectedPanelIndex)
 		End Function
 	#tag EndMethod
 
@@ -452,20 +458,20 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub ShowPage(Index As Integer, UserData As Auto = Nil)
+		Sub ShowPage(Index As Integer, UserData As Variant = Nil)
 		  If Self.ViewShelf.SelectedIndex <> Index Then
 		    Self.ViewShelf.SelectedIndex = Index
 		  End If
 		  
 		  If Index = -1 Then
 		    If Self.mOpened Then
-		      RaiseEvent ChangePosition(Self.CollapseDistance * -1)
+		      RaiseEvent ChangePosition((Self.CollapseDistance * -1) - Self.Left)
 		      Self.mOpened = False
 		    End If
 		    Return
 		  End If
 		  
-		  If Self.Views.Value <> Index Then
+		  If Self.Views.SelectedPanelIndex <> Index Then
 		    Dim OldPage As LibrarySubview = Self.CurrentView
 		    If OldPage <> Nil Then
 		      OldPage.SwitchedFrom()
@@ -473,13 +479,13 @@ End
 		    
 		    Dim NewPage As LibrarySubview = Self.ViewAtIndex(Index)
 		    If NewPage <> Nil Then
-		      Self.Views.Value = Index
+		      Self.Views.SelectedPanelIndex = Index
 		      NewPage.SwitchedTo(UserData)
 		    End If
 		  End If
 		  
 		  If Not Self.mOpened Then
-		    RaiseEvent ChangePosition(Self.CollapseDistance)
+		    RaiseEvent ChangePosition(0 - Self.Left)
 		    Self.mOpened = True
 		  End If
 		End Sub
@@ -518,11 +524,11 @@ End
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Close()
+		Event Closing()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event Opening()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -731,7 +737,7 @@ End
 #tag EndEvents
 #tag Events ViewShelf
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.Add(Self.mMenuButton)
 		  Me.Add(Self.mNotificationsButton)
 		  Me.Add(ShelfItem.NewSpacer)
@@ -743,7 +749,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
+		Sub Pressed()
 		  If Me.SelectedItem = Nil Then
 		    Self.ShowPage(-1)
 		    Return
@@ -772,49 +778,84 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="DoubleBuffer"
 		Visible=true
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -822,22 +863,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -845,61 +871,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -907,12 +943,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -920,13 +959,15 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -934,15 +975,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -950,7 +983,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -958,5 +991,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

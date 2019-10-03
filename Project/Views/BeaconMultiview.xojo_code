@@ -2,8 +2,8 @@
 Protected Class BeaconMultiview
 Inherits BeaconWindow
 	#tag Event
-		Sub Open()
-		  RaiseEvent Open
+		Sub Opening()
+		  RaiseEvent Opening
 		  Self.CurrentView.SwitchedTo()
 		End Sub
 	#tag EndEvent
@@ -23,7 +23,7 @@ Inherits BeaconWindow
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub ShowPage(Index As Integer, UserData As Auto = Nil)
+		Sub ShowPage(Index As Integer, UserData As Variant = Nil)
 		  If Self.mCurrentIndex = Index Then
 		    Self.Show()
 		    Return
@@ -56,7 +56,7 @@ Inherits BeaconWindow
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event Opening()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -71,39 +71,59 @@ Inherits BeaconWindow
 
 	#tag ViewBehavior
 		#tag ViewProperty
-			Name="BackColor"
-			Visible=true
-			Group="Background"
-			InitialValue="&hFFFFFF"
-			Type="Color"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Backdrop"
-			Visible=true
-			Group="Background"
-			Type="Picture"
-			EditorType="Picture"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="CloseButton"
-			Visible=true
+			Name="Resizeable"
+			Visible=false
 			Group="Frame"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Composite"
-			Group="OS X (Carbon)"
-			InitialValue="False"
+			Name="MenuBarVisible"
+			Visible=true
+			Group="Deprecated"
+			InitialValue="True"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Frame"
+			Name="MinimumWidth"
+			Visible=true
+			Group="Size"
+			InitialValue="64"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MinimumHeight"
+			Visible=true
+			Group="Size"
+			InitialValue="64"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MaximumWidth"
+			Visible=true
+			Group="Size"
+			InitialValue="32000"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MaximumHeight"
+			Visible=true
+			Group="Size"
+			InitialValue="32000"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Type"
 			Visible=true
 			Group="Frame"
 			InitialValue="0"
-			Type="Integer"
+			Type="Types"
 			EditorType="Enum"
 			#tag EnumValues
 				"0 - Document"
@@ -120,134 +140,43 @@ Inherits BeaconWindow
 			#tag EndEnumValues
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="FullScreen"
-			Group="Behavior"
-			InitialValue="False"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="FullScreenButton"
-			Visible=true
-			Group="Frame"
-			InitialValue="False"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="HasBackColor"
-			Visible=true
-			Group="Background"
-			InitialValue="False"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Height"
-			Visible=true
-			Group="Size"
-			InitialValue="400"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="ImplicitInstance"
-			Visible=true
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Interfaces"
-			Visible=true
-			Group="ID"
-			Type="String"
-			EditorType="String"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="LiveResize"
-			Visible=true
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MacProcID"
-			Group="OS X (Carbon)"
-			InitialValue="0"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MaxHeight"
-			Visible=true
-			Group="Size"
-			InitialValue="32000"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MaximizeButton"
+			Name="HasCloseButton"
 			Visible=true
 			Group="Frame"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="MaxWidth"
-			Visible=true
-			Group="Size"
-			InitialValue="32000"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MenuBar"
-			Visible=true
-			Group="Menus"
-			Type="MenuBar"
-			EditorType="MenuBar"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MenuBarVisible"
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MinHeight"
-			Visible=true
-			Group="Size"
-			InitialValue="64"
-			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="MinimizeButton"
+			Name="HasMaximizeButton"
 			Visible=true
 			Group="Frame"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="MinWidth"
+			Name="HasMinimizeButton"
 			Visible=true
-			Group="Size"
-			InitialValue="64"
-			Type="Integer"
+			Group="Frame"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Name"
+			Name="HasFullScreenButton"
 			Visible=true
-			Group="ID"
-			Type="String"
-			EditorType="String"
+			Group="Frame"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Placement"
+			Name="DefaultLocation"
 			Visible=true
 			Group="Behavior"
 			InitialValue="0"
-			Type="Integer"
+			Type="Locations"
 			EditorType="Enum"
 			#tag EnumValues
 				"0 - Default"
@@ -258,19 +187,100 @@ Inherits BeaconWindow
 			#tag EndEnumValues
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Resizeable"
+			Name="HasBackgroundColor"
 			Visible=true
-			Group="Frame"
+			Group="Background"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="BackgroundColor"
+			Visible=true
+			Group="Background"
+			InitialValue="&hFFFFFF"
+			Type="Color"
+			EditorType="Color"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Backdrop"
+			Visible=true
+			Group="Background"
+			InitialValue=""
+			Type="Picture"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Composite"
+			Visible=false
+			Group="OS X (Carbon)"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="FullScreen"
+			Visible=false
+			Group="Behavior"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Height"
+			Visible=true
+			Group="Size"
+			InitialValue="400"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="ImplicitInstance"
+			Visible=true
+			Group="Behavior"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Interfaces"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MacProcID"
+			Visible=false
+			Group="OS X (Carbon)"
+			InitialValue="0"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MenuBar"
+			Visible=true
+			Group="Menus"
+			InitialValue=""
+			Type="MenuBar"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Name"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Title"
@@ -278,6 +288,7 @@ Inherits BeaconWindow
 			Group="Frame"
 			InitialValue="Untitled"
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Visible"
@@ -285,7 +296,7 @@ Inherits BeaconWindow
 			Group="Behavior"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Width"
@@ -293,6 +304,7 @@ Inherits BeaconWindow
 			Group="Size"
 			InitialValue="600"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

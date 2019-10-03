@@ -1,13 +1,58 @@
 #tag Module
 Protected Module Language
+	#tag Method, Flags = &h0
+		Function EnglishOxfordList(Extends Items() As String) As String
+		  Return EnglishOxfordList(Items)
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h1
-		Protected Function LabelForConfig(Config As Beacon.ConfigGroup) As Text
+		Protected Function EnglishOxfordList(Items() As String) As String
+		  If Items.LastRowIndex = -1 Then
+		    Return ""
+		  ElseIf Items.LastRowIndex = 0 Then
+		    Return Items(0)
+		  ElseIf Items.LastRowIndex = 1 Then
+		    Return Items(0) + " and " + Items(1)
+		  Else
+		    Dim LastItem As String = Items(Items.LastRowIndex)
+		    Items.RemoveRowAt(Items.LastRowIndex)
+		    Dim List As String = Join(Items, ", ") + ", and " + LastItem
+		    Items.AddRow(LastItem) // Gotta put it back
+		    Return List
+		  End If
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h1
+		Protected Function FolderItemErrorReason(ErrorCode As Integer) As String
+		  Select Case ErrorCode
+		  Case FolderItem.DestDoesNotExistError
+		    Return "The destination does not exist"
+		  Case FolderItem.FileNotFound
+		    Return "File not found"
+		  Case FolderItem.AccessDenied
+		    Return "Permission denied"
+		  Case FolderItem.NotEnoughMemory
+		    Return "Out of memory"
+		  Case FolderItem.FileInUse
+		    Return "File is in use"
+		  Case FolderItem.InvalidName
+		    Return "Filename is invalid"
+		  Else
+		    Return "Other error #" + ErrorCode.ToString
+		  End Select
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h1
+		Protected Function LabelForConfig(Config As Beacon.ConfigGroup) As String
 		  Return Language.LabelForConfig(Config.ConfigName)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
-		Protected Function LabelForConfig(ConfigName As Text) As Text
+		Protected Function LabelForConfig(ConfigName As String) As String
 		  Select Case ConfigName
 		  Case BeaconConfigs.Difficulty.ConfigName
 		    Return "Difficulty"
@@ -31,6 +76,10 @@ Protected Module Language
 		    Return "Harvest Rates"
 		  Case BeaconConfigs.DinoAdjustments.ConfigName
 		    Return "Creature Adjustments"
+		  Case BeaconConfigs.StatMultipliers.ConfigName
+		    Return "Player and Creature Stat Multipliers"
+		  Case BeaconConfigs.DayCycle.ConfigName
+		    Return "Day and Night Cycle"
 		  End Select
 		End Function
 	#tag EndMethod
@@ -65,8 +114,14 @@ Protected Module Language
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
+		Protected Function NounWithQuantity(Quantity As Integer, Singular As String, Plural As String) As String
+		  Return Str(Quantity, "-0,") + " " + If(Quantity = 1, Singular, Plural)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h1
 		Protected Function ReplacePlaceholders(Source As String, ParamArray Values() As String) As String
-		  For I As Integer = 0 To Values.Ubound
+		  For I As Integer = 0 To Values.LastRowIndex
 		    Dim Placeholder As String = "?" + Str(I + 1, "0")
 		    Source = Source.ReplaceAll(Placeholder, Values(I))
 		  Next
@@ -167,6 +222,7 @@ Protected Module Language
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -174,18 +230,23 @@ Protected Module Language
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -193,6 +254,7 @@ Protected Module Language
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Module

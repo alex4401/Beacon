@@ -2,21 +2,21 @@
 Protected Class BeaconToolbarItem
 Implements ObservationKit.Observable
 	#tag Method, Flags = &h0
-		Sub AddObserver(Observer As ObservationKit.Observer, Key As Text)
+		Sub AddObserver(Observer As ObservationKit.Observer, Key As String)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		    
@@ -26,7 +26,7 @@ Implements ObservationKit.Observable
 		    End If
 		  Next
 		  
-		  Refs.Append(Xojo.Core.WeakRef.Create(Observer))
+		  Refs.AddRow(New WeakRef(Observer))
 		  Self.mObservers.Value(Key) = Refs
 		  
 		End Sub
@@ -66,21 +66,21 @@ Implements ObservationKit.Observable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub NotifyObservers(Key As Text, Value As Auto)
+		Sub NotifyObservers(Key As String, Value As Variant)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		    
@@ -91,21 +91,21 @@ Implements ObservationKit.Observable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub RemoveObserver(Observer As ObservationKit.Observer, Key As Text)
+		Sub RemoveObserver(Observer As ObservationKit.Observer, Key As String)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Or Refs(I).Value = Observer Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		  Next
@@ -244,7 +244,7 @@ Implements ObservationKit.Observable
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mObservers As Xojo.Core.Dictionary
+		Private mObservers As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -265,7 +265,7 @@ Implements ObservationKit.Observable
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h0
-		Rect As REALbasic.Rect
+		Rect As Xojo.Rect
 	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h0
@@ -324,30 +324,43 @@ Implements ObservationKit.Observable
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="Caption"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Enabled"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="HasMenu"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="HelpTag"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Icon"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Picture"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -355,6 +368,7 @@ Implements ObservationKit.Observable
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -362,16 +376,21 @@ Implements ObservationKit.Observable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Subcaption"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
@@ -379,7 +398,9 @@ Implements ObservationKit.Observable
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -387,11 +408,35 @@ Implements ObservationKit.Observable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Toggled"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="IconColor"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="BeaconToolbarItem.IconColors"
+			EditorType="Enum"
+			#tag EnumValues
+				"0 - Standard"
+				"1 - Blue"
+				"2 - Brown"
+				"3 - Gray"
+				"4 - Green"
+				"5 - Orange"
+				"6 - Pink"
+				"7 - Purple"
+				"8 - Red"
+				"9 - Yellow"
+			#tag EndEnumValues
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

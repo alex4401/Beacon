@@ -5,7 +5,6 @@ Begin LibrarySubview LibraryPaneDocuments Implements NotificationKit.Receiver
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -58,7 +57,6 @@ Begin LibrarySubview LibraryPaneDocuments Implements NotificationKit.Receiver
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -95,7 +93,6 @@ Begin LibrarySubview LibraryPaneDocuments Implements NotificationKit.Receiver
       Caption         =   "Documents"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -127,7 +124,6 @@ Begin LibrarySubview LibraryPaneDocuments Implements NotificationKit.Receiver
       DoubleBuffer    =   False
       DrawCaptions    =   True
       Enabled         =   True
-      EraseBackground =   True
       Height          =   61
       HelpTag         =   ""
       Index           =   -2147483648
@@ -158,7 +154,6 @@ Begin LibrarySubview LibraryPaneDocuments Implements NotificationKit.Receiver
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -185,13 +180,13 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
+		Sub Closing()
 		  NotificationKit.Ignore(Self, Preferences.Notification_OnlineStateChanged, IdentityManager.Notification_IdentityChanged, Preferences.Notification_RecentsChanged)
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.ToolbarCaption = "Documents"
 		  
 		  NotificationKit.Watch(Self, Preferences.Notification_OnlineStateChanged, IdentityManager.Notification_IdentityChanged, Preferences.Notification_RecentsChanged)
@@ -199,8 +194,8 @@ End
 		  
 		  Dim AutosaveFolder As FolderItem = App.AutosaveFolder()
 		  If AutosaveFolder <> Nil Then
-		    For I As Integer = 1 To AutosaveFolder.Count
-		      Dim File As FolderItem = AutosaveFolder.Item(I)
+		    For I As Integer = 0 To AutosaveFolder.Count - 1
+		      Dim File As BookmarkedFolderItem = New BookmarkedFolderItem(AutosaveFolder.ChildAt(I))
 		      If Not File.Name.EndsWith(BeaconFileTypes.BeaconDocument.PrimaryExtension) Then
 		        Continue
 		      End If
@@ -224,11 +219,11 @@ End
 		  Redim Self.mCloudDocuments(-1)
 		  
 		  If Response.Success Then
-		    Dim Dicts() As Auto = Response.JSON
-		    For Each Dict As Xojo.Core.Dictionary In Dicts
+		    Dim Dicts() As Variant = Response.JSON
+		    For Each Dict As Dictionary In Dicts
 		      Dim Document As New BeaconAPI.Document(Dict)
-		      Dim URL As Text = Beacon.DocumentURL.TypeCloud + "://" + Document.ResourceURL.Mid(Document.ResourceURL.IndexOf("://") + 3)
-		      Self.mCloudDocuments.Append(URL)
+		      Dim URL As String = Beacon.DocumentURL.TypeCloud + "://" + Document.ResourceURL.Middle(Document.ResourceURL.IndexOf("://") + 3)
+		      Self.mCloudDocuments.AddRow(URL)
 		    Next
 		  End If
 		  
@@ -245,10 +240,10 @@ End
 		  Redim Self.mCommunityDocuments(-1)
 		  
 		  If Response.Success Then
-		    Dim Dicts() As Auto = Response.JSON
-		    For Each Dict As Xojo.Core.Dictionary In Dicts
+		    Dim Dicts() As Variant = Response.JSON
+		    For Each Dict As Dictionary In Dicts
 		      Dim Document As New BeaconAPI.Document(Dict)
-		      Self.mCommunityDocuments.Append(Document.ResourceURL)
+		      Self.mCommunityDocuments.AddRow(Document.ResourceURL)
 		    Next
 		  End If
 		  
@@ -279,10 +274,10 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Controller_DeleteError(Sender As Beacon.DocumentController, Reason As Text)
+		Private Sub Controller_DeleteError(Sender As Beacon.DocumentController, Reason As String)
 		  Dim Notification As New Beacon.UserNotification("The document " + Sender.Name + " could not be deleted.")
 		  Notification.SecondaryMessage = Reason
-		  Notification.UserData = New Xojo.Core.Dictionary
+		  Notification.UserData = New Dictionary
 		  Notification.UserData.Value("DocumentID") = If(Sender.Document <> Nil, Sender.Document.DocumentID, "")
 		  Notification.UserData.Value("DocumentURL") = Sender.URL.URL // To force convert to text
 		  Notification.UserData.Value("Reason") = Reason
@@ -294,33 +289,33 @@ End
 		Private Sub Controller_DeleteSuccess(Sender As Beacon.DocumentController)
 		  Dim URL As Beacon.DocumentURL = Sender.URL
 		  
-		  For I As Integer = Self.List.ListCount - 1 DownTo 0
-		    If Self.List.RowTag(I) = URL Then
-		      Self.List.RemoveRow(I)
+		  For I As Integer = Self.List.RowCount - 1 DownTo 0
+		    If Self.List.RowTagAt(I) = URL Then
+		      Self.List.RemoveRowAt(I)
 		    End If
 		  Next
 		  
 		  Select Case URL.Scheme
 		  Case Beacon.DocumentURL.TypeCloud
-		    For I As Integer = Self.mCloudDocuments.Ubound DownTo 0
+		    For I As Integer = Self.mCloudDocuments.LastRowIndex DownTo 0
 		      If Self.mCloudDocuments(I) = URL Then
-		        Self.mCloudDocuments.Remove(I)
+		        Self.mCloudDocuments.RemoveRowAt(I)
 		        Exit For I
 		      End If
 		    Next
 		  Case Beacon.DocumentURL.TypeWeb
-		    For I As Integer = Self.mCommunityDocuments.Ubound DownTo 0
+		    For I As Integer = Self.mCommunityDocuments.LastRowIndex DownTo 0
 		      If Self.mCommunityDocuments(I) = URL Then
-		        Self.mCommunityDocuments.Remove(I)
+		        Self.mCommunityDocuments.RemoveRowAt(I)
 		        Exit For I
 		      End If
 		    Next
 		  End Select
 		  
 		  Dim Recents() As Beacon.DocumentURL = Preferences.RecentDocuments
-		  For I As Integer = Recents.Ubound DownTo 0
+		  For I As Integer = Recents.LastRowIndex DownTo 0
 		    If Recents(I) = URL Then
-		      Recents.Remove(I)
+		      Recents.RemoveRowAt(I)
 		      Exit For I
 		    End If
 		  Next
@@ -351,13 +346,13 @@ End
 		  Self.SelectDocument(URL)
 		  
 		  Dim View As New DocumentEditorView(Sender)
-		  View.ContentsChanged = Sender.Document.Modified
+		  View.Changed = Sender.Document.Modified
 		  Self.ShowView(View)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Controller_LoadError(Sender As Beacon.DocumentController, Reason As Text)
+		Private Sub Controller_LoadError(Sender As Beacon.DocumentController, Reason As String)
 		  #Pragma Unused Reason
 		  
 		  If Self.mProgress <> Nil Then
@@ -369,7 +364,7 @@ End
 		  
 		  Dim RecentIdx As Integer = -1
 		  Dim Recents() As Beacon.DocumentURL = Preferences.RecentDocuments
-		  For I As Integer = 0 To Recents.Ubound
+		  For I As Integer = 0 To Recents.LastRowIndex
 		    If Recents(I) = Sender.URL Then
 		      RecentIdx = I
 		      Exit For I
@@ -378,7 +373,7 @@ End
 		  
 		  If RecentIdx > -1 Then
 		    If Self.ShowConfirm("Unable to load """ + Sender.Name + """", "The document could not be loaded. It may have been deleted. Would you like to remove it from the recent documents list?", "Remove", "Keep") Then
-		      Recents.Remove(RecentIdx)
+		      Recents.RemoveRowAt(RecentIdx)
 		      Preferences.RecentDocuments = Recents
 		    End If
 		  Else
@@ -429,7 +424,7 @@ End
 		    Document = New Beacon.Document
 		    
 		    Static NewDocumentNumber As Integer = 1
-		    Document.Title = "Untitled Document " + NewDocumentNumber.ToText
+		    Document.Title = "Untitled Document " + NewDocumentNumber.ToString
 		    Document.Modified = False
 		    NewDocumentNumber = NewDocumentNumber + 1
 		  End If
@@ -481,7 +476,7 @@ End
 
 	#tag Method, Flags = &h0
 		Sub OpenFile(File As FolderItem)
-		  Dim URL As Beacon.DocumentURL = Beacon.DocumentURL.URLForFile(File)
+		  Dim URL As Beacon.DocumentURL = Beacon.DocumentURL.URLForFile(New BookmarkedFolderItem(File))
 		  Self.OpenController(New Beacon.DocumentController(URL, App.IdentityManager.CurrentIdentity))
 		End Sub
 	#tag EndMethod
@@ -494,8 +489,8 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub SelectDocument(Document As Beacon.DocumentURL)
-		  For I As Integer = Self.List.ListCount - 1 DownTo 0
-		    Self.List.Selected(I) = Beacon.DocumentURL(Self.List.RowTag(I)) = Document
+		  For I As Integer = Self.List.RowCount - 1 DownTo 0
+		    Self.List.Selected(I) = Beacon.DocumentURL(Self.List.RowTagAt(I)) = Document
 		  Next
 		End Sub
 	#tag EndMethod
@@ -503,9 +498,9 @@ End
 	#tag Method, Flags = &h0
 		Function SelectedDocuments() As Beacon.DocumentURL()
 		  Dim Documents() As Beacon.DocumentURL
-		  For I As Integer = 0 To Self.List.ListCount - 1
+		  For I As Integer = 0 To Self.List.RowCount - 1
 		    If Self.List.Selected(I) Then
-		      Documents.Append(Self.List.RowTag(I))
+		      Documents.AddRow(Self.List.RowTagAt(I))
 		    End If
 		  Next
 		  Return Documents
@@ -514,13 +509,13 @@ End
 
 	#tag Method, Flags = &h0
 		Sub SelectedDocuments(Assigns Documents() As Beacon.DocumentURL)
-		  Dim Selected() As Text
+		  Dim Selected() As String
 		  For Each URL As Beacon.DocumentURL In Documents
-		    Selected.Append(URL)
+		    Selected.AddRow(URL)
 		  Next
 		  
-		  For I As Integer = 0 To Self.List.ListCount - 1
-		    Dim URL As Text = Beacon.DocumentURL(Self.List.RowTag(I))
+		  For I As Integer = 0 To Self.List.RowCount - 1
+		    Dim URL As String = Beacon.DocumentURL(Self.List.RowTagAt(I))
 		    Self.List.Selected(I) = Selected.IndexOf(URL) > -1
 		  Next
 		End Sub
@@ -528,7 +523,7 @@ End
 
 	#tag Method, Flags = &h0
 		Sub ShowOpenDocument()
-		  Dim Dialog As New OpenDialog
+		  Dim Dialog As New OpenFileDialog
 		  Dialog.Filter = BeaconFileTypes.BeaconDocument + BeaconFileTypes.IniFile + BeaconFileTypes.BeaconPreset + BeaconFileTypes.BeaconIdentity
 		  
 		  Dim File As FolderItem = Dialog.ShowModalWithin(Self.TrueWindow)
@@ -541,11 +536,11 @@ End
 	#tag Method, Flags = &h21
 		Private Sub UpdateCloudDocuments()
 		  If App.IdentityManager.CurrentIdentity <> Nil Then
-		    Dim Params As New Xojo.Core.Dictionary
+		    Dim Params As New Dictionary
 		    Params.Value("user_id") = App.IdentityManager.CurrentIdentity.Identifier
 		    
-		    Dim Request As New BeaconAPI.Request("document.php", "GET", Params, AddressOf APICallback_CloudDocumentsList)
-		    Request.Sign(App.IdentityManager.CurrentIdentity)
+		    Dim Request As New BeaconAPI.Request("document", "GET", Params, AddressOf APICallback_CloudDocumentsList)
+		    Request.Authenticate(Preferences.OnlineToken)
 		    Self.APISocket.Start(Request)
 		  Else
 		    Redim Self.mCloudDocuments(-1)
@@ -559,7 +554,7 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateCommunityDocuments()
-		  Dim Params As New Xojo.Core.Dictionary
+		  Dim Params As New Dictionary
 		  
 		  // Do not sign this request so we get only truly public documents
 		  Dim Request As New BeaconAPI.Request("document.php", "GET", Params, AddressOf APICallback_CommunityDocumentsList)
@@ -584,21 +579,21 @@ End
 		    Documents = Self.mCommunityDocuments
 		  End Select
 		  
-		  Dim RowBound As Integer = Self.List.ListCount - 1
-		  Dim SelectedURLs() As Text
+		  Dim RowBound As Integer = Self.List.RowCount - 1
+		  Dim SelectedURLs() As String
 		  For I As Integer = 0 To RowBound
 		    If Self.List.Selected(I) Then
-		      Dim URL As Beacon.DocumentURL = Self.List.RowTag(I)
-		      SelectedURLs.Append(URL)
+		      Dim URL As Beacon.DocumentURL = Self.List.RowTagAt(I)
+		      SelectedURLs.AddRow(URL)
 		    End If
 		  Next
 		  
-		  Self.List.RowCount = Documents.Ubound + 1
+		  Self.List.RowCount = Documents.LastRowIndex + 1
 		  
-		  For I As Integer = 0 To Documents.Ubound
+		  For I As Integer = 0 To Documents.LastRowIndex
 		    Dim URL As Beacon.DocumentURL = Documents(I)
-		    Self.List.Cell(I, Self.ColumnName) = URL.Name
-		    Self.List.RowTag(I) = URL
+		    Self.List.CellValueAt(I, Self.ColumnName) = URL.Name
+		    Self.List.RowTagAt(I) = URL
 		    Self.List.Selected(I) = SelectedURLs.IndexOf(URL) > -1
 		  Next
 		End Sub
@@ -698,24 +693,24 @@ End
 
 #tag Events List
 	#tag Event
-		Sub DoubleClick()
-		  For I As Integer = Self.List.ListCount - 1 DownTo 0
+		Sub DoubleClicked()
+		  For I As Integer = Self.List.RowCount - 1 DownTo 0
 		    If Not Self.List.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Self.OpenURL(Beacon.DocumentURL(Self.List.RowTag(I)))
+		    Self.OpenURL(Beacon.DocumentURL(Self.List.RowTagAt(I)))
 		  Next
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Function CompareRows(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
+		Function RowComparison(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
 		  Select Case Column
 		  Case 0
-		    Dim Row1URL As Beacon.DocumentURL = Me.RowTag(Row1)
-		    Dim Row2URL As Beacon.DocumentURL = Me.RowTag(Row2)
+		    Dim Row1URL As Beacon.DocumentURL = Me.RowTagAt(Row1)
+		    Dim Row2URL As Beacon.DocumentURL = Me.RowTagAt(Row2)
 		    
-		    Result = Row1URL.Name.Compare(Row2URL.Name)
+		    Result = Row1URL.Name.Compare(Row2URL.Name, ComparisonOptions.CaseSensitive)
 		    
 		    Return True
 		  End Select
@@ -723,19 +718,19 @@ End
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  If Me.SelCount = 0 Then
+		  If Me.SelectedRowCount = 0 Then
 		    Return False
 		  End If
 		  
 		  If Self.View = Self.ViewRecentDocuments Then
 		    Return True
 		  Else
-		    For I As Integer = Me.ListCount - 1 DownTo 0
+		    For I As Integer = Me.RowCount - 1 DownTo 0
 		      If Not Me.Selected(I) Then
 		        Continue For I
 		      End If
 		      
-		      Dim Controller As New Beacon.DocumentController(Beacon.DocumentURL(Me.RowTag(I)), App.IdentityManager.CurrentIdentity)
+		      Dim Controller As New Beacon.DocumentController(Beacon.DocumentURL(Me.RowTagAt(I)), App.IdentityManager.CurrentIdentity)
 		      If Not Controller.CanWrite Then
 		        Return False
 		      End If
@@ -755,16 +750,16 @@ End
 		    // Not deleting something, just removing from the list
 		    Dim Recents() As Beacon.DocumentURL = Preferences.RecentDocuments
 		    Dim Changed As Boolean
-		    For I As Integer = Me.ListCount - 1 DownTo 0
+		    For I As Integer = Me.RowCount - 1 DownTo 0
 		      If Not Me.Selected(I) Then
 		        Continue For I
 		      End If
 		      
-		      Dim SelectedURL As Beacon.DocumentURL = Me.RowTag(I)
-		      For X As Integer = Recents.Ubound DownTo 0
+		      Dim SelectedURL As Beacon.DocumentURL = Me.RowTagAt(I)
+		      For X As Integer = Recents.LastRowIndex DownTo 0
 		        If Recents(X) = SelectedURL Then
 		          Changed = True
-		          Recents.Remove(X)
+		          Recents.RemoveRowAt(X)
 		          Continue For I
 		        End If
 		      Next
@@ -776,24 +771,24 @@ End
 		  End If
 		  
 		  Dim Controllers() As Beacon.DocumentController
-		  For I As Integer = Me.ListCount - 1 DownTo 0
+		  For I As Integer = Me.RowCount - 1 DownTo 0
 		    If Not Me.Selected(I) Then
 		      Continue For I
 		    End If
 		    
-		    Dim URL As Beacon.DocumentURL = Me.RowTag(I)
+		    Dim URL As Beacon.DocumentURL = Me.RowTagAt(I)
 		    Dim Controller As New Beacon.DocumentController(URL, App.IdentityManager.CurrentIdentity)
 		    If Controller.CanWrite() Then
-		      Controllers.Append(Controller)
+		      Controllers.AddRow(Controller)
 		    End If
 		  Next
 		  
 		  If Warn Then
 		    Dim Message, Explanation As String
-		    If Controllers.Ubound = 0 Then
+		    If Controllers.LastRowIndex = 0 Then
 		      Message = "Are you sure you want to delete the document """ + Controllers(0).Name + """?"
 		    Else
-		      Message = "Are you sure you want to delete these " + Str(Controllers.Ubound + 1, "-0") + " documents?"
+		      Message = "Are you sure you want to delete these " + Str(Controllers.LastRowIndex + 1, "-0") + " documents?"
 		    End If
 		    Explanation = "Files will be deleted immediately and cannot be recovered."
 		    
@@ -835,11 +830,11 @@ End
 		  #Pragma Unused BackgroundColor
 		  #Pragma Unused IsHighlighted
 		  
-		  If Column <> Self.ColumnIcon Or Row >= Me.ListCount Then
+		  If Column <> Self.ColumnIcon Or Row >= Me.RowCount Then
 		    Return
 		  End If
 		  
-		  Dim URL As Beacon.DocumentURL = Me.RowTag(Row)
+		  Dim URL As Beacon.DocumentURL = Me.RowTagAt(Row)
 		  If URL = Nil Then
 		    Return
 		  End If
@@ -857,13 +852,13 @@ End
 		    Return
 		  End If
 		  
-		  G.DrawPicture(Icon, (Me.Column(Column).WidthActual - Icon.Width) / 2, (Me.DefaultRowHeight - Icon.Height) / 2)
+		  G.DrawPicture(Icon, (Me.ColumnAt(Column).WidthActual - Icon.Width) / 2, (Me.DefaultRowHeight - Icon.Height) / 2)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Header
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.LeftItems.Append(New BeaconToolbarItem("Add", IconToolbarAdd, "Start a new Beacon document."))
 		End Sub
 	#tag EndEvent
@@ -873,7 +868,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "Add"
 		    Self.NewDocument()
@@ -883,7 +878,7 @@ End
 #tag EndEvents
 #tag Events Switcher
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.Add(ShelfItem.NewFlexibleSpacer)
 		  Me.Add(IconRecentDocuments, "Recent", "recent")
 		  Me.Add(ShelfItem.NewFlexibleSpacer)
@@ -895,17 +890,83 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
+		Sub Pressed()
 		  Self.View = Me.SelectedIndex
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -913,6 +974,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -920,6 +982,7 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -927,44 +990,15 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -972,22 +1006,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -995,61 +1014,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -1057,12 +1086,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -1070,11 +1102,13 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -1082,7 +1116,9 @@ End
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -1090,20 +1126,15 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="View"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1111,7 +1142,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1119,5 +1150,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

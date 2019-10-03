@@ -5,7 +5,6 @@ Begin ConfigEditor DinoAdjustmentsConfigEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,6 @@ Begin ConfigEditor DinoAdjustmentsConfigEditor
       Caption         =   "Creature Adjustments"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -65,7 +63,6 @@ Begin ConfigEditor DinoAdjustmentsConfigEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -119,7 +116,6 @@ Begin ConfigEditor DinoAdjustmentsConfigEditor
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -146,24 +142,24 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub ParsingFinished(ParsedData As Xojo.Core.Dictionary)
+		Sub ParsingFinished(ParsedData As Dictionary)
 		  If ParsedData = Nil Then
 		    Return
 		  End If
 		  
-		  Dim OtherConfig As BeaconConfigs.DinoAdjustments = BeaconConfigs.DinoAdjustments.FromImport(ParsedData, New Xojo.Core.Dictionary, Self.Document.MapCompatibility, Self.Document.DifficultyValue)
+		  Dim OtherConfig As BeaconConfigs.DinoAdjustments = BeaconConfigs.DinoAdjustments.FromImport(ParsedData, New Dictionary, Self.Document.MapCompatibility, Self.Document.Difficulty)
 		  If OtherConfig = Nil Then
 		    Return
 		  End If
 		  
 		  Dim Config As BeaconConfigs.DinoAdjustments = Self.Config(True)
 		  Dim Behaviors() As Beacon.CreatureBehavior = OtherConfig.All
-		  Dim Classes() As Text
+		  Dim Classes() As String
 		  For Each Behavior As Beacon.CreatureBehavior In Behaviors
 		    Config.Behavior(Behavior.TargetClass) = Behavior
-		    Classes.Append(Behavior.TargetClass)
+		    Classes.AddRow(Behavior.TargetClass)
 		  Next
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.UpdateList(Classes)
 		End Sub
 	#tag EndEvent
@@ -183,7 +179,7 @@ End
 
 	#tag Method, Flags = &h1
 		Protected Function Config(ForWriting As Boolean) As BeaconConfigs.DinoAdjustments
-		  Static ConfigName As Text = BeaconConfigs.DinoAdjustments.ConfigName
+		  Static ConfigName As String = BeaconConfigs.DinoAdjustments.ConfigName
 		  
 		  Dim Document As Beacon.Document = Self.Document
 		  Dim Config As BeaconConfigs.DinoAdjustments
@@ -207,23 +203,23 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ConfigLabel() As Text
+		Function ConfigLabel() As String
 		  Return Language.LabelForConfig(BeaconConfigs.DinoAdjustments.ConfigName)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub EditSelected()
-		  If Self.List.ListIndex = -1 Then
+		  If Self.List.SelectedRowIndex = -1 Then
 		    Return
 		  End If
 		  
 		  // See the comment in ShowAdd
-		  Dim ClassString As Text = Self.List.RowTag(Self.List.ListIndex)
+		  Dim ClassString As String = Self.List.RowTagAt(Self.List.SelectedRowIndex)
 		  If DinoAdjustmentDialog.Present(Self, ClassString, Self.Config(False), Self.Document.Mods) Then
 		    Call Self.Config(True)
 		    Self.UpdateList()
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  End If
 		End Sub
 	#tag EndMethod
@@ -237,19 +233,19 @@ End
 		  If DinoAdjustmentDialog.Present(Self, "", Config, Self.Document.Mods) Then
 		    Call Self.Config(True)
 		    Self.UpdateList()
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		  End If
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub ShowDuplicate()
-		  If Self.List.SelCount <> 1 Then
+		  If Self.List.SelectedRowCount <> 1 Then
 		    Return
 		  End If
 		  
 		  Dim Config As BeaconConfigs.DinoAdjustments = Self.Config(False)
-		  Dim SelectedClass As Text = Self.List.RowTag(Self.List.ListIndex)
+		  Dim SelectedClass As String = Self.List.RowTagAt(Self.List.SelectedRowIndex)
 		  Dim SelectedBehavior As Beacon.CreatureBehavior = Config.Behavior(SelectedClass)
 		  If SelectedBehavior = Nil Then
 		    Return
@@ -260,32 +256,32 @@ End
 		  For Each Behavior As Beacon.CreatureBehavior In Behaviors
 		    Dim Creature As Beacon.Creature = Behavior.TargetCreature
 		    If Creature <> Nil Then
-		      CurrentCreatures.Append(Creature)
+		      CurrentCreatures.AddRow(Creature)
 		    End If
 		  Next
 		  
 		  Dim Creatures() As Beacon.Creature = EngramSelectorDialog.Present(Self, "", CurrentCreatures, True)
-		  If Creatures.Ubound = -1 Then
+		  If Creatures.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  Config = Self.Config(True)
-		  Dim SelectClasses() As Text
+		  Dim SelectClasses() As String
 		  For Each Creature As Beacon.Creature In Creatures
 		    Dim Behavior As Beacon.CreatureBehavior = SelectedBehavior.Clone(Creature.ClassString)
 		    Config.Behavior(Behavior.TargetClass) = Behavior
-		    SelectClasses.Append(Behavior.TargetClass)
+		    SelectClasses.AddRow(Behavior.TargetClass)
 		  Next
 		  Self.UpdateList(SelectClasses)
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateList()
-		  Dim Classes() As Text
-		  For I As Integer = 0 To Self.List.ListCount - 1
+		  Dim Classes() As String
+		  For I As Integer = 0 To Self.List.RowCount - 1
 		    If Self.List.Selected(I) Then
-		      Classes.Append(Self.List.RowTag(I))
+		      Classes.AddRow(Self.List.RowTagAt(I))
 		    End If
 		  Next
 		  Self.UpdateList(Classes)
@@ -293,8 +289,8 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub UpdateList(SelectClasses() As Text)
-		  Self.List.DeleteAllRows
+		Private Sub UpdateList(SelectClasses() As String)
+		  Self.List.RemoveAllRows
 		  
 		  Dim Behaviors() As Beacon.CreatureBehavior = Self.Config(False).All
 		  For Each Behavior As Beacon.CreatureBehavior In Behaviors
@@ -322,10 +318,10 @@ End
 		    End If
 		    
 		    If SelectClasses.IndexOf(Behavior.TargetClass) > -1 Then
-		      Self.List.Selected(Self.List.LastIndex) = True
+		      Self.List.Selected(Self.List.LastAddedRowIndex) = True
 		    End If
 		    
-		    Self.List.RowTag(Self.List.LastIndex) = Behavior.TargetClass
+		    Self.List.RowTagAt(Self.List.LastAddedRowIndex) = Behavior.TargetClass
 		  Next
 		  
 		  Self.List.Sort()
@@ -362,10 +358,10 @@ End
 
 #tag Events Header
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.Caption = Self.ConfigLabel
 		  
-		  Dim AddButton As New BeaconToolbarItem("AddCreature", IconAdd)
+		  Dim AddButton As New BeaconToolbarItem("AddCreature", IconToolbarAdd)
 		  AddButton.HelpTag = "Define new creature adjustments"
 		  
 		  Dim DuplicateButton As New BeaconToolbarItem("Duplicate", IconToolbarClone, False)
@@ -376,7 +372,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddCreature"
 		    Self.ShowAdd()
@@ -388,21 +384,21 @@ End
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Open()
-		  Me.ColumnAlignment(Self.ColumnWildDamage) = Listbox.AlignCenter
-		  Me.ColumnAlignment(Self.ColumnWildResistance) = Listbox.AlignCenter
-		  Me.ColumnAlignment(Self.ColumnTamedDamage) = Listbox.AlignCenter
-		  Me.ColumnAlignment(Self.ColumnTamedResistance) = Listbox.AlignCenter
+		Sub Opening()
+		  Me.ColumnAlignmentAt(Self.ColumnWildDamage) = Listbox.Alignments.Center
+		  Me.ColumnAlignmentAt(Self.ColumnWildResistance) = Listbox.Alignments.Center
+		  Me.ColumnAlignmentAt(Self.ColumnTamedDamage) = Listbox.Alignments.Center
+		  Me.ColumnAlignmentAt(Self.ColumnTamedResistance) = Listbox.Alignments.Center
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function CanCopy() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
@@ -414,10 +410,10 @@ End
 		Sub PerformClear(Warn As Boolean)
 		  If Warn Then
 		    Dim Message As String
-		    If Me.SelCount = 1 Then
-		      Message = "Are you sure you want to delete the """ + NthField(Me.Cell(Me.ListIndex, Self.ColumnName), EndOfLine, 1) + """ creature adjustment?"
+		    If Me.SelectedRowCount = 1 Then
+		      Message = "Are you sure you want to delete the """ + FrameworkExtensions.FieldAtPosition(Me.CellValueAt(Me.SelectedRowIndex, Self.ColumnName), EndOfLine, 1) + """ creature adjustment?"
 		    Else
-		      Message = "Are you sure you want to delete these " + Str(Me.SelCount, "-0") + " creature adjustments?"
+		      Message = "Are you sure you want to delete these " + Str(Me.SelectedRowCount, "-0") + " creature adjustments?"
 		    End If
 		    
 		    If Not Self.ShowConfirm(Message, "This action cannot be undone.", "Delete", "Cancel") Then
@@ -426,11 +422,11 @@ End
 		  End If
 		  
 		  Dim Config As BeaconConfigs.DinoAdjustments = Self.Config(True)
-		  For I As Integer = Me.ListCount - 1 DownTo 0
+		  For I As Integer = Me.RowCount - 1 DownTo 0
 		    If Me.Selected(I) Then
-		      Dim ClassString As Text = Me.RowTag(I)
+		      Dim ClassString As String = Me.RowTagAt(I)
 		      Config.RemoveBehavior(ClassString)
-		      Self.ContentsChanged = True
+		      Self.Changed = True
 		    End If
 		  Next
 		  Self.UpdateList()
@@ -438,42 +434,42 @@ End
 	#tag EndEvent
 	#tag Event
 		Sub PerformCopy(Board As Clipboard)
-		  Dim Dicts() As Xojo.Core.Dictionary
+		  Dim Dicts() As Dictionary
 		  Dim Config As BeaconConfigs.DinoAdjustments = Self.Config(False)
-		  For I As Integer = 0 To Me.ListCount - 1
+		  For I As Integer = 0 To Me.RowCount - 1
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim ClassString As Text = Me.RowTag(I)
+		    Dim ClassString As String = Me.RowTagAt(I)
 		    Dim Behavior As Beacon.CreatureBehavior = Config.Behavior(ClassString)
 		    If Behavior = Nil Then
 		      Continue
 		    End If
 		    
-		    Dicts.Append(Behavior.ToDictionary)
+		    Dicts.AddRow(Behavior.ToDictionary)
 		  Next
 		  
-		  Board.AddRawData(Xojo.Data.GenerateJSON(Dicts), Self.kClipboardType)
+		  Board.AddRawData(Beacon.GenerateJSON(Dicts, False), Self.kClipboardType)
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub PerformPaste(Board As Clipboard)
 		  If Board.RawDataAvailable(Self.kClipboardType) Then
-		    Dim JSON As Text = Board.RawData(Self.kClipboardType).DefineEncoding(Encodings.UTF8).ToText
-		    Dim Items() As Auto
+		    Dim JSON As String = Board.RawData(Self.kClipboardType).DefineEncoding(Encodings.UTF8)
+		    Dim Items() As Variant
 		    Try
-		      Items = Xojo.Data.ParseJSON(JSON)
+		      Items = Beacon.ParseJSON(JSON)
 		    Catch Err As RuntimeException
 		    End Try
 		    
-		    If Items.Ubound = -1 Then
+		    If Items.LastRowIndex = -1 Then
 		      Return
 		    End If
 		    
 		    Dim Config As BeaconConfigs.DinoAdjustments = Self.Config(True)
-		    Dim SelectClasses() As Text
-		    For Each Entry As Xojo.Core.Dictionary In Items
+		    Dim SelectClasses() As String
+		    For Each Entry As Dictionary In Items
 		      Dim Behavior As Beacon.CreatureBehavior = Beacon.CreatureBehavior.FromDictionary(Entry)
 		      If Behavior = Nil Then
 		        Continue
@@ -481,35 +477,101 @@ End
 		      
 		      Config.Behavior(Behavior.TargetClass) = Behavior
 		    Next
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		    Self.UpdateList(SelectClasses)
 		    Return
 		  End If
 		  
 		  If Board.TextAvailable Then
 		    Dim ImportText As String = Board.Text.GuessEncoding
-		    Self.Parse(ImportText.ToText, "Clipboard")
+		    Self.Parse(ImportText, "Clipboard")
 		    Return
 		  End If
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub DoubleClick()
-		  Self.EditSelected()
+		Sub SelectionChanged()
+		  Self.Header.Duplicate.Enabled = Me.SelectedRowCount = 1
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
-		  Self.Header.Duplicate.Enabled = Me.SelCount = 1
+		Sub DoubleClicked()
+		  Self.EditSelected()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -517,6 +579,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -524,10 +587,13 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -535,15 +601,17 @@ End
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -551,6 +619,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -558,53 +627,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -612,6 +699,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -619,7 +707,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -627,7 +715,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -635,72 +723,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -708,7 +739,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -716,6 +747,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

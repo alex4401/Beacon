@@ -3,7 +3,6 @@ Begin BeaconDialog ExperienceWizard
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   8
    FullScreen      =   False
@@ -11,18 +10,20 @@ Begin BeaconDialog ExperienceWizard
    HasBackColor    =   False
    Height          =   510
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
-   MaxHeight       =   32000
+   MaxHeight       =   510
    MaximizeButton  =   False
-   MaxWidth        =   32000
+   MaxWidth        =   651
    MenuBar         =   0
    MenuBarVisible  =   True
-   MinHeight       =   64
+   MinHeight       =   510
    MinimizeButton  =   False
-   MinWidth        =   64
+   MinWidth        =   651
    Placement       =   1
+   Resizable       =   "False"
    Resizeable      =   False
+   SystemUIVisible =   "True"
    Title           =   "Experience Wizard"
    Visible         =   True
    Width           =   651
@@ -399,7 +400,6 @@ Begin BeaconDialog ExperienceWizard
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   272
       HelpTag         =   ""
       Index           =   -2147483648
@@ -453,10 +453,10 @@ Begin BeaconDialog ExperienceWizard
       LockRight       =   False
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
+      SelectionChangeBlocked=   False
       SelectionType   =   0
       ShowDropIndicator=   False
       TabIndex        =   11
@@ -477,7 +477,7 @@ Begin BeaconDialog ExperienceWizard
    Begin UITweaks.ResizedPushButton ActionButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "OK"
       Default         =   True
@@ -509,7 +509,7 @@ Begin BeaconDialog ExperienceWizard
    Begin UITweaks.ResizedPushButton CancelButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Cancel"
       Default         =   False
@@ -750,7 +750,7 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.mSettingUp = False
 		  
 		  Self.Designer.Curve = New Beacon.Curve(0, 0, 1, 1)
@@ -775,8 +775,8 @@ End
 		  
 		  Dim Levels() As UInt64
 		  If Not Win.mCancelled Then
-		    For I As Integer = 0 To Win.List.ListCount - 1
-		      Levels.Append(Win.List.RowTag(I))
+		    For I As Integer = 0 To Win.List.RowCount - 1
+		      Levels.AddRow(Win.List.RowTagAt(I))
 		    Next
 		  End If
 		  Win.Close
@@ -788,8 +788,8 @@ End
 	#tag Method, Flags = &h21
 		Private Sub UpdateList()
 		  Dim Curve As Beacon.Curve = Self.Designer.Curve
-		  Dim AdditionalLevels As Integer = Max(CDbl(Self.LevelCountField.Text), 1)
-		  Dim AdditionalXP As UInt64 = Max(CDbl(Self.XPField.Text), 0)
+		  Dim AdditionalLevels As Integer = Max(CDbl(Self.LevelCountField.Value), 1)
+		  Dim AdditionalXP As UInt64 = Max(CDbl(Self.XPField.Value), 0)
 		  Dim StartingLevel As Integer = Self.mStartingLevel
 		  Dim StartingXP As UInt64 = Self.mStartingXP
 		  Dim EndingLevel As Integer = (StartingLevel + AdditionalLevels) - 1
@@ -797,18 +797,18 @@ End
 		  Dim ScrollPosition As Integer = Self.List.ScrollPosition
 		  Dim Allowed As Boolean = EndingXP <= BeaconConfigs.ExperienceCurves.MaxSupportedXP
 		  
-		  Self.List.DeleteAllRows()
+		  Self.List.RemoveAllRows()
 		  For Level As Integer = 1 To AdditionalLevels
 		    Dim Progress As Double = Level / AdditionalLevels
 		    Dim LevelXP As UInt64 = Round(Curve.Evaluate(Progress, StartingXP, EndingXP))
 		    
 		    Self.List.AddRow(Format((Level - 1) + StartingLevel, "0,"), Format(LevelXP, "0,"))
-		    Self.List.RowTag(Self.List.LastIndex) = LevelXP
+		    Self.List.RowTagAt(Self.List.LastAddedRowIndex) = LevelXP
 		  Next
 		  Self.List.ScrollPosition = ScrollPosition
 		  
-		  Self.FinalLevelField.Text = Format(EndingLevel, "0,")
-		  Self.NextLevelField.Text = Format(StartingLevel, "0,")
+		  Self.FinalLevelField.Value = Format(EndingLevel, "0,")
+		  Self.NextLevelField.Value = Format(StartingLevel, "0,")
 		  Self.ActionButton.Enabled = Allowed
 		  Self.WarningLabel.Visible = Not Allowed
 		End Sub
@@ -836,7 +836,7 @@ End
 
 #tag Events LevelCountField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.mSettingUp Or Self.Focus <> Me Then
 		    Return
 		  End If
@@ -847,7 +847,7 @@ End
 #tag EndEvents
 #tag Events XPField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.mSettingUp Or Self.Focus <> Me Then
 		    Return
 		  End If
@@ -864,10 +864,10 @@ End
 		  
 		  Dim Curve As Beacon.Curve = Me.Curve
 		  
-		  Self.PointFields(0).Text = Format(Curve.Point(1).X, "0.000")
-		  Self.PointFields(1).Text = Format(Curve.Point(1).Y, "0.000")
-		  Self.PointFields(2).Text = Format(Curve.Point(2).X, "0.000")
-		  Self.PointFields(3).Text = Format(Curve.Point(2).Y, "0.000")
+		  Self.PointFields(0).Value = Format(Curve.Point(1).X, "0.000")
+		  Self.PointFields(1).Value = Format(Curve.Point(1).Y, "0.000")
+		  Self.PointFields(2).Value = Format(Curve.Point(2).X, "0.000")
+		  Self.PointFields(3).Value = Format(Curve.Point(2).Y, "0.000")
 		  
 		  Self.UpdateList()
 		  
@@ -877,15 +877,15 @@ End
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Open()
-		  Me.ColumnAlignment(0) = Listbox.AlignRight
-		  Me.ColumnAlignment(1) = Listbox.AlignRight
+		Sub Opening()
+		  Me.ColumnAlignmentAt(0) = Listbox.Alignments.Right
+		  Me.ColumnAlignmentAt(1) = Listbox.Alignments.Right
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.mCancelled = False
 		  Self.Hide()
 		End Sub
@@ -893,7 +893,7 @@ End
 #tag EndEvents
 #tag Events CancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.mCancelled = True
 		  Self.Hide()
 		End Sub
@@ -901,86 +901,71 @@ End
 #tag EndEvents
 #tag Events PointFields
 	#tag Event
-		Sub TextChange(index as Integer)
+		Sub TextChanged(index as Integer)
 		  If Self.mSettingUp Or Self.Focus <> Me Then
 		    Return
 		  End If
 		  
-		  Dim Curve As New Beacon.Curve(CDbl(Self.PointFields(0).Text), CDbl(Self.PointFields(1).Text), CDbl(Self.PointFields(2).Text), CDbl(Self.PointFields(3).Text))
+		  Dim Curve As New Beacon.Curve(CDbl(Self.PointFields(0).Value), CDbl(Self.PointFields(1).Value), CDbl(Self.PointFields(2).Value), CDbl(Self.PointFields(3).Value))
 		  Self.Designer.Curve = Curve
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="Name"
+		Name="Resizeable"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Interfaces"
+		Name="MenuBarVisible"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Deprecated"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Super"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Width"
-		Visible=true
-		Group="Size"
-		InitialValue="600"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinWidth"
+		Name="MinimumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinHeight"
+		Name="MinimumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
+		Name="MaximumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxHeight"
+		Name="MaximumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -997,78 +982,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Title"
-		Visible=true
-		Group="Frame"
-		InitialValue="Untitled"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasMinimizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinimizeButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
+		Name="HasFullScreenButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -1079,61 +1029,123 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Super"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Width"
+		Visible=true
+		Group="Size"
+		InitialValue="600"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Title"
+		Visible=true
+		Group="Frame"
+		InitialValue="Untitled"
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Visible"
 		Visible=true
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
+		Visible=false
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MenuBar"
 		Visible=true
 		Group="Menus"
+		InitialValue=""
 		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Visible=true
-		Group="Deprecated"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

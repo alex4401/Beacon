@@ -5,7 +5,6 @@ Begin DiscoveryView LocalDiscoveryView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -113,7 +112,7 @@ Begin DiscoveryView LocalDiscoveryView
    Begin UITweaks.ResizedPushButton ActionButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "Next"
       Default         =   True
@@ -145,7 +144,7 @@ Begin DiscoveryView LocalDiscoveryView
    Begin UITweaks.ResizedPushButton CancelButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Cancel"
       Default         =   False
@@ -177,7 +176,7 @@ Begin DiscoveryView LocalDiscoveryView
    Begin UITweaks.ResizedPushButton ChooseFileButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "Select File"
       Default         =   False
@@ -214,7 +213,7 @@ Begin DiscoveryView LocalDiscoveryView
       DoubleBuffer    =   False
       DrawCaptions    =   True
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   60
       HelpTag         =   ""
       Index           =   -2147483648
@@ -245,7 +244,7 @@ Begin DiscoveryView LocalDiscoveryView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -303,6 +302,7 @@ Begin DiscoveryView LocalDiscoveryView
       Width           =   560
    End
    Begin ClipboardWatcher Watcher
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Mode            =   2
@@ -317,7 +317,7 @@ End
 	#tag Event
 		Sub Begin()
 		  Self.DesiredHeight = 400
-		  Self.ConfigArea.Text = ""
+		  Self.ConfigArea.Value = ""
 		End Sub
 	#tag EndEvent
 
@@ -329,8 +329,8 @@ End
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
-		  RaiseEvent Open
+		Sub Opening()
+		  RaiseEvent Opening
 		  Self.AcceptFileDrop(BeaconFileTypes.IniFile)
 		  Self.ConfigArea.AcceptFileDrop(BeaconFileTypes.IniFile)
 		  Self.SwapButtons()
@@ -349,7 +349,7 @@ End
 		  Dim Type As ConfigFileType = Self.DetectConfigType(Content)
 		  Self.SetSwitcherForType(Type)
 		  
-		  If Self.ConfigArea.Text.Len <> 0 Then
+		  If Self.ConfigArea.Value.Length <> 0 Then
 		    Dim Dialog As New MessageDialog
 		    Dialog.Title = ""
 		    Dialog.Message = "Would you like to replace the existing content, or add this file to it?"
@@ -369,14 +369,14 @@ End
 		    
 		    Select Case Choice
 		    Case Dialog.ActionButton
-		      Self.ConfigArea.Text = Content.Trim
+		      Self.ConfigArea.Value = Content.Trim
 		    Case Dialog.CancelButton
 		      Return
 		    Case Dialog.AlternateActionButton
-		      Self.ConfigArea.Text = Self.ConfigArea.Text + EndOfLine + Content.Trim
+		      Self.ConfigArea.Value = Self.ConfigArea.Value + EndOfLine + Content.Trim
 		    End Select
 		  Else
-		    Self.ConfigArea.Text = Content.Trim
+		    Self.ConfigArea.Value = Content.Trim
 		  End If
 		  
 		  If Not DetectSibling Then
@@ -435,12 +435,12 @@ End
 
 	#tag Method, Flags = &h21
 		Private Function DetectConfigType(Content As String, File As FolderItem = Nil) As ConfigFileType
-		  Dim GameIniPos As Integer = Content.InStr(Beacon.ShooterGameHeader)
-		  Dim SettingsIniPos As Integer = Content.InStr(Beacon.ServerSettingsHeader)
+		  Dim GameIniPos As Integer = Content.IndexOf(Beacon.ShooterGameHeader)
+		  Dim SettingsIniPos As Integer = Content.IndexOf(Beacon.ServerSettingsHeader)
 		  
-		  If GameIniPos > 0 And SettingsIniPos = 0 Then
+		  If GameIniPos > -1 And SettingsIniPos = -1 Then
 		    Return ConfigFileType.GameIni
-		  ElseIf SettingsIniPos > 0 And GameIniPos = 0 Then
+		  ElseIf SettingsIniPos > -1 And GameIniPos = -1 Then
 		    Return ConfigFileType.GameUserSettingsIni
 		  ElseIf File <> Nil Then
 		    Select Case File.Name
@@ -483,8 +483,8 @@ End
 		      Return ""
 		    End If
 		    
-		    Dim Dialog As New OpenDialog
-		    Dialog.InitialDirectory = File.Parent
+		    Dim Dialog As New OpenFileDialog
+		    Dialog.InitialFolder = File.Parent
 		    Dialog.SuggestedFileName = File.Name
 		    Dialog.PromptText = "Select your " + File.Name + " file if you want to import it too"
 		    Dialog.ActionButtonCaption = "Import"
@@ -512,7 +512,7 @@ End
 
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event Opening()
 	#tag EndHook
 
 
@@ -547,17 +547,17 @@ End
 
 #tag Events ConfigArea
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Not Self.mSettingUp Then
 		    Select Case Self.Switcher.SelectedIndex
 		    Case Self.GameIniIndex
-		      Self.mGameIniContent = Me.Text.Trim
+		      Self.mGameIniContent = Me.Value.Trim
 		    Case Self.GameUserSettingsIniIndex
-		      Self.mGameUserSettingsIniContent = Me.Text.Trim
+		      Self.mGameUserSettingsIniContent = Me.Value.Trim
 		    End Select
 		  End If
 		  
-		  Self.ActionButton.Enabled = Self.mGameIniContent.Len > 0 Or Self.mGameUserSettingsIniContent.Len > 0
+		  Self.ActionButton.Enabled = Self.mGameIniContent.Length > 0 Or Self.mGameUserSettingsIniContent.Length > 0
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -569,29 +569,29 @@ End
 #tag EndEvents
 #tag Events ActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Dim Engines(0) As Beacon.DiscoveryEngine
-		  Engines(0) = New Beacon.LocalDiscoveryEngine(Self.mGameIniContent.ToText, Self.mGameUserSettingsIniContent.ToText)
+		  Engines(0) = New Beacon.LocalDiscoveryEngine(Self.mGameIniContent, Self.mGameUserSettingsIniContent)
 		  Self.ShouldFinish(Engines)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events CancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.ShouldCancel()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ChooseFileButton
 	#tag Event
-		Sub Action()
-		  If Self.mGameIniContent.Len > 0 And Self.mGameUserSettingsIniContent.Len > 0 And Self.ShowConfirm("Both files are already selected", "You can select another file if you really want to, but both Game.ini and GameUserSettings.ini files are already present.", "Add Another", "Cancel") = False Then
+		Sub Pressed()
+		  If Self.mGameIniContent.Length > 0 And Self.mGameUserSettingsIniContent.Length > 0 And Self.ShowConfirm("Both files are already selected", "You can select another file if you really want to, but both Game.ini and GameUserSettings.ini files are already present.", "Add Another", "Cancel") = False Then
 		    Return
 		  End If
 		  
-		  Dim Dialog As New OpenDialog
-		  Dialog.SuggestedFileName = If(Self.mGameIniContent.Len > 0, "GameUserSettings.ini", "Game.ini")
+		  Dim Dialog As New OpenFileDialog
+		  Dialog.SuggestedFileName = If(Self.mGameIniContent.Length > 0, "GameUserSettings.ini", "Game.ini")
 		  Dialog.Filter = BeaconFileTypes.IniFile
 		  
 		  Dim File As FolderItem = Dialog.ShowModalWithin(Self.TrueWindow)
@@ -603,7 +603,7 @@ End
 #tag EndEvents
 #tag Events Switcher
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.Add(ShelfItem.NewFlexibleSpacer)
 		  Me.Add(IconGameUserSettingsIni, "GameUserSettings.ini", "gameusersettings.ini")
 		  Me.Add(IconGameIni, "Game.ini", "game.ini")
@@ -612,16 +612,16 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
+		Sub Pressed()
 		  Dim SettingUp As Boolean = Self.mSettingUp
 		  Self.mSettingUp = True
 		  Select Case Me.SelectedIndex
 		  Case Self.GameIniIndex
-		    Self.ConfigArea.Text = Self.mGameIniContent
+		    Self.ConfigArea.Value = Self.mGameIniContent
 		  Case Self.GameUserSettingsIniIndex
-		    Self.ConfigArea.Text = Self.mGameUserSettingsIniContent
+		    Self.ConfigArea.Value = Self.mGameUserSettingsIniContent
 		  Else
-		    Self.ConfigArea.Text = ""
+		    Self.ConfigArea.Value = ""
 		  End Select
 		  Self.mSettingUp = SettingUp
 		End Sub
@@ -637,49 +637,84 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="DoubleBuffer"
 		Visible=true
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -687,22 +722,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -710,61 +730,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -772,12 +802,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -785,13 +818,15 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -799,15 +834,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -815,7 +842,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -823,5 +850,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

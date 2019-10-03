@@ -4,7 +4,7 @@ Inherits AnimationKit.Task
 	#tag Event
 		Sub Perform(Final As Boolean, Time As Double)
 		  If Final Then
-		    Self.CurrentFrame = UBound(Self.Frames)
+		    Self.CurrentFrame = Self.Frames.LastRowIndex
 		    AnimationKit.FrameTarget(Self.Item).AnimationStep(Self.Identifier, Self.Frames.LastFrame)
 		    Return
 		  End If
@@ -12,7 +12,7 @@ Inherits AnimationKit.Task
 		  Dim Duration As Double = Self.DurationInSeconds * 1000000
 		  Dim LoopElapsed As Double = Self.ElapsedTime(Time) Mod Duration
 		  Dim PercentComplete As Double = LoopElapsed / Duration
-		  Dim Frame As Integer = Round(Self.Frames.UBound * PercentComplete)
+		  Dim Frame As Integer = Round(Self.Frames.LastRowIndex * PercentComplete)
 		  
 		  If Frame <> Self.CurrentFrame Then
 		    Self.CurrentFrame = Frame
@@ -68,7 +68,7 @@ Inherits AnimationKit.Task
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		Identifier As Text
+		Identifier As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
@@ -78,15 +78,43 @@ Inherits AnimationKit.Task
 
 	#tag ViewBehavior
 		#tag ViewProperty
+			Name="Cancelled"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="LastFrameTime"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Double"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Started"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
 			Name="DurationInSeconds"
+			Visible=false
 			Group="Behavior"
 			InitialValue="1"
 			Type="Double"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Identifier"
+			Visible=false
 			Group="Behavior"
-			Type="Text"
+			InitialValue=""
+			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
@@ -95,6 +123,7 @@ Inherits AnimationKit.Task
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -102,23 +131,31 @@ Inherits AnimationKit.Task
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Looping"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -126,6 +163,7 @@ Inherits AnimationKit.Task
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

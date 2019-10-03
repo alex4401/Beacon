@@ -3,7 +3,6 @@ Begin BeaconDialog BreedingTunerDialog
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   8
    FullScreen      =   False
@@ -11,19 +10,21 @@ Begin BeaconDialog BreedingTunerDialog
    HasBackColor    =   False
    Height          =   400
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
    MaxHeight       =   32000
    MaximizeButton  =   False
-   MaxWidth        =   32000
+   MaxWidth        =   600
    MenuBar         =   0
    MenuBarVisible  =   True
-   MinHeight       =   64
+   MinHeight       =   400
    MinimizeButton  =   False
-   MinWidth        =   64
+   MinWidth        =   600
    Placement       =   1
+   Resizable       =   "True"
    Resizeable      =   False
-   Title           =   "Breeding Tuner Threshold"
+   SystemUIVisible =   "True"
+   Title           =   "Auto Compute Imprinting Multiplier"
    Visible         =   True
    Width           =   600
    Begin Label MessageLabel
@@ -99,7 +100,7 @@ Begin BeaconDialog BreedingTunerDialog
    Begin UITweaks.ResizedPushButton CancelButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Cancel"
       Default         =   False
@@ -131,7 +132,7 @@ Begin BeaconDialog BreedingTunerDialog
    Begin UITweaks.ResizedPushButton ActionButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "OK"
       Default         =   True
@@ -192,7 +193,6 @@ Begin BeaconDialog BreedingTunerDialog
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -217,7 +217,7 @@ Begin BeaconDialog BreedingTunerDialog
    Begin UITweaks.ResizedPushButton MajorCreaturesButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Major Creatures"
       Default         =   False
@@ -249,7 +249,7 @@ Begin BeaconDialog BreedingTunerDialog
    Begin UITweaks.ResizedPushButton AllCreaturesButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "All Creatures"
       Default         =   False
@@ -281,7 +281,7 @@ Begin BeaconDialog BreedingTunerDialog
    Begin UITweaks.ResizedPushButton ClearCreaturesButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Clear Creatures"
       Default         =   False
@@ -315,17 +315,17 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
-		  Self.CreaturesList.ColumnType(Self.ColumnChecked) = Listbox.TypeCheckbox
+		Sub Opening()
+		  Self.CreaturesList.ColumnTypeAt(Self.ColumnChecked) = Listbox.CellTypes.CheckBox
 		  
-		  Dim Creatures() As Beacon.Creature = LocalData.SharedInstance.SearchForCreatures("", New Beacon.TextList)
+		  Dim Creatures() As Beacon.Creature = LocalData.SharedInstance.SearchForCreatures("", New Beacon.StringList)
 		  For Each Creature As Beacon.Creature In Creatures
-		    If Creature.IncubationTime = Nil Or Creature.MatureTime = Nil Then
+		    If Creature.IncubationTime = 0 Or Creature.MatureTime = 0 Then
 		      Continue
 		    End If
 		    
 		    Self.CreaturesList.AddRow("", Creature.Label)
-		    Self.CreaturesList.RowTag(Self.CreaturesList.LastIndex) = Creature
+		    Self.CreaturesList.RowTagAt(Self.CreaturesList.LastAddedRowIndex) = Creature
 		  Next
 		  
 		  Self.CheckCreatures(Preferences.BreedingTunerCreatures)
@@ -337,18 +337,18 @@ End
 		Private Sub CheckCreatures(List As String)
 		  Self.mAutoCheckingCreatures = True
 		  If List = "*" Then
-		    For I As Integer = 0 To Self.CreaturesList.ListCount - 1
-		      Self.CreaturesList.CellCheck(I, Self.ColumnChecked) = True
+		    For I As Integer = 0 To Self.CreaturesList.RowCount - 1
+		      Self.CreaturesList.CellCheckBoxValueAt(I, Self.ColumnChecked) = True
 		    Next
 		  Else
 		    Dim Creatures() As String = List.Split(",")
-		    For I As Integer = 0 To Creatures.Ubound
+		    For I As Integer = 0 To Creatures.LastRowIndex
 		      Creatures(I) = Creatures(I).Trim
 		    Next
 		    
-		    For I As Integer = 0 To Self.CreaturesList.ListCount - 1
-		      Dim ClassString As String = Beacon.Creature(Self.CreaturesList.RowTag(I)).ClassString
-		      Self.CreaturesList.CellCheck(I, Self.ColumnChecked) = Creatures.IndexOf(ClassString) > -1
+		    For I As Integer = 0 To Self.CreaturesList.RowCount - 1
+		      Dim ClassString As String = Beacon.Creature(Self.CreaturesList.RowTagAt(I)).ClassString
+		      Self.CreaturesList.CellCheckBoxValueAt(I, Self.ColumnChecked) = Creatures.IndexOf(ClassString) > -1
 		    Next
 		  End If
 		  Self.mAutoCheckingCreatures = False
@@ -419,7 +419,7 @@ End
 
 #tag Events CancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.mChosenMultiplier = 0
 		  Self.Hide
 		End Sub
@@ -427,20 +427,20 @@ End
 #tag EndEvents
 #tag Events ActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Const Threshold = 0.95
 		  
 		  Dim Creatures() As Beacon.Creature
-		  For I As Integer = 0 To Self.CreaturesList.ListCount - 1
-		    If Self.CreaturesList.CellCheck(I, Self.ColumnChecked) Then
-		      Creatures.Append(Self.CreaturesList.RowTag(I))
+		  For I As Integer = 0 To Self.CreaturesList.RowCount - 1
+		    If Self.CreaturesList.CellCheckBoxValueAt(I, Self.ColumnChecked) Then
+		      Creatures.AddRow(Self.CreaturesList.RowTagAt(I))
 		    End If
 		  Next
 		  
 		  // Get fastest maturing creature
 		  Dim FastestMature As UInt64
 		  For Each Creature As Beacon.Creature In Creatures
-		    Dim MatureSeconds As UInt64 = Beacon.IntervalToSeconds(Creature.MatureTime) / Self.mMatureSpeedMultiplier
+		    Dim MatureSeconds As UInt64 = Creature.MatureTime / Self.mMatureSpeedMultiplier
 		    If FastestMature = 0 Or MatureSeconds < FastestMature Then
 		      FastestMature = MatureSeconds
 		    End If
@@ -451,7 +451,7 @@ End
 		  Dim OfficialCuddlePeriod As Integer = LocalData.SharedInstance.GetIntegerVariable("Cuddle Period")
 		  Dim ImprintMultiplier As Double = TargetCuddleSeconds / OfficialCuddlePeriod
 		  
-		  Preferences.BreedingTunerCreatures = Self.mLastCheckedList.ToText
+		  Preferences.BreedingTunerCreatures = Self.mLastCheckedList
 		  Self.mChosenMultiplier = ImprintMultiplier
 		  Self.Hide
 		End Sub
@@ -467,9 +467,9 @@ End
 		  End If
 		  
 		  Dim Classes() As String
-		  For I As Integer = 0 To Self.CreaturesList.ListCount - 1
-		    If Self.CreaturesList.CellCheck(I, Column) Then
-		      Classes.Append(Beacon.Creature(Self.CreaturesList.RowTag(I)).ClassString)
+		  For I As Integer = 0 To Self.CreaturesList.RowCount - 1
+		    If Self.CreaturesList.CellCheckBoxValueAt(I, Column) Then
+		      Classes.AddRow(Beacon.Creature(Self.CreaturesList.RowTagAt(I)).ClassString)
 		    End If
 		  Next
 		  Self.mLastCheckedList = Classes.Join(",")
@@ -479,95 +479,80 @@ End
 #tag EndEvents
 #tag Events MajorCreaturesButton
 	#tag Event
-		Sub Action()
-		  Self.CheckCreatures(LocalData.SharedInstance.GetTextVariable("Major Imprint Creatures"))
+		Sub Pressed()
+		  Self.CheckCreatures(LocalData.SharedInstance.GetStringVariable("Major Imprint Creatures"))
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events AllCreaturesButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.CheckCreatures("*")
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ClearCreaturesButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.CheckCreatures("")
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="Name"
+		Name="Resizeable"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Interfaces"
+		Name="MenuBarVisible"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Deprecated"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Super"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Width"
-		Visible=true
-		Group="Size"
-		InitialValue="600"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinWidth"
+		Name="MinimumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinHeight"
+		Name="MinimumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="64"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
+		Name="MaximumWidth"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxHeight"
+		Name="MaximumHeight"
 		Visible=true
 		Group="Size"
 		InitialValue="32000"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -584,78 +569,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Title"
-		Visible=true
-		Group="Frame"
-		InitialValue="Untitled"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasMinimizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinimizeButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
+		Name="HasFullScreenButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -666,61 +616,123 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Super"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Width"
+		Visible=true
+		Group="Size"
+		InitialValue="600"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Title"
+		Visible=true
+		Group="Frame"
+		InitialValue="Untitled"
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Visible"
 		Visible=true
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
+		Visible=false
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MenuBar"
 		Visible=true
 		Group="Menus"
+		InitialValue=""
 		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Visible=true
-		Group="Deprecated"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

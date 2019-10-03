@@ -2,7 +2,7 @@
 Private Class ConfigParser
 	#tag Method, Flags = &h0
 		Function AddCharacter(Char As String) As Boolean
-		  Static LineEndingChar As Text = Beacon.ImportThread.LineEndingChar
+		  Static LineEndingChar As String = Beacon.ImportThread.LineEndingChar
 		  
 		  Self.ConsumedLastChar = True
 		  
@@ -17,8 +17,8 @@ Private Class ConfigParser
 		        Self.SubParser = Nil
 		        Return True
 		      Case Self.TypeArray
-		        Dim Values() As Auto = Self.mValue
-		        Values.Append(Self.SubParser.Value)
+		        Dim Values() As Variant = Self.mValue
+		        Values.AddRow(Self.SubParser.Value)
 		        Self.mValue = Values
 		        Dim Consumed As Boolean = Self.SubParser.ConsumedLastChar
 		        Self.SubParser = Nil
@@ -36,7 +36,7 @@ Private Class ConfigParser
 		    If Char = """" Then
 		      InQuotes = False
 		    Else
-		      Self.Buffer.Append(Char)
+		      Self.Buffer.AddRow(Char)
 		    End If
 		    Return False
 		  End If
@@ -45,18 +45,18 @@ Private Class ConfigParser
 		  Case Self.TypeIntrinsic
 		    Select Case Char
 		    Case "("
-		      If Self.Buffer.Ubound = -1 Then
+		      If Self.Buffer.LastRowIndex = -1 Then
 		        Self.SubParser = New Beacon.ConfigParser(Self.Level + 1)
 		        Self.Type = Self.TypeArray
 		        
-		        Dim Values() As Auto
+		        Dim Values() As Variant
 		        Self.mValue = Values
 		      Else
-		        Self.Buffer.Append(Char)
+		        Self.Buffer.AddRow(Char)
 		      End If
 		    Case "="
 		      If Not Self.KeyFound Then
-		        Self.Key = Self.Buffer.Join("").Trim.ToText
+		        Self.Key = Join(Self.Buffer, "").Trim
 		        Redim Self.Buffer(-1)
 		        Self.Type = Self.TypePair
 		        Self.SubParser = New Beacon.ConfigParser(Self.Level) // Same level
@@ -65,14 +65,14 @@ Private Class ConfigParser
 		        Self.SubParser.KeyFound = True
 		        Self.KeyFound = True
 		      Else
-		        Self.Buffer.Append(Char)
+		        Self.Buffer.AddRow(Char)
 		      End If
 		    Case ")", ",", LineEndingChar
 		      If Self.Level = 0 And Char <> LineEndingChar Then
-		        Self.Buffer.Append(Char)
+		        Self.Buffer.AddRow(Char)
 		      Else
 		        Self.ConsumedLastChar = False
-		        Self.mValue = Self.Buffer.Join("").ToText
+		        Self.mValue = Join(Self.Buffer, "")
 		        Redim Self.Buffer(-1)
 		        Self.KeyFound = False
 		        Return True
@@ -80,7 +80,7 @@ Private Class ConfigParser
 		    Case """"
 		      Self.InQuotes = True
 		    Else
-		      Self.Buffer.Append(Char)
+		      Self.Buffer.AddRow(Char)
 		    End Select
 		  Case Self.TypeArray
 		    Select Case Char
@@ -101,7 +101,7 @@ Private Class ConfigParser
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Value() As Auto
+		Function Value() As Variant
 		  Return Self.mValue
 		End Function
 	#tag EndMethod
@@ -120,7 +120,7 @@ Private Class ConfigParser
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private Key As Text
+		Private Key As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -132,7 +132,7 @@ Private Class ConfigParser
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mValue As Auto
+		Private mValue As Variant
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -161,6 +161,7 @@ Private Class ConfigParser
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -168,18 +169,23 @@ Private Class ConfigParser
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -187,6 +193,7 @@ Private Class ConfigParser
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

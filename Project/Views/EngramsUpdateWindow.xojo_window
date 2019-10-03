@@ -3,7 +3,6 @@ Begin Window EngramsUpdateWindow Implements NotificationKit.Receiver
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   False
    Frame           =   0
    FullScreen      =   False
@@ -11,7 +10,7 @@ Begin Window EngramsUpdateWindow Implements NotificationKit.Receiver
    HasBackColor    =   False
    Height          =   124
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
    MaxHeight       =   32000
    MaximizeButton  =   False
@@ -22,7 +21,9 @@ Begin Window EngramsUpdateWindow Implements NotificationKit.Receiver
    MinimizeButton  =   False
    MinWidth        =   64
    Placement       =   2
+   Resizable       =   "True"
    Resizeable      =   False
+   SystemUIVisible =   "True"
    Title           =   ""
    Visible         =   False
    Width           =   450
@@ -31,6 +32,7 @@ Begin Window EngramsUpdateWindow Implements NotificationKit.Receiver
       Enabled         =   True
       Height          =   20
       HelpTag         =   ""
+      Indeterminate   =   False
       Index           =   -2147483648
       InitialParent   =   ""
       Left            =   20
@@ -43,9 +45,10 @@ Begin Window EngramsUpdateWindow Implements NotificationKit.Receiver
       Scope           =   2
       TabIndex        =   0
       TabPanelIndex   =   0
+      TabStop         =   "True"
       Top             =   52
       Transparent     =   False
-      Value           =   0
+      Value           =   0.0
       Visible         =   True
       Width           =   410
    End
@@ -85,6 +88,7 @@ Begin Window EngramsUpdateWindow Implements NotificationKit.Receiver
       Width           =   410
    End
    Begin Timer RevealTimer
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Mode            =   1
@@ -95,7 +99,7 @@ Begin Window EngramsUpdateWindow Implements NotificationKit.Receiver
    Begin UITweaks.ResizedPushButton CancelButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   True
       Caption         =   "Cancel"
       Default         =   False
@@ -129,13 +133,13 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
+		Sub Closing()
 		  NotificationKit.Ignore(Self, LocalData.Notification_ImportSuccess, LocalData.Notification_ImportFailed)
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  NotificationKit.Watch(Self, LocalData.Notification_ImportSuccess, LocalData.Notification_ImportFailed)
 		End Sub
 	#tag EndEvent
@@ -155,23 +159,23 @@ End
 		  
 		  Select Case Notification.Name
 		  Case LocalData.Notification_ImportSuccess, LocalData.Notification_ImportFailed
-		    Self.RevealTimer.Mode = Timer.ModeOff
+		    Self.RevealTimer.RunMode = Timer.RunModes.Off
 		    
-		    Dim Date As Xojo.Core.Date
-		    If Notification.UserData <> Nil And Notification.UserData IsA Xojo.Core.Date Then
-		      Date = Notification.UserData
+		    Dim ImportDate As DateTime
+		    If Notification.UserData <> Nil And Notification.UserData IsA DateTime Then
+		      ImportDate = Notification.UserData
 		    Else
-		      Date = LocalData.SharedInstance.LastSync
+		      ImportDate = LocalData.SharedInstance.LastSync
 		    End If
 		    
 		    Dim Dialog As New MessageDialog
 		    Dialog.Title = ""
-		    If Date <> Nil Then
-		      Dialog.Message = "Engram definitions have been updated"
-		      Dialog.Explanation = "Engrams, loot sources, and presets are current as of " + Date.ToText(Xojo.Core.Locale.Current, Xojo.Core.Date.FormatStyles.Long, Xojo.Core.Date.FormatStyles.Short) + " UTC."
-		    Else
+		    If IsNull(ImportDate) Then
 		      Dialog.Message = "Engram definitions have not been updated"
 		      Dialog.Explanation = "No engram definitions are currently loaded into Beacon. Try relaunching Beacon. If the problem persists, see the website at " + Beacon.WebURL("/help/") + " for more support options."
+		    Else
+		      Dialog.Message = "Engram definitions have been updated"
+		      Dialog.Explanation = "Engrams, loot sources, and presets are current as of " + ImportDate.ToString(Locale.Current, DateTime.FormatStyles.Long, DateTime.FormatStyles.Short) + " UTC."
 		    End If
 		    Call Dialog.ShowModal
 		    
@@ -193,14 +197,14 @@ End
 
 #tag Events RevealTimer
 	#tag Event
-		Sub Action()
+		Sub Run()
 		  Self.Show()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events CancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  // Doesn't really cancel, just dismisses the window
 		  
 		  Self.Close()

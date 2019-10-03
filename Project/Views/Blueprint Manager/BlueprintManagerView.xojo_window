@@ -5,7 +5,6 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,6 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
       Caption         =   "Objects"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -65,7 +63,6 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   552
       HelpTag         =   ""
       Index           =   -2147483648
@@ -105,6 +102,7 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
       Scope           =   2
       TabIndex        =   2
       TabPanelIndex   =   0
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   2
@@ -117,7 +115,6 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
          Backdrop        =   0
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   True
          Height          =   1
          HelpTag         =   ""
          Index           =   -2147483648
@@ -147,7 +144,6 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
          Caption         =   ""
          DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   False
          Height          =   40
          HelpTag         =   ""
          Index           =   -2147483648
@@ -183,6 +179,7 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
          HasBackColor    =   False
          Height          =   592
          HelpTag         =   ""
+         Index           =   -2147483648
          InitialParent   =   "Pages"
          Left            =   296
          LockBottom      =   True
@@ -217,6 +214,7 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
          HasBackColor    =   False
          Height          =   592
          HelpTag         =   ""
+         Index           =   -2147483648
          InitialParent   =   "Pages"
          Left            =   296
          LockBottom      =   True
@@ -271,7 +269,6 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
       LockRight       =   False
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -300,7 +297,6 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -323,6 +319,7 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
       Width           =   295
    End
    Begin Beacon.EngramSearcherThread Searcher
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Priority        =   5
@@ -331,6 +328,7 @@ Begin BeaconSubview BlueprintManagerView Implements NotificationKit.Receiver
       TabPanelIndex   =   0
    End
    Begin Timer ClipboardWatcher
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Mode            =   0
@@ -343,27 +341,27 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
+		Sub Closing()
 		  NotificationKit.Ignore(Self, LocalData.Notification_EngramsChanged)
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub EnableMenuItems()
-		  If Self.List.ListCount > 0 Then
+		Sub Hidden()
+		  Self.ClipboardWatcher.RunMode = Timer.RunModes.Off
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Sub MenuSelected()
+		  If Self.List.RowCount > 0 Then
 		    FileExport.Enable
 		  End If
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Hidden()
-		  Self.ClipboardWatcher.Mode = Timer.ModeOff
-		End Sub
-	#tag EndEvent
-
-	#tag Event
-		Sub Open()
+		Sub Opening()
 		  NotificationKit.Watch(Self, LocalData.Notification_EngramsChanged)
 		  
 		  Self.SetupUI()
@@ -373,19 +371,19 @@ End
 
 	#tag Event
 		Function ShouldSave() As Boolean
-		  If Self.Pages.Value = Self.PageEditor And Self.Editor.Modified Then
+		  If Self.Pages.SelectedPanelIndex = Self.PageEditor And Self.Editor.Modified Then
 		    Self.Editor.Save()
-		  ElseIf Self.Pages.Value = Self.PageMulti And Self.MultiEditor.Modified Then
+		  ElseIf Self.Pages.SelectedPanelIndex = Self.PageMulti And Self.MultiEditor.Modified Then
 		    Self.MultiEditor.Save()
 		  End If
 		End Function
 	#tag EndEvent
 
 	#tag Event
-		Sub Shown(UserData As Auto = Nil)
+		Sub Shown(UserData As Variant = Nil)
 		  #Pragma Unused UserData
 		  
-		  Self.ClipboardWatcher.Mode = Timer.ModeMultiple
+		  Self.ClipboardWatcher.RunMode = Timer.RunModes.Multiple
 		End Sub
 	#tag EndEvent
 
@@ -401,8 +399,8 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub AddObject()
-		  Self.Editor.ObjectID = Beacon.CreateUUID
-		  Self.Pages.Value = Self.PageEditor
+		  Self.Editor.ObjectID = New v4UUID
+		  Self.Pages.SelectedPanelIndex = Self.PageEditor
 		End Sub
 	#tag EndMethod
 
@@ -420,7 +418,7 @@ End
 
 	#tag Method, Flags = &h0
 		Function ConfirmClose(Callback As BeaconSubview.BringToFrontDelegate) As Boolean
-		  If Self.Pages.Value = Self.PageEmpty Or (Self.Pages.Value = Self.PageEditor And Not Self.Editor.Modified) Or (Self.Pages.Value = Self.PageMulti And Not Self.MultiEditor.Modified) Then
+		  If Self.Pages.SelectedPanelIndex = Self.PageEmpty Or (Self.Pages.SelectedPanelIndex = Self.PageEditor And Not Self.Editor.Modified) Or (Self.Pages.SelectedPanelIndex = Self.PageMulti And Not Self.MultiEditor.Modified) Then
 		    Return True
 		  End If
 		  
@@ -428,10 +426,10 @@ End
 		    Callback.Invoke(Self)
 		  End If
 		  
-		  If Self.Pages.Value = Self.PageEditor Then
+		  If Self.Pages.SelectedPanelIndex = Self.PageEditor Then
 		    Self.Editor.ObjectID = ""
 		    Return Not Self.Editor.Modified
-		  ElseIf Self.Pages.Value = Self.PageMulti Then
+		  ElseIf Self.Pages.SelectedPanelIndex = Self.PageMulti Then
 		    Self.MultiEditor.Blueprints = Nil
 		    Return Not Self.MultiEditor.Modified
 		  End If
@@ -440,27 +438,27 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub ExportAll()
-		  Dim Dialog As New SaveAsDialog
+		  Dim Dialog As New SaveFileDialog
 		  Dialog.SuggestedFileName = "Beacon Objects.csv"
 		  Dialog.PromptText = "Export objects to CSV"
 		  Dialog.Filter = BeaconFileTypes.CSVFile
 		  
 		  Dim File As FolderItem = Dialog.ShowModalWithin(Self.TrueWindow)
 		  If File <> Nil Then
-		    Dim Mods As New Beacon.TextList
-		    Mods.Append(LocalData.UserModID.ToText)
+		    Dim Mods As New Beacon.StringList
+		    Mods.Append(LocalData.UserModID)
 		    
 		    Dim Engrams() As Beacon.Blueprint = LocalData.SharedInstance.SearchForBlueprints(Beacon.CategoryEngrams, "", Mods, "")
 		    Dim Creatures() As Beacon.Blueprint = LocalData.SharedInstance.SearchForBlueprints(Beacon.CategoryCreatures, "", Mods, "")
 		    Dim Blueprints() As Beacon.Blueprint
 		    For Each Engram As Beacon.Blueprint In Engrams
-		      Blueprints.Append(Engram)
+		      Blueprints.AddRow(Engram)
 		    Next
 		    For Each Creature As Beacon.Blueprint In Creatures
-		      Blueprints.Append(Creature)
+		      Blueprints.AddRow(Creature)
 		    Next
 		    
-		    Dim CSV As Text = Beacon.CreateCSV(Blueprints)
+		    Dim CSV As String = Beacon.CreateCSV(Blueprints)
 		    Dim Stream As TextOutputStream = TextOutputStream.Create(File)
 		    Stream.Write(CSV)
 		    Stream.Close
@@ -513,7 +511,7 @@ End
 
 	#tag Method, Flags = &h0
 		Shared Function PromptForImportFile(Parent As Window) As FolderItem
-		  Dim Dialog As New OpenDialog
+		  Dim Dialog As New OpenFileDialog
 		  Dialog.Filter = BeaconFileTypes.Text + BeaconFileTypes.CSVFile
 		  Return Dialog.ShowModalWithin(Parent.TrueWindow)
 		End Function
@@ -527,37 +525,37 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub SetupUI()
-		  Dim Mods As New Beacon.TextList(0)
-		  Mods(0) = LocalData.UserModID.ToText
+		  Dim Mods As New Beacon.StringList(0)
+		  Mods(0) = LocalData.UserModID
 		  
 		  Dim Engrams() As Beacon.Engram = LocalData.SharedInstance.SearchForEngrams("", Mods)
 		  Dim Creatures() As Beacon.Creature = LocalData.SharedInstance.SearchForCreatures("", Mods)
 		  Dim Blueprints() As Beacon.Blueprint
-		  Dim Labels() As Text
+		  Dim Labels() As String
 		  For Each Engram As Beacon.Engram In Engrams
-		    Blueprints.Append(Engram)
-		    Labels.Append(Engram.Label)
+		    Blueprints.AddRow(Engram)
+		    Labels.AddRow(Engram.Label)
 		  Next
 		  For Each Creature As Beacon.Creature In Creatures
-		    Blueprints.Append(Creature)
-		    Labels.Append(Creature.Label)
+		    Blueprints.AddRow(Creature)
+		    Labels.AddRow(Creature.Label)
 		  Next
 		  Labels.SortWith(Blueprints)
 		  
-		  Dim SelectedPaths() As Text
-		  For I As Integer = 0 To Self.List.ListCount - 1
+		  Dim SelectedPaths() As String
+		  For I As Integer = 0 To Self.List.RowCount - 1
 		    If Self.List.Selected(I) Then
-		      SelectedPaths.Append(Beacon.Blueprint(Self.List.RowTag(I)).Path)
+		      SelectedPaths.AddRow(Beacon.Blueprint(Self.List.RowTagAt(I)).Path)
 		    End If
 		  Next
 		  
 		  Self.mSettingUp = True
-		  Self.List.RowCount = Blueprints.Ubound + 1
-		  For I As Integer = 0 To Blueprints.Ubound
+		  Self.List.RowCount = Blueprints.LastRowIndex + 1
+		  For I As Integer = 0 To Blueprints.LastRowIndex
 		    Dim Blueprint As Beacon.Blueprint = Blueprints(I)
 		    
-		    Self.List.RowTag(I) = Blueprint
-		    Self.List.Cell(I, 0) = Blueprint.Label
+		    Self.List.RowTagAt(I) = Blueprint
+		    Self.List.CellValueAt(I, 0) = Blueprint.Label
 		    Self.List.Selected(I) = SelectedPaths.IndexOf(Blueprint.Path) > -1
 		  Next
 		  Self.List.EnsureSelectionIsVisible()
@@ -568,34 +566,34 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateEditorWithSelection()
-		  If Self.List.SelCount = 0 Then
-		    If Self.Pages.Value = Self.PageEditor Then
+		  If Self.List.SelectedRowCount = 0 Then
+		    If Self.Pages.SelectedPanelIndex = Self.PageEditor Then
 		      Self.Editor.ObjectID = ""
 		      If Not Self.Editor.Modified Then
-		        Self.Pages.Value = Self.PageEmpty
+		        Self.Pages.SelectedPanelIndex = Self.PageEmpty
 		      End If
-		    ElseIf Self.Pages.Value = Self.PageMulti Then
+		    ElseIf Self.Pages.SelectedPanelIndex = Self.PageMulti Then
 		      Self.MultiEditor.Blueprints = Nil
 		      If Not Self.MultiEditor.Modified Then
-		        Self.Pages.Value = Self.PageEmpty
+		        Self.Pages.SelectedPanelIndex = Self.PageEmpty
 		      End If
 		    End If
-		  ElseIf Self.List.SelCount = 1 Then
-		    If Self.Pages.Value = Self.PageMulti Then
+		  ElseIf Self.List.SelectedRowCount = 1 Then
+		    If Self.Pages.SelectedPanelIndex = Self.PageMulti Then
 		      Self.MultiEditor.Blueprints = Nil
 		      If Self.MultiEditor.Modified Then
 		        Return
 		      End If
 		    End If
 		    
-		    Dim Blueprint As Beacon.Blueprint = Self.List.RowTag(Self.List.ListIndex)
+		    Dim Blueprint As Beacon.Blueprint = Self.List.RowTagAt(Self.List.SelectedRowIndex)
 		    Self.Editor.ObjectID = Blueprint.ObjectID
 		    
-		    If Self.Pages.Value <> Self.PageEditor Then
-		      Self.Pages.Value = Self.PageEditor
+		    If Self.Pages.SelectedPanelIndex <> Self.PageEditor Then
+		      Self.Pages.SelectedPanelIndex = Self.PageEditor
 		    End If
-		  ElseIf Self.List.SelCount > 1 Then
-		    If Self.Pages.Value = Self.PageEditor Then
+		  ElseIf Self.List.SelectedRowCount > 1 Then
+		    If Self.Pages.SelectedPanelIndex = Self.PageEditor Then
 		      Self.Editor.ObjectID = ""
 		      If Self.Editor.Modified Then
 		        Return
@@ -603,15 +601,15 @@ End
 		    End If
 		    
 		    Dim Blueprints() As Beacon.Blueprint
-		    For I As Integer = 0 To Self.List.ListCount - 1
+		    For I As Integer = 0 To Self.List.RowCount - 1
 		      If Self.List.Selected(I) Then
-		        Blueprints.Append(Beacon.Blueprint(Self.List.RowTag(I)))
+		        Blueprints.AddRow(Beacon.Blueprint(Self.List.RowTagAt(I)))
 		      End If
 		    Next
 		    Self.MultiEditor.Blueprints = Blueprints
 		    
-		    If Self.Pages.Value <> Self.PageMulti Then
-		      Self.Pages.Value = Self.PageMulti
+		    If Self.Pages.SelectedPanelIndex <> Self.PageMulti Then
+		      Self.Pages.SelectedPanelIndex = Self.PageMulti
 		    End If
 		  End If
 		End Sub
@@ -641,7 +639,7 @@ End
 
 #tag Events ListHeader
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddObject"
 		    Self.AddObject()
@@ -655,7 +653,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.LeftItems.Append(New BeaconToolbarItem("AddObject", IconToolbarAdd, "Define a new creature or engram"))
 		  
 		  Me.RightItems.Append(New BeaconToolbarItem("ImportFile", IconToolbarFile, "Import from file"))
@@ -666,14 +664,14 @@ End
 #tag EndEvents
 #tag Events Pages
 	#tag Event
-		Sub Change()
-		  Select Case Me.Value
+		Sub PanelChanged()
+		  Select Case Me.SelectedPanelIndex
 		  Case Self.PageEmpty
-		    Self.ContentsChanged = False
+		    Self.Changed = False
 		  Case Self.PageEditor
-		    Self.ContentsChanged = Self.Editor.ContentsChanged
+		    Self.Changed = Self.Editor.Changed
 		  Case Self.PageMulti
-		    Self.ContentsChanged = Self.Editor.ContentsChanged
+		    Self.Changed = Self.Editor.Changed
 		  End Select
 		End Sub
 	#tag EndEvent
@@ -681,8 +679,8 @@ End
 #tag Events Editor
 	#tag Event
 		Sub ContentsChanged()
-		  If Self.Pages.Value = Self.PageEditor Then
-		    Self.ContentsChanged = Me.ContentsChanged
+		  If Self.Pages.SelectedPanelIndex = Self.PageEditor Then
+		    Self.Changed = Me.Changed
 		  End If
 		End Sub
 	#tag EndEvent
@@ -690,15 +688,15 @@ End
 #tag Events MultiEditor
 	#tag Event
 		Sub ContentsChanged()
-		  If Self.Pages.Value = Self.PageMulti Then
-		    Self.ContentsChanged = Me.ContentsChanged
+		  If Self.Pages.SelectedPanelIndex = Self.PageMulti Then
+		    Self.Changed = Me.Changed
 		  End If
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Change()
+		Sub SelectionChanged()
 		  If Not Self.mSettingUp Then
 		    Self.UpdateEditorWithSelection()
 		  End If
@@ -706,17 +704,17 @@ End
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
 		Sub PerformClear(Warn As Boolean)
 		  If Warn Then
 		    Dim Message As String
-		    If Me.SelCount = 1 Then
+		    If Me.SelectedRowCount = 1 Then
 		      Message = "Are you sure you want to delete this object?"
 		    Else
-		      Message = "Are you sure you want to delete these " + Str(Me.SelCount, "-0") + " objects?"
+		      Message = "Are you sure you want to delete these " + Str(Me.SelectedRowCount, "-0") + " objects?"
 		    End If
 		    
 		    If Not Self.ShowConfirm(Message, "This action cannot be undone.", "Delete", "Cancel") Then
@@ -725,9 +723,9 @@ End
 		  End If
 		  
 		  Dim Objects() As Beacon.Blueprint
-		  For I As Integer = 0 To Me.ListCount - 1
+		  For I As Integer = 0 To Me.RowCount - 1
 		    If Me.Selected(I) Then
-		      Objects.Append(Beacon.Blueprint(Me.RowTag(I)))
+		      Objects.AddRow(Beacon.Blueprint(Me.RowTagAt(I)))
 		    End If
 		  Next
 		  
@@ -742,23 +740,23 @@ End
 		  
 		  Dim Blueprints() As Beacon.Blueprint = Me.Blueprints(True)
 		  Dim ImportedCount As Integer = LocalData.SharedInstance.SaveBlueprints(Blueprints, False)
-		  Dim SkippedCount As Integer = (Blueprints.Ubound + 1) - ImportedCount
+		  Dim SkippedCount As Integer = (Blueprints.LastRowIndex + 1) - ImportedCount
 		  
 		  Self.SetupUI()
 		  
 		  Dim Messages() As String
 		  If ImportedCount = 1 Then
-		    Messages.Append("1 object was added.")
+		    Messages.AddRow("1 object was added.")
 		  ElseIf ImportedCount > 1 Then
-		    Messages.Append(Str(ImportedCount, "-0") + " objects were added.")
+		    Messages.AddRow(Str(ImportedCount, "-0") + " objects were added.")
 		  End If
 		  If SkippedCount = 1 Then
-		    Messages.Append("1 object was skipped because it already exists in the database.")
+		    Messages.AddRow("1 object was skipped because it already exists in the database.")
 		  ElseIf SkippedCount > 1 Then
-		    Messages.Append(Str(SkippedCount, "-0") + " objects were skipped because they already exist in the database.")
+		    Messages.AddRow(Str(SkippedCount, "-0") + " objects were skipped because they already exist in the database.")
 		  End If
 		  If ImportedCount = 0 And SkippedCount = 0 Then
-		    Messages.Append("No objects were found to import.")
+		    Messages.AddRow("No objects were found to import.")
 		  End If
 		  
 		  Self.ShowAlert("Object import has finished", Join(Messages, " "))
@@ -772,15 +770,81 @@ End
 #tag EndEvents
 #tag Events ClipboardWatcher
 	#tag Event
-		Sub Action()
+		Sub Run()
 		  Self.ListHeader.ImportClipboard.Enabled = Self.ClipboardHasCodes
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="ToolbarCaption"
+		Name="EraseBackground"
+		Visible=false
 		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ToolbarCaption"
+		Visible=false
+		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -790,6 +854,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -797,26 +862,31 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -824,6 +894,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -831,53 +902,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -885,6 +974,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -892,7 +982,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -900,7 +990,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -908,72 +998,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -981,7 +1014,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -989,6 +1022,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

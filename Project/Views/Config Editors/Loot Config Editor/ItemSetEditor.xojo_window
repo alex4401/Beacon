@@ -5,7 +5,6 @@ Begin BeaconContainer ItemSetEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -58,7 +57,7 @@ Begin BeaconContainer ItemSetEditor
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
+      RowCount        =   "0"
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -88,7 +87,7 @@ Begin BeaconContainer ItemSetEditor
       Caption         =   "Item Set Contents"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -119,7 +118,7 @@ Begin BeaconContainer ItemSetEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -180,7 +179,7 @@ Begin BeaconContainer ItemSetEditor
       Caption         =   ""
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   21
       HelpTag         =   ""
       Index           =   -2147483648
@@ -215,20 +214,20 @@ End
 	#tag Method, Flags = &h21
 		Private Sub EditSelectedEntries(Prefilter As String = "")
 		  Dim Sources() As Beacon.SetEntry
-		  For I As Integer = 0 To EntryList.ListCount - 1
+		  For I As Integer = 0 To EntryList.RowCount - 1
 		    If Not EntryList.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Sources.Append(EntryList.RowTag(I))
+		    Sources.AddRow(EntryList.RowTagAt(I))
 		  Next
 		  
 		  Dim Entries() As Beacon.SetEntry = EntryEditor.Present(Self, Self.Document.Mods, Sources, Prefilter)
-		  If Entries = Nil Or Entries.Ubound <> Sources.Ubound Then
+		  If Entries = Nil Or Entries.LastRowIndex <> Sources.LastRowIndex Then
 		    Return
 		  End If
 		  
-		  For I As Integer = 0 To Entries.Ubound
+		  For I As Integer = 0 To Entries.LastRowIndex
 		    Dim Source As Beacon.SetEntry = Sources(I)
 		    Dim Idx As Integer = Self.mSet.IndexOf(Source)
 		    If Idx > -1 Then
@@ -249,9 +248,9 @@ End
 
 	#tag Method, Flags = &h0
 		Function GoToChild(Entry As Beacon.SetEntry, Option As Beacon.SetEntryOption = Nil) As Boolean
-		  For I As Integer = 0 To Self.EntryList.ListCount - 1
-		    If Self.EntryList.RowTag(I) = Entry Then
-		      Self.EntryList.ListIndex = I
+		  For I As Integer = 0 To Self.EntryList.RowCount - 1
+		    If Self.EntryList.RowTagAt(I) = Entry Then
+		      Self.EntryList.SelectedRowIndex = I
 		      Self.EntryList.EnsureSelectionIsVisible()
 		      If Option <> Nil And Option.Engram <> Nil Then
 		        Self.EditSelectedEntries(Option.Engram.ClassString)
@@ -259,7 +258,7 @@ End
 		      Return True
 		    End If
 		  Next
-		  Self.EntryList.ListIndex = -1
+		  Self.EntryList.SelectedRowIndex = -1
 		  Return False
 		End Function
 	#tag EndMethod
@@ -268,12 +267,12 @@ End
 		Private Sub RemoveSelectedEntries()
 		  Dim Changed As Boolean
 		  
-		  For I As Integer = EntryList.ListCount - 1 DownTo 0
+		  For I As Integer = EntryList.RowCount - 1 DownTo 0
 		    If Not EntryList.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim Entry As Beacon.SetEntry = EntryList.RowTag(I)
+		    Dim Entry As Beacon.SetEntry = EntryList.RowTagAt(I)
 		    Dim Idx As Integer = Self.mSet.IndexOf(Entry)
 		    Self.mSet.Remove(Idx)
 		    Changed = True
@@ -297,25 +296,25 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateEntryList(SelectEntries() As Beacon.SetEntry)
-		  Dim Selected() As Text
+		  Dim Selected() As String
 		  Dim ScrollToSelection As Boolean
 		  If SelectEntries <> Nil Then
 		    For Each Entry As Beacon.SetEntry In SelectEntries
 		      If Entry <> Nil Then
-		        Selected.Append(Entry.UniqueID)
+		        Selected.AddRow(Entry.UniqueID)
 		      End If
 		    Next
 		    ScrollToSelection = True
 		  Else
-		    For I As Integer = 0 To EntryList.ListCount - 1
+		    For I As Integer = 0 To EntryList.RowCount - 1
 		      If EntryList.Selected(I) Then
-		        Dim Entry As Beacon.SetEntry = EntryList.RowTag(I)
-		        Selected.Append(Entry.UniqueID)
+		        Dim Entry As Beacon.SetEntry = EntryList.RowTagAt(I)
+		        Selected.AddRow(Entry.UniqueID)
 		      End If
 		    Next
 		  End If
 		  
-		  EntryList.DeleteAllRows()
+		  EntryList.RemoveAllRows()
 		  
 		  If Self.mSet = Nil Then
 		    Self.UpdateStatus()
@@ -324,11 +323,11 @@ End
 		  
 		  
 		  If Self.mSet = Nil Then
-		    EntryList.DeleteAllRows
+		    EntryList.RemoveAllRows
 		    Return
 		  End If
 		  
-		  For I As Integer = 0 To UBound(Self.mSet)
+		  For I As Integer = 0 To Self.mSet.LastRowIndex
 		    Dim Entry As Beacon.SetEntry = Self.mSet(I)
 		    If Entry = Nil Then
 		      Continue
@@ -351,9 +350,9 @@ End
 		    
 		    Dim QuantityText As String
 		    If Entry.MinQuantity = Entry.MaxQuantity Then
-		      QuantityText = Entry.MinQuantity.ToText
+		      QuantityText = Entry.MinQuantity.ToString
 		    Else
-		      QuantityText = Entry.MinQuantity.ToText + " - " + Entry.MaxQuantity.ToText
+		      QuantityText = Entry.MinQuantity.ToString + " - " + Entry.MaxQuantity.ToString
 		    End If
 		    
 		    Dim FiguresText As String
@@ -370,13 +369,13 @@ End
 		    End If
 		    
 		    EntryList.AddRow("")
-		    Dim Idx As Integer = EntryList.LastIndex
-		    EntryList.Cell(Idx, Self.ColumnLabel) = Entry.Label
-		    EntryList.Cell(Idx, Self.ColumnQuality) = QualityText
-		    EntryList.Cell(Idx, Self.ColumnQuantity) = QuantityText
-		    EntryList.Cell(Idx, Self.ColumnFigures) = FiguresText
+		    Dim Idx As Integer = EntryList.LastAddedRowIndex
+		    EntryList.CellValueAt(Idx, Self.ColumnLabel) = Entry.Label
+		    EntryList.CellValueAt(Idx, Self.ColumnQuality) = QualityText
+		    EntryList.CellValueAt(Idx, Self.ColumnQuantity) = QuantityText
+		    EntryList.CellValueAt(Idx, Self.ColumnFigures) = FiguresText
 		    
-		    EntryList.RowTag(Idx) = Entry
+		    EntryList.RowTagAt(Idx) = Entry
 		    EntryList.Selected(Idx) = Selected.IndexOf(Entry.UniqueID) > -1
 		  Next
 		  
@@ -399,7 +398,7 @@ End
 	#tag Method, Flags = &h21
 		Private Sub UpdateStatus()
 		  Dim TotalCount As UInteger = Self.EntryList.RowCount
-		  Dim SelectedCount As UInteger = Self.EntryList.SelCount
+		  Dim SelectedCount As UInteger = Self.EntryList.SelectedRowCount
 		  
 		  Dim Caption As String = Format(TotalCount, "0,") + " " + If(TotalCount = 1, "Item Set Entry", "Item Set Entries")
 		  If SelectedCount > 0 Then
@@ -461,7 +460,7 @@ End
 #tag Events EntryList
 	#tag Event
 		Function CanCopy() As Boolean
-		  Return Me.ListIndex > -1
+		  Return Me.SelectedRowIndex > -1
 		End Function
 	#tag EndEvent
 	#tag Event
@@ -478,22 +477,22 @@ End
 	#tag EndEvent
 	#tag Event
 		Sub PerformCopy(Board As Clipboard)
-		  Dim Entries() As Xojo.Core.Dictionary
-		  For I As Integer = 0 To Me.ListCount - 1
+		  Dim Entries() As Dictionary
+		  For I As Integer = 0 To Me.RowCount - 1
 		    If Me.Selected(I) Then
-		      Entries.Append(Beacon.SetEntry(Me.RowTag(I)).Export)
+		      Entries.AddRow(Beacon.SetEntry(Me.RowTagAt(I)).Export)
 		    End If
 		  Next
 		  
-		  If UBound(Entries) = -1 Then
+		  If Entries.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
-		  Dim Contents As Text
-		  If UBound(Entries) = 0 Then
-		    Contents = Xojo.Data.GenerateJSON(Entries(0))
+		  Dim Contents As String
+		  If Entries.LastRowIndex = 0 Then
+		    Contents = Beacon.GenerateJSON(Entries(0), False)
 		  Else
-		    Contents = Xojo.Data.GenerateJSON(Entries)
+		    Contents = Beacon.GenerateJSON(Entries, False)
 		  End If
 		  
 		  Board.AddRawData(Contents, Self.kClipboardType)
@@ -506,27 +505,27 @@ End
 		  End If
 		  
 		  Dim Contents As String = DefineEncoding(Board.RawData(Self.kClipboardType), Encodings.UTF8)
-		  Dim Parsed As Auto
+		  Dim Parsed As Variant
 		  Try
-		    Parsed = Xojo.Data.ParseJSON(Contents.ToText)
-		  Catch Err As Xojo.Data.InvalidJSONException
-		    Beep
+		    Parsed = Beacon.ParseJSON(Contents)
+		  Catch Err As RuntimeException
+		    System.Beep
 		    Return
 		  End Try
 		  
 		  Dim Modified As Boolean
-		  Dim Info As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Parsed)
-		  If Info.FullName = "Xojo.Core.Dictionary" Then
+		  Dim Info As Introspection.TypeInfo = Introspection.GetType(Parsed)
+		  If Info.FullName = "Dictionary" Then
 		    // Single item
 		    Dim Entry As Beacon.SetEntry = Beacon.SetEntry.ImportFromBeacon(Parsed)
 		    If Entry <> Nil Then
 		      Self.mSet.Append(Entry)
 		      Modified = True
 		    End If
-		  ElseIf Info.FullName = "Auto()" Then
+		  ElseIf Info.FullName = "Object()" Then
 		    // Multiple items
-		    Dim Dicts() As Auto = Parsed
-		    For Each Dict As Xojo.Core.Dictionary In Dicts
+		    Dim Dicts() As Variant = Parsed
+		    For Each Dict As Dictionary In Dicts
 		      Dim Entry As Beacon.SetEntry = Beacon.SetEntry.ImportFromBeacon(Dict)
 		      If Entry <> Nil Then
 		        Self.mSet.Append(Entry)
@@ -543,13 +542,13 @@ End
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Me.ListIndex > -1
+		  Return Me.SelectedRowIndex > -1
 		End Function
 	#tag EndEvent
 	#tag Event
-		Function CompareRows(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
-		  Dim Entry1 As Beacon.SetEntry = Me.RowTag(Row1)
-		  Dim Entry2 As Beacon.SetEntry = Me.RowTag(Row2)
+		Function RowComparison(row1 as Integer, row2 as Integer, column as Integer, ByRef result as Integer) As Boolean
+		  Dim Entry1 As Beacon.SetEntry = Me.RowTagAt(Row1)
+		  Dim Entry2 As Beacon.SetEntry = Me.RowTagAt(Row2)
 		  
 		  Dim Value1, Value2 As Double
 		  Select Case Column
@@ -587,12 +586,12 @@ End
 		End Function
 	#tag EndEvent
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub DoubleClick()
+		Sub DoubleClicked()
 		  Self.EditSelectedEntries()
 		End Sub
 	#tag EndEvent
@@ -604,11 +603,11 @@ End
 		  Dim Item As MenuItem
 		  
 		  Item = New MenuItem
-		  Item.Text = "Create Blueprint Entry"
-		  Item.Enabled = Me.SelCount > 0
+		  Item.Value = "Create Blueprint Entry"
+		  Item.Enabled = Me.SelectedRowCount > 0
 		  Item.Tag = "createblueprintentry"
 		  
-		  Base.Append(Item)
+		  Base.AddMenu(Item)
 		  Return True
 		End Function
 	#tag EndEvent
@@ -617,9 +616,9 @@ End
 		  Select Case hitItem.Tag
 		  Case "createblueprintentry"
 		    Dim Entries() As Beacon.SetEntry
-		    For I As Integer = 0 To Me.ListCount - 1
+		    For I As Integer = 0 To Me.RowCount - 1
 		      If Me.Selected(I) Then
-		        Entries.Append(Me.RowTag(I))
+		        Entries.AddRow(Me.RowTagAt(I))
 		      End If
 		    Next
 		    
@@ -639,21 +638,21 @@ End
 		End Function
 	#tag EndEvent
 	#tag Event
-		Sub Change()
-		  Self.Header.EditEntry.Enabled = Me.SelCount > 0
+		Sub SelectionChanged()
+		  Self.Header.EditEntry.Enabled = Me.SelectedRowCount > 0
 		  Self.UpdateStatus()
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function RowIsInvalid(Row As Integer) As Boolean
-		  Dim Entry As Beacon.SetEntry = Me.RowTag(Row)
+		  Dim Entry As Beacon.SetEntry = Me.RowTagAt(Row)
 		  Return Not Entry.IsValid(Self.Document)
 		End Function
 	#tag EndEvent
 #tag EndEvents
 #tag Events Header
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddEntry"
 		    Dim Entries() As Beacon.SetEntry = EntryEditor.Present(Self, Self.Document.Mods)
@@ -673,8 +672,8 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Open()
-		  Dim AddButton As New BeaconToolbarItem("AddEntry", IconAdd)
+		Sub Opening()
+		  Dim AddButton As New BeaconToolbarItem("AddEntry", IconToolbarAdd)
 		  AddButton.HelpTag = "Add engrams to this item set."
 		  
 		  Dim EditButton As New BeaconToolbarItem("EditEntry", IconToolbarEdit, False)
@@ -699,56 +698,91 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Updated()
+		Sub SettingsChanged()
 		  RaiseEvent Updated
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="DoubleBuffer"
 		Visible=true
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -756,22 +790,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -779,61 +798,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -841,12 +870,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -854,13 +886,15 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -868,15 +902,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -884,7 +910,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -892,5 +918,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

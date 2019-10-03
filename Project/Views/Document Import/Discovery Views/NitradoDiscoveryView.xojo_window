@@ -5,7 +5,6 @@ Begin DiscoveryView NitradoDiscoveryView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -44,6 +43,7 @@ Begin DiscoveryView NitradoDiscoveryView
       Scope           =   2
       TabIndex        =   0
       TabPanelIndex   =   0
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   0
@@ -52,7 +52,7 @@ Begin DiscoveryView NitradoDiscoveryView
       Begin UITweaks.ResizedPushButton FindingCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -121,6 +121,7 @@ Begin DiscoveryView NitradoDiscoveryView
          Enabled         =   True
          Height          =   20
          HelpTag         =   ""
+         Indeterminate   =   False
          Index           =   -2147483648
          InitialParent   =   "PagePanel1"
          Left            =   20
@@ -133,9 +134,10 @@ Begin DiscoveryView NitradoDiscoveryView
          Scope           =   2
          TabIndex        =   1
          TabPanelIndex   =   1
+         TabStop         =   "True"
          Top             =   222
          Transparent     =   False
-         Value           =   0
+         Value           =   0.0
          Visible         =   True
          Width           =   560
       End
@@ -171,10 +173,10 @@ Begin DiscoveryView NitradoDiscoveryView
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
+         SelectionChangeBlocked=   False
          SelectionType   =   0
          ShowDropIndicator=   False
          TabIndex        =   1
@@ -230,7 +232,7 @@ Begin DiscoveryView NitradoDiscoveryView
       Begin UITweaks.ResizedPushButton ListCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -262,7 +264,7 @@ Begin DiscoveryView NitradoDiscoveryView
       Begin UITweaks.ResizedPushButton ListActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Next"
          Default         =   True
@@ -293,6 +295,7 @@ Begin DiscoveryView NitradoDiscoveryView
       End
    End
    Begin Beacon.OAuth2Client AuthClient
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Provider        =   ""
@@ -300,6 +303,7 @@ Begin DiscoveryView NitradoDiscoveryView
       TabPanelIndex   =   0
    End
    Begin Timer LookupStartTimer
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Mode            =   0
@@ -314,17 +318,8 @@ End
 	#tag Event
 		Sub Begin()
 		  Self.DesiredHeight = 124
-		  Self.LookupStartTimer.Mode = Timer.ModeSingle
-		  Self.PagePanel1.Value = 0
-		End Sub
-	#tag EndEvent
-
-	#tag Event
-		Sub Close()
-		  If Self.mBrowser <> Nil And Self.mBrowser.Value <> Nil And Self.mBrowser.Value IsA MiniBrowser Then
-		    MiniBrowser(Self.mBrowser.Value).Close
-		    Self.mBrowser = Nil
-		  End If
+		  Self.LookupStartTimer.RunMode = Timer.RunModes.Single
+		  Self.PagePanel1.SelectedPanelIndex = 0
 		End Sub
 	#tag EndEvent
 
@@ -335,10 +330,10 @@ End
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.AuthClient.Provider = Beacon.OAuth2Client.ProviderNitrado
 		  Self.SwapButtons()
-		  RaiseEvent Open
+		  RaiseEvent Opening
 		  Self.CheckActionEnabled
 		End Sub
 	#tag EndEvent
@@ -359,7 +354,7 @@ End
 
 
 	#tag Method, Flags = &h21
-		Private Sub Callback_ListServers(URL As Text, Status As Integer, Content As Xojo.Core.MemoryBlock, Tag As Auto)
+		Private Sub Callback_ListServers(URL As String, Status As Integer, Content As MemoryBlock, Tag As Variant)
 		  #Pragma Unused URL
 		  #Pragma Unused Tag
 		  
@@ -379,38 +374,40 @@ End
 		  Case 200
 		    // Good
 		  Else
-		    Self.ShowAlert("Nitrado API Error", "An unexpected error with the Nitrado API occurred. HTTP status " + Status.ToText + " was returned.")
+		    Self.ShowAlert("Nitrado API Error", "An unexpected error with the Nitrado API occurred. HTTP status " + Status.ToString + " was returned.")
 		    Self.ShouldCancel()
 		    Return
 		  End Select
 		  
 		  Try
-		    Dim TextContent As Text = Xojo.Core.TextEncoding.UTF8.ConvertDataToText(Content, False)
-		    
-		    Dim Reply As Xojo.Core.Dictionary = Xojo.Data.ParseJSON(TextContent)
+		    Dim Reply As Dictionary = Beacon.ParseJSON(Content)
 		    If Reply.HasKey("status") = False Or Reply.Value("status") <> "success" Then
 		      Self.ShowAlert("Nitrado API Error", "The request to list services was not successful.")
 		      Self.ShouldCancel()
 		      Return
 		    End If
 		    
-		    Self.List.DeleteAllRows
+		    Self.List.RemoveAllRows
 		    
-		    Dim Data As Xojo.Core.Dictionary = Reply.Value("data")
-		    Dim Services() As Auto = Data.Value("services")
-		    For Each Service As Xojo.Core.Dictionary In Services
-		      Dim Type As Text = Service.Value("type")
+		    Dim Data As Dictionary = Reply.Value("data")
+		    Dim Services() As Variant = Data.Value("services")
+		    For Each Service As Dictionary In Services
+		      Dim Type As String = Service.Value("type")
 		      If Type <> "gameserver" Then
 		        Continue
 		      End If
 		      
-		      Dim Details As Xojo.Core.Dictionary = Service.Value("details")
-		      Dim Game As Text = Details.Value("game")
+		      Dim Details As Dictionary = Service.Value("details")
+		      If IsNull(Details) Or Details.HasKey("game") = False Then
+		        Continue
+		      End If
+		      
+		      Dim Game As String = Details.Value("game")
 		      If Not Game.BeginsWith("Ark: Survival Evolved") Then
 		        Continue
 		      End If
 		      
-		      Dim ServerName As Text = Details.Value("name")
+		      Dim ServerName As String = Details.Value("name")
 		      If Service.Lookup("comment", Nil) <> Nil Then
 		        ServerName = Service.Value("comment")
 		      End If
@@ -421,14 +418,16 @@ End
 		      Profile.ServiceID = Service.Value("id")
 		      
 		      Self.List.AddRow("", Profile.Name, Profile.Address)
-		      Self.List.RowTag(Self.List.LastIndex) = Profile
+		      Self.List.RowTagAt(Self.List.LastAddedRowIndex) = Profile
 		    Next
 		    
 		    Self.List.Sort
 		    Self.DesiredHeight = 400
-		    Self.PagePanel1.Value = 1
+		    Self.PagePanel1.SelectedPanelIndex = 1
 		  Catch Err As RuntimeException
-		    Dim Info As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Err)
+		    
+		    App.LogAPIException(Err, CurrentMethodName, Status, Content)
+		    Dim Info As Introspection.TypeInfo = Introspection.GetType(Err)
 		    Self.ShowAlert("Nitrado API Error", "The Nitrado API responded in an unexpected manner. An unhandled " + Info.FullName + " was encountered.")
 		    Self.ShouldCancel()
 		  End Try
@@ -437,8 +436,8 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub CheckActionEnabled()
-		  For I As Integer = 0 To Self.List.ListCount - 1
-		    If Self.List.CellCheck(I, 0) Then
+		  For I As Integer = 0 To Self.List.RowCount - 1
+		    If Self.List.CellCheckBoxValueAt(I, 0) Then
 		      Self.ListActionButton.Enabled = True
 		      Return
 		    End If
@@ -450,26 +449,26 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub ListServers()
-		  Dim Headers As New Xojo.Core.Dictionary
+		  Dim Headers As New Dictionary
 		  Headers.Value("Authorization") = "Bearer " + Self.AuthClient.AccessToken
 		  
-		  Dim URL As Text = "https://api.nitrado.net/services"
+		  Dim URL As String = "https://api.nitrado.net/services"
 		  SimpleHTTP.Get(URL, AddressOf Callback_ListServers, Nil, Headers)
 		End Sub
 	#tag EndMethod
 
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event Opening()
 	#tag EndHook
 
 
 	#tag Property, Flags = &h21
-		Private mBrowser As WeakRef
+		Private mOAuthWindow As OAuthAuthorizationWindow
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mSelectedServers As Xojo.Core.Dictionary
+		Private mSelectedServers As Dictionary
 	#tag EndProperty
 
 
@@ -484,20 +483,15 @@ End
 
 #tag Events FindingCancelButton
 	#tag Event
-		Sub Action()
-		  If Self.mBrowser <> Nil And Self.mBrowser.Value <> Nil And Self.mBrowser.Value IsA MiniBrowser Then
-		    MiniBrowser(Self.mBrowser.Value).Close
-		    Self.mBrowser = Nil
-		  End If
-		  
+		Sub Pressed()
 		  Self.ShouldCancel()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Open()
-		  Self.List.ColumnType(0) = Listbox.TypeCheckbox
+		Sub Opening()
+		  Self.List.ColumnTypeAt(0) = Listbox.CellTypes.CheckBox
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -511,22 +505,22 @@ End
 #tag EndEvents
 #tag Events ListCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.ShouldCancel()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ListActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Dim Engines() As Beacon.NitradoDiscoveryEngine
-		  For I As Integer = 0 To Self.List.ListCount - 1
-		    If Not Self.List.CellCheck(I, 0) Then
+		  For I As Integer = 0 To Self.List.RowCount - 1
+		    If Not Self.List.CellCheckBoxValueAt(I, 0) Then
 		      Continue
 		    End If
 		    
-		    Dim Profile As Beacon.NitradoServerProfile = Self.List.RowTag(I)
-		    Engines.Append(New Beacon.NitradoDiscoveryEngine(Profile, Self.AuthClient.AccessToken))
+		    Dim Profile As Beacon.NitradoServerProfile = Self.List.RowTagAt(I)
+		    Engines.AddRow(New Beacon.NitradoDiscoveryEngine(Profile, Self.AuthClient.AccessToken))
 		  Next
 		  Self.ShouldFinish(Engines, "Nitrado", Self.AuthClient.AuthData)
 		End Sub
@@ -545,86 +539,117 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Function ShowURL(URL As Text) As Beacon.WebView
-		  If Self.mBrowser <> Nil And Self.mBrowser.Value <> Nil And Self.mBrowser.Value IsA MiniBrowser Then
-		    MiniBrowser(Self.mBrowser.Value).Close
-		    Self.mBrowser = Nil
+		Function StartAuthentication(URL As String, Provider As String) As Boolean
+		  If Not Self.ShowConfirm("Open your browser to authorize with " + Provider + "?", "To continue discovering servers, you must authorize " + Provider + " to allow Beacon to access your servers.", "Continue", "Cancel") Then
+		    Return False
 		  End If
 		  
-		  // This code is disabled because Nitrado login is currently working in embedded webkit in 10.10
-		  #if false and TargetMacOS
-		    Declare Function NSClassFromString Lib "Cocoa" (ClassName As CFStringRef) As Ptr
-		    Declare Function GetProcessInfo Lib "Cocoa" Selector "processInfo" (Target As Ptr) As Ptr
-		    Declare Function OperatingSystemVersion Lib "AppKit" Selector "operatingSystemVersion" (Target As Ptr) As MacVersionInfo
-		    
-		    Dim Info As Ptr = GetProcessInfo(NSClassFromString("NSProcessInfo"))
-		    Dim Version As MacVersionInfo = OperatingSystemVersion(Info)
-		    Dim ComboVersion As Integer = Val(Str(Version.MajorVersion, "000") + Str(Version.MinorVersion, "000") + Str(Version.BugVersion, "000"))
-		    If ComboVersion < 10012000 Then
-		      Return Nil
-		    End If
-		  #endif
-		  
-		  Dim Browser As MiniBrowser = MiniBrowser.ShowURL(URL)
-		  If Browser <> Nil Then
-		    Self.mBrowser = New WeakRef(Browser)
-		  End If
-		  Return Browser
+		  ShowURL(URL)
+		  Return True
 		End Function
+	#tag EndEvent
+	#tag Event
+		Sub DismissWaitingWindow()
+		  If Self.mOAuthWindow <> Nil Then
+		    Self.mOAuthWindow.Close
+		    Self.mOAuthWindow = Nil
+		  End If
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub ShowWaitingWindow()
+		  Self.mOAuthWindow = New OAuthAuthorizationWindow(Me)
+		  Self.mOAuthWindow.Show()
+		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events LookupStartTimer
 	#tag Event
-		Sub Action()
-		  Self.AuthClient.Authenticate()
+		Sub Run()
+		  Self.AuthClient.Authenticate(App.IdentityManager.CurrentIdentity)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
+	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
 		Visible=true
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -632,22 +657,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -655,61 +665,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -717,12 +737,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -730,13 +753,15 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -744,15 +769,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -760,7 +777,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -768,5 +785,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

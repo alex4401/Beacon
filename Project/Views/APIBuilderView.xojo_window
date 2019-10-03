@@ -5,7 +5,6 @@ Begin BeaconSubview APIBuilderView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,7 @@ Begin BeaconSubview APIBuilderView
       Caption         =   "API Builder"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -87,7 +86,7 @@ Begin BeaconSubview APIBuilderView
       Top             =   239
       Transparent     =   False
       Underline       =   False
-      Value           =   False
+      Value           =   "False"
       Visible         =   True
       Width           =   267
    End
@@ -177,7 +176,7 @@ Begin BeaconSubview APIBuilderView
    Begin UITweaks.ResizedPushButton BuildButton
       AutoDeactivate  =   True
       Bold            =   False
-      ButtonStyle     =   "0"
+      ButtonStyle     =   0
       Cancel          =   False
       Caption         =   "Build"
       Default         =   False
@@ -586,7 +585,7 @@ Begin BeaconSubview APIBuilderView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -613,7 +612,7 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.ToolbarCaption = "API Builder"
 		End Sub
 	#tag EndEvent
@@ -627,8 +626,8 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Shared Function BuildCURLCode(Request As BeaconAPI.Request) As Text
-		  Dim Cmd As Text = "curl"
+		Private Shared Function BuildCURLCode(Request As BeaconAPI.Request) As String
+		  Dim Cmd As String = "curl"
 		  If Request.Method <> "GET" Then
 		    Cmd = Cmd + " --request '" + Request.Method + "'"
 		    If Request.Query <> "" Then
@@ -650,17 +649,17 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Shared Function BuildHTTPCode(Request As BeaconAPI.Request) As Text
+		Private Shared Function BuildHTTPCode(Request As BeaconAPI.Request) As String
 		  Dim StringEOL As String = EndOfLine
-		  Dim EOL As Text = StringEOL.ToText // Really hate that it takes 2 lines of code to do this
+		  Dim EOL As String = StringEOL // Really hate that it takes 2 lines of code to do this
 		  
-		  Dim URL As Text = Request.URL
+		  Dim URL As String = Request.URL
 		  Dim SchemeEnd As Integer = URL.IndexOf("://")
-		  URL = URL.Mid(SchemeEnd + 3)
+		  URL = URL.Middle(SchemeEnd + 3)
 		  
 		  Dim HostEnd As Integer = URL.IndexOf("/")
-		  Dim Host As Text = URL.Left(HostEnd)
-		  Dim Path As Text = URL.Mid(HostEnd)
+		  Dim Host As String = URL.Left(HostEnd)
+		  Dim Path As String = URL.Middle(HostEnd)
 		  
 		  If Request.Method = "GET" Then
 		    If Request.Query <> "" Then
@@ -668,20 +667,20 @@ End
 		    End If
 		  End If
 		  
-		  Dim Lines() As Text
-		  Lines.Append(Request.Method + " " + Path + " HTTP/1.1")
-		  Lines.Append("Host: " + Host)
+		  Dim Lines() As String
+		  Lines.AddRow(Request.Method + " " + Path + " HTTP/1.1")
+		  Lines.AddRow("Host: " + Host)
 		  
 		  If Request.Authenticated Then
-		    Lines.Append("Authorization: " + Request.AuthHeader)
+		    Lines.AddRow("Authorization: " + Request.AuthHeader)
 		  End If
 		  
 		  If Request.Method <> "GET" Then
 		    If Request.ContentType <> "" Then
-		      Lines.Append("Content-Type: " + Request.ContentType)
+		      Lines.AddRow("Content-Type: " + Request.ContentType)
 		    End If
-		    Lines.Append("")
-		    Lines.Append(Request.Query)
+		    Lines.AddRow("")
+		    Lines.AddRow(Request.Query)
 		  End If
 		  
 		  Return Lines.Join(EOL)
@@ -689,68 +688,68 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Shared Function BuildPHPCode(Request As BeaconAPI.Request) As Text
+		Private Shared Function BuildPHPCode(Request As BeaconAPI.Request) As String
 		  Dim StringEOL As String = EndOfLine
-		  Dim EOL As Text = StringEOL.ToText // Really hate that it takes 2 lines of code to do this
+		  Dim EOL As String = StringEOL // Really hate that it takes 2 lines of code to do this
 		  Dim Authenticated As Boolean = Request.Authenticated
 		  
-		  Dim Lines() As Text
+		  Dim Lines() As String
 		  
-		  Dim URL As Text = Request.URL
+		  Dim URL As String = Request.URL
 		  If Request.Method = "GET" Then
 		    If Request.Query <> "" Then
 		      URL = URL + "?" + Request.Query
 		    End If
 		  End If
-		  Lines.Append("$url = '" + URL.ReplaceAll("'", "\'") + "';")
+		  Lines.AddRow("$url = '" + URL.ReplaceAll("'", "\'") + "';")
 		  
 		  If Authenticated Or Request.Method <> "GET" Then
-		    Lines.Append("$method = '" + Request.Method.ReplaceAll("'", "\'").Uppercase + "';")
+		    Lines.AddRow("$method = '" + Request.Method.ReplaceAll("'", "\'").Uppercase + "';")
 		  End If
 		  
 		  If Request.Method <> "GET" And Request.Query <> "" Then
-		    Lines.Append("$body = '" + Request.Query.ReplaceAll("'", "\'") + "';")
+		    Lines.AddRow("$body = '" + Request.Query.ReplaceAll("'", "\'") + "';")
 		  End If
 		  
 		  If Authenticated Then
-		    Lines.Append("")
+		    Lines.AddRow("")
 		    If Request.Method = "GET" Then
-		      Lines.Append("$auth = $method . chr(10) . $url;")
+		      Lines.AddRow("$auth = $method . Encodings.UTF8.Chr(10) . $url;")
 		    Else
 		      If Request.Query <> "" Then
-		        Lines.Append("$auth = $method . chr(10) . $url  . chr(10) . $body;")
+		        Lines.AddRow("$auth = $method . Encodings.UTF8.Chr(10) . $url  . Encodings.UTF8.Chr(10) . $body;")
 		      Else
-		        Lines.Append("$auth = $method . chr(10) . $url  . chr(10);")
+		        Lines.AddRow("$auth = $method . Encodings.UTF8.Chr(10) . $url  . Encodings.UTF8.Chr(10);")
 		      End If
 		    End If
-		    Lines.Append("// Change Myself.beaconidentiy to point to your identity file!")
-		    Lines.Append("$identity = json_decode(file_get_contents('Myself.beaconidentity'), true);")
-		    Lines.Append("$username = $identity['Identifier'];")
-		    Lines.Append("$private_key = $identity['Private'];")
-		    Lines.Append("$private_key = trim(chunk_split(base64_encode(hex2bin($private_key)), 64, ""\n""));")
-		    Lines.Append("$private_key = ""-----BEGIN RSA PRIVATE KEY-----\n$private_key\n-----END RSA PRIVATE KEY-----"";")
-		    Lines.Append("openssl_sign($auth, $password, $private_key) or die('Unable to authenticate action');")
+		    Lines.AddRow("// Change Myself.beaconidentiy to point to your identity file!")
+		    Lines.AddRow("$identity = json_decode(file_get_contents('Myself.beaconidentity'), true);")
+		    Lines.AddRow("$username = $identity['Identifier'];")
+		    Lines.AddRow("$private_key = $identity['Private'];")
+		    Lines.AddRow("$private_key = trim(chunk_split(base64_encode(hex2bin($private_key)), 64, ""\n""));")
+		    Lines.AddRow("$private_key = ""-----BEGIN RSA PRIVATE KEY-----\n$private_key\n-----END RSA PRIVATE KEY-----"";")
+		    Lines.AddRow("openssl_sign($auth, $password, $private_key) or die('Unable to authenticate action');")
 		  End If
 		  
-		  Lines.Append("")
-		  Lines.Append("$http = curl_init();")
-		  Lines.Append("curl_setopt($http, CURLOPT_URL, $url);")
-		  Lines.Append("curl_setopt($http, CURLOPT_RETURNTRANSFER, 1);")
+		  Lines.AddRow("")
+		  Lines.AddRow("$http = curl_init();")
+		  Lines.AddRow("curl_setopt($http, CURLOPT_URL, $url);")
+		  Lines.AddRow("curl_setopt($http, CURLOPT_RETURNTRANSFER, 1);")
 		  If Request.Method <> "GET" Then
-		    Lines.Append("curl_setopt($http, CURLOPT_CUSTOMREQUEST, $method);")
+		    Lines.AddRow("curl_setopt($http, CURLOPT_CUSTOMREQUEST, $method);")
 		    If Request.Query <> "" Then
-		      Lines.Append("curl_setopt($http, CURLOPT_POSTFIELDS, $body);")
+		      Lines.AddRow("curl_setopt($http, CURLOPT_POSTFIELDS, $body);")
 		    End If
 		    If Request.ContentType <> "" Then
-		      Lines.Append("curl_setopt($http, CURLOPT_HTTPHEADER, array('Content-Type: " + Request.ContentType.ReplaceAll("'", "\'") + "'));")
+		      Lines.AddRow("curl_setopt($http, CURLOPT_HTTPHEADER, array('Content-Type: " + Request.ContentType.ReplaceAll("'", "\'") + "'));")
 		    End If
 		  End If
 		  If Authenticated Then
-		    Lines.Append("curl_setopt($http, CURLOPT_USERPWD, $username . ':' . bin2hex($password));")
+		    Lines.AddRow("curl_setopt($http, CURLOPT_USERPWD, $username . ':' . bin2hex($password));")
 		  End If
-		  Lines.Append("$response = curl_exec($http);")
-		  Lines.Append("$http_status = curl_getinfo($http, CURLINFO_HTTP_CODE);")
-		  Lines.Append("curl_close($http);")
+		  Lines.AddRow("$response = curl_exec($http);")
+		  Lines.AddRow("$http_status = curl_getinfo($http, CURLINFO_HTTP_CODE);")
+		  Lines.AddRow("curl_close($http);")
 		  
 		  Return Lines.Join(EOL)
 		End Function
@@ -761,11 +760,11 @@ End
 
 #tag Events BuildButton
 	#tag Event
-		Sub Action()
-		  Dim Path As Text = PathField.Text.ToText
-		  Dim Method As Text = MethodMenu.Text.ToText
-		  Dim Body As Text = BodyField.Text.ToText
-		  Dim ContentType As Text = ContentTypeField.Text.ToText
+		Sub Pressed()
+		  Dim Path As String = PathField.Value
+		  Dim Method As String = MethodMenu.SelectedRowValue
+		  Dim Body As String = BodyField.Value
+		  Dim ContentType As String = ContentTypeField.Value
 		  
 		  Dim Request As BeaconAPI.Request
 		  Try
@@ -775,28 +774,28 @@ End
 		      Request = New BeaconAPI.Request(Path, Method, AddressOf APICallback_DoNothing)
 		    End If
 		    If AuthenticatedCheck.Value Then
-		      Request.Sign(App.IdentityManager.CurrentIdentity)
+		      Request.Authenticate(Preferences.OnlineToken)
 		    End If
 		  Catch Err As UnsupportedOperationException
 		    Self.ShowAlert("Cannot build the request", Err.Reason)
 		    Return
 		  End Try
 		  
-		  Select Case FormatMenu.ListIndex
+		  Select Case FormatMenu.SelectedRowIndex
 		  Case 0
-		    CodeField.Text = Self.BuildCURLCode(Request)
+		    CodeField.Value = Self.BuildCURLCode(Request)
 		  Case 1
-		    CodeField.Text = Self.BuildPHPCode(Request)
+		    CodeField.Value = Self.BuildPHPCode(Request)
 		  Case 2
-		    CodeField.Text = Self.BuildHTTPCode(Request)
+		    CodeField.Value = Self.BuildHTTPCode(Request)
 		  End Select
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events MethodMenu
 	#tag Event
-		Sub Change()
-		  BodyField.Enabled = Me.ListIndex > 0
+		Sub SelectionChanged()
+		  BodyField.Enabled = Me.SelectedRowIndex > 0
 		  BodyLabel.Enabled = BodyField.Enabled
 		  ContentTypeField.Enabled = BodyField.Enabled
 		  ContentTypeLabel.Enabled = BodyField.Enabled
@@ -805,10 +804,76 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -816,6 +881,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -823,6 +889,7 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -830,44 +897,15 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -875,22 +913,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -898,61 +921,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -960,12 +993,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -973,11 +1009,13 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -985,7 +1023,9 @@ End
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -993,15 +1033,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1009,7 +1041,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1017,5 +1049,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

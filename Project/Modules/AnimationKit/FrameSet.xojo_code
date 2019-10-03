@@ -1,10 +1,10 @@
 #tag Class
 Protected Class FrameSet
-Implements xojo.Core.Iterable
+Implements Iterable
 	#tag Method, Flags = &h0
 		Sub Append(Frame As AnimationKit.Frame)
 		  Self.VerifyFrame(Frame)
-		  Self.Frames.Append(Frame)
+		  Self.Frames.AddRow(Frame)
 		  Self.CheckCurrentFrames()
 		End Sub
 	#tag EndMethod
@@ -12,7 +12,7 @@ Implements xojo.Core.Iterable
 	#tag Method, Flags = &h21
 		Private Sub CheckCurrentFrames()
 		  Dim FirstFrame As AnimationKit.Frame
-		  For I As Integer = 0 To UBound(Self.Frames)
+		  For I As Integer = 0 To Self.Frames.LastRowIndex
 		    If Self.Frames(I) <> Nil Then
 		      FirstFrame = Self.Frames(I)
 		      Exit For I
@@ -37,7 +37,7 @@ Implements xojo.Core.Iterable
 
 	#tag Method, Flags = &h0
 		Function Count() As Integer
-		  Return UBound(Self.Frames) + 1
+		  Return Self.Frames.LastRowIndex + 1
 		End Function
 	#tag EndMethod
 
@@ -50,8 +50,8 @@ Implements xojo.Core.Iterable
 		  End If
 		  
 		  Dim Set As New AnimationKit.FrameSet()
-		  Redim Set(UBound(StandardCells))
-		  For I As Integer = 0 To UBound(StandardCells)
+		  Redim Set(StandardCells.LastRowIndex)
+		  For I As Integer = 0 To StandardCells.LastRowIndex
 		    If RetinaSprites <> Nil Then
 		      Set(I) = New AnimationKit.Frame(StandardCells(I), RetinaCells(I))
 		    Else
@@ -71,8 +71,8 @@ Implements xojo.Core.Iterable
 		  End If
 		  
 		  Dim Set As New AnimationKit.FrameSet()
-		  Redim Set(UBound(StandardCells))
-		  For I As Integer = 0 To UBound(StandardCells)
+		  Redim Set(StandardCells.LastRowIndex)
+		  For I As Integer = 0 To StandardCells.LastRowIndex
 		    If RetinaSprites <> Nil Then
 		      Set(I) = New AnimationKit.Frame(StandardCells(I), RetinaCells(I))
 		    Else
@@ -106,16 +106,8 @@ Implements xojo.Core.Iterable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetIterator() As Xojo.Core.Iterator
-		  // Part of the xojo.Core.Iterable interface.
-		  
-		  Return New AnimationKit.FrameSetIterator(Self)
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Function IndexOf(Frame As AnimationKit.Frame) As Integer
-		  For I As Integer = 0 To UBound(Self.Frames)
+		  For I As Integer = 0 To Self.Frames.LastRowIndex
 		    If Self.Frames(I) = Frame Then
 		      Return I
 		    End If
@@ -127,16 +119,30 @@ Implements xojo.Core.Iterable
 	#tag Method, Flags = &h0
 		Sub Insert(Index As Integer, Frame As AnimationKit.Frame)
 		  Self.VerifyFrame(Frame)
-		  Self.Frames.Insert(Index, Frame)
+		  Self.Frames.AddRowAt(Index, Frame)
 		  Self.CheckCurrentFrames()
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function Iterator() As Iterator
+		  // Part of the Iterable interface.
+		  
+		  Return New AnimationKit.FrameSetIterator(Self)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function LastFrame() As AnimationKit.Frame
 		  If Self.Count > 0 Then
-		    Return Self.Frames(UBound(Self.Frames))
+		    Return Self.Frames(Self.Frames.LastRowIndex)
 		  End If
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function LastRowIndex() As Integer
+		  Return Self.Frames.LastRowIndex
 		End Function
 	#tag EndMethod
 
@@ -161,7 +167,7 @@ Implements xojo.Core.Iterable
 
 	#tag Method, Flags = &h0
 		Sub Remove(Index As Integer)
-		  Self.Frames.Remove(Index)
+		  Self.Frames.RemoveRowAt(Index)
 		  Self.CheckCurrentFrames()
 		End Sub
 	#tag EndMethod
@@ -169,8 +175,8 @@ Implements xojo.Core.Iterable
 	#tag Method, Flags = &h0
 		Function Reverse() As AnimationKit.FrameSet
 		  Dim Set As New AnimationKit.FrameSet
-		  For I As Integer = UBound(Self.Frames) DownTo 0
-		    Set.Frames.Append(Self.Frames(I))
+		  For I As Integer = Self.Frames.LastRowIndex DownTo 0
+		    Set.Frames.AddRow(Self.Frames(I))
 		  Next
 		  Set.CheckCurrentFrames()
 		  Return Set
@@ -190,7 +196,7 @@ Implements xojo.Core.Iterable
 		    For Column As Integer = 0 To Columns - 1
 		      Dim Sprite As New iOSBitmap(Width, Height, Sprites.Scale)
 		      Sprite.Graphics.DrawImage(Sprites, (Row * Column) * -1, (Column * Height) * -1)
-		      Cells.Append(Sprite.Image)
+		      Cells.AddRow(Sprite.Image)
 		    Next
 		  Next
 		  Return Cells
@@ -210,16 +216,10 @@ Implements xojo.Core.Iterable
 		    For Column As Integer = 0 To Columns - 1
 		      Dim Sprite As New Picture(Width, Height)
 		      Sprite.Graphics.DrawPicture(Sprites, (Row * Column) * -1, (Column * Height) * -1)
-		      Cells.Append(Sprite)
+		      Cells.AddRow(Sprite)
 		    Next
 		  Next
 		  Return Cells
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function UBound() As Integer
-		  Return UBound(Self.Frames)
 		End Function
 	#tag EndMethod
 
@@ -258,6 +258,7 @@ Implements xojo.Core.Iterable
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -265,18 +266,23 @@ Implements xojo.Core.Iterable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -284,6 +290,7 @@ Implements xojo.Core.Iterable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

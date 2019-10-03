@@ -1,22 +1,22 @@
 #tag Class
 Protected Class BeaconToolbarItemArray
-Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
+Implements ObservationKit.Observable,ObservationKit.Observer,Iterable
 	#tag Method, Flags = &h0
-		Sub AddObserver(Observer As ObservationKit.Observer, Key As Text)
+		Sub AddObserver(Observer As ObservationKit.Observer, Key As String)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		    
@@ -26,7 +26,7 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 		    End If
 		  Next
 		  
-		  Refs.Append(Xojo.Core.WeakRef.Create(Observer))
+		  Refs.AddRow(New WeakRef(Observer))
 		  Self.mObservers.Value(Key) = Refs
 		  
 		End Sub
@@ -34,7 +34,7 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 
 	#tag Method, Flags = &h0
 		Sub Append(Item As BeaconToolbarItem)
-		  Self.mItems.Append(Item)
+		  Self.mItems.AddRow(Item)
 		  
 		  If Item <> Nil Then
 		    Item.AddObserver(Self, BeaconToolbarItem.KeyChanged)
@@ -46,21 +46,13 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 
 	#tag Method, Flags = &h0
 		Function Count() As Integer
-		  Return Self.mItems.Ubound + 1
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function GetIterator() As Xojo.Core.Iterator
-		  // Part of the Xojo.Core.Iterable interface.
-		  
-		  Return New BeaconToolbarItemIterator(Self.mItems)
+		  Return Self.mItems.LastRowIndex + 1
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function IndexOf(Item As BeaconToolbarItem) As Integer
-		  For I As Integer = 0 To Self.mItems.Ubound
+		  For I As Integer = 0 To Self.mItems.LastRowIndex
 		    If Self.mItems(I) = Item Then
 		      Return I
 		    End If
@@ -71,7 +63,7 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 
 	#tag Method, Flags = &h0
 		Sub Insert(Index As Integer, Item As BeaconToolbarItem)
-		  Self.mItems.Insert(Index, Item)
+		  Self.mItems.AddRowAt(Index, Item)
 		  
 		  If Item <> Nil Then
 		    Item.AddObserver(Self, BeaconToolbarItem.KeyChanged)
@@ -82,21 +74,35 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub NotifyObservers(Key As Text, Value As Auto)
+		Function Iterator() As Iterator
+		  // Part of the Iterable interface.
+		  
+		  Return New BeaconToolbarItemIterator(Self.mItems)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function LastRowIndex() As Integer
+		  Return Self.mItems.LastRowIndex
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub NotifyObservers(Key As String, Value As Variant)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		    
@@ -107,7 +113,7 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub ObservedValueChanged(Source As ObservationKit.Observable, Key As Text, Value As Auto)
+		Sub ObservedValueChanged(Source As ObservationKit.Observable, Key As String, Value As Variant)
 		  // Part of the ObservationKit.Observer interface.
 		  
 		  #Pragma Unused Source
@@ -118,11 +124,11 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 
 	#tag Method, Flags = &h0
 		Sub Operator_Redim(NewBound As Integer)
-		  If NewBound = Self.mItems.Ubound Then
+		  If NewBound = Self.mItems.LastRowIndex Then
 		    Return
 		  End If
 		  
-		  For I As Integer = Self.mItems.Ubound DownTo NewBound + 1
+		  For I As Integer = Self.mItems.LastRowIndex DownTo NewBound + 1
 		    Dim OldValue As BeaconToolbarItem = Self.mItems(I)
 		    If OldValue <> Nil Then
 		      OldValue.RemoveObserver(Self, BeaconToolbarItem.KeyChanged)
@@ -165,28 +171,28 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 		    OldValue.RemoveObserver(Self, BeaconToolbarItem.KeyChanged)
 		  End If
 		  
-		  Self.mItems.Remove(Index)
+		  Self.mItems.RemoveRowAt(Index)
 		  
 		  Self.NotifyObservers(BeaconToolbarItem.KeyChanged, Nil)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub RemoveObserver(Observer As ObservationKit.Observer, Key As Text)
+		Sub RemoveObserver(Observer As ObservationKit.Observer, Key As String)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Or Refs(I).Value = Observer Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		  Next
@@ -196,19 +202,13 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 		End Sub
 	#tag EndMethod
 
-	#tag Method, Flags = &h0
-		Function UBound() As Integer
-		  Return Self.mItems.Ubound
-		End Function
-	#tag EndMethod
-
 
 	#tag Property, Flags = &h21
 		Private mItems() As BeaconToolbarItem
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mObservers As Xojo.Core.Dictionary
+		Private mObservers As Dictionary
 	#tag EndProperty
 
 
@@ -219,6 +219,7 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -226,18 +227,23 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -245,6 +251,7 @@ Implements Xojo.Core.Iterable,ObservationKit.Observable,ObservationKit.Observer
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

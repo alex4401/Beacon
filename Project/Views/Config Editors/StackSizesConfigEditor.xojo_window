@@ -5,7 +5,6 @@ Begin ConfigEditor StackSizesConfigEditor
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -112,7 +111,6 @@ Begin ConfigEditor StackSizesConfigEditor
       Caption         =   "Stack Size Overrides"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -143,7 +141,6 @@ Begin ConfigEditor StackSizesConfigEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -197,7 +194,6 @@ Begin ConfigEditor StackSizesConfigEditor
       LockRight       =   True
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -226,7 +222,6 @@ Begin ConfigEditor StackSizesConfigEditor
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -253,24 +248,24 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub ParsingFinished(ParsedData As Xojo.Core.Dictionary)
+		Sub ParsingFinished(ParsedData As Dictionary)
 		  // Don't import the global multiplier, it would likely be confusing for users
 		  
 		  If ParsedData = Nil Then
 		    Return
 		  End If
 		  
-		  Dim OtherConfig As BeaconConfigs.StackSizes = BeaconConfigs.StackSizes.FromImport(ParsedData, New Xojo.Core.Dictionary, Self.Document.MapCompatibility, Self.Document.DifficultyValue)
+		  Dim OtherConfig As BeaconConfigs.StackSizes = BeaconConfigs.StackSizes.FromImport(ParsedData, New Dictionary, Self.Document.MapCompatibility, Self.Document.Difficulty)
 		  If OtherConfig = Nil Or OtherConfig.Count = 0 Then
 		    Return
 		  End If
 		  
 		  Dim Config As BeaconConfigs.StackSizes = Self.Config(True)
-		  Dim Classes() As Text = OtherConfig.Classes
-		  For Each ClassString As Text In Classes
+		  Dim Classes() As String = OtherConfig.Classes
+		  For Each ClassString As String In Classes
 		    Config.Override(ClassString) = OtherConfig.Override(ClassString)
 		  Next
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.UpdateList(Classes)
 		End Sub
 	#tag EndEvent
@@ -283,7 +278,7 @@ End
 
 	#tag Event
 		Sub SetupUI()
-		  Self.GlobalMultiplierField.Text = Format(Self.Config(False).GlobalMultiplier, "0.0#####")
+		  Self.GlobalMultiplierField.Value = Format(Self.Config(False).GlobalMultiplier, "0.0#####")
 		  Self.UpdateList()
 		End Sub
 	#tag EndEvent
@@ -291,7 +286,7 @@ End
 
 	#tag Method, Flags = &h1
 		Protected Function Config(ForWriting As Boolean) As BeaconConfigs.StackSizes
-		  Static ConfigName As Text = BeaconConfigs.StackSizes.ConfigName
+		  Static ConfigName As String = BeaconConfigs.StackSizes.ConfigName
 		  
 		  Dim Document As Beacon.Document = Self.Document
 		  Dim Config As BeaconConfigs.StackSizes
@@ -315,7 +310,7 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ConfigLabel() As Text
+		Function ConfigLabel() As String
 		  Return Language.LabelForConfig(BeaconConfigs.StackSizes.ConfigName)
 		End Function
 	#tag EndMethod
@@ -324,18 +319,18 @@ End
 		Private Sub ShowAddOverride()
 		  Dim CurrentEngrams() As Beacon.Engram
 		  Dim Config As BeaconConfigs.StackSizes = Self.Config(False)
-		  Dim Classes() As Text = Config.Classes
-		  For Each ClassString As Text In Classes
+		  Dim Classes() As String = Config.Classes
+		  For Each ClassString As String In Classes
 		    Dim Engram As Beacon.Engram = LocalData.SharedInstance.GetEngramByClass(ClassString)
 		    If Engram = Nil Then
 		      Continue
 		    End If
 		    
-		    CurrentEngrams.Append(Engram)
+		    CurrentEngrams.AddRow(Engram)
 		  Next
 		  
 		  Dim NewEngrams() As Beacon.Engram = EngramSelectorDialog.Present(Self, "Stackables", CurrentEngrams, Self.Document.Mods, False)
-		  If NewEngrams = Nil Or NewEngrams.Ubound = -1 Then
+		  If NewEngrams = Nil Or NewEngrams.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
@@ -346,34 +341,34 @@ End
 		  Next
 		  
 		  Self.UpdateList(NewEngrams)
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub ShowDuplicateOverride()
-		  If Self.List.SelCount <> 1 Then
+		  If Self.List.SelectedRowCount <> 1 Then
 		    Return
 		  End If
 		  
 		  Dim CurrentEngrams() As Beacon.Engram
 		  Dim Config As BeaconConfigs.StackSizes = Self.Config(False)
-		  Dim Classes() As Text = Config.Classes
-		  For Each ClassString As Text In Classes
+		  Dim Classes() As String = Config.Classes
+		  For Each ClassString As String In Classes
 		    Dim Engram As Beacon.Engram = LocalData.SharedInstance.GetEngramByClass(ClassString)
 		    If Engram = Nil Then
 		      Continue
 		    End If
 		    
-		    CurrentEngrams.Append(Engram)
+		    CurrentEngrams.AddRow(Engram)
 		  Next
 		  
 		  Dim NewEngrams() As Beacon.Engram = EngramSelectorDialog.Present(Self, "Stackables", CurrentEngrams, Self.Document.Mods, True)
-		  If NewEngrams = Nil Or NewEngrams.Ubound = -1 Then
+		  If NewEngrams = Nil Or NewEngrams.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
-		  Dim SourceClass As Text = Self.List.RowTag(Self.List.ListIndex)
+		  Dim SourceClass As String = Self.List.RowTagAt(Self.List.SelectedRowIndex)
 		  Dim Size As Integer = Config.Override(SourceClass)
 		  
 		  Config = Self.Config(True)
@@ -383,19 +378,19 @@ End
 		  Next
 		  
 		  Self.UpdateList(NewEngrams)
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateList()
-		  Dim Classes() As Text
-		  For I As Integer = 0 To Self.List.ListCount - 1
+		  Dim Classes() As String
+		  For I As Integer = 0 To Self.List.RowCount - 1
 		    If Not Self.List.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Classes.Append(Self.List.RowTag(I))
+		    Classes.AddRow(Self.List.RowTagAt(I))
 		  Next
 		  Self.UpdateList(Classes)
 		End Sub
@@ -403,26 +398,26 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateList(SelectEngrams() As Beacon.Engram)
-		  Dim Classes() As Text
+		  Dim Classes() As String
 		  For Each Engram As Beacon.Engram In SelectEngrams
-		    Classes.Append(Engram.ClassString)
+		    Classes.AddRow(Engram.ClassString)
 		  Next
 		  Self.UpdateList(Classes) 
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub UpdateList(SelectClasses() As Text)
+		Private Sub UpdateList(SelectClasses() As String)
 		  Dim Config As BeaconConfigs.StackSizes = Self.Config(False)
-		  Dim Classes() As Text = Config.Classes
+		  Dim Classes() As String = Config.Classes
 		  
 		  Dim ScrollPosition As Integer = Self.List.ScrollPosition
 		  Self.List.SelectionChangeBlocked = True
 		  
-		  Self.List.DeleteAllRows()
-		  For Each ClassString As Text In Classes
+		  Self.List.RemoveAllRows()
+		  For Each ClassString As String In Classes
 		    Dim Engram As Beacon.Engram = LocalData.SharedInstance.GetEngramByClass(ClassString)
-		    Dim EngramName As Text
+		    Dim EngramName As String
 		    If Engram <> Nil Then
 		      EngramName = Engram.Label
 		    Else
@@ -430,9 +425,9 @@ End
 		    End If
 		    
 		    Dim Size As Integer = Config.Override(ClassString)
-		    Self.List.AddRow(EngramName, Size.ToText)
-		    Self.List.RowTag(Self.List.LastIndex) = ClassString
-		    Self.List.Selected(Self.List.LastIndex) = SelectClasses.IndexOf(ClassString) > -1
+		    Self.List.AddRow(EngramName, Size.ToString)
+		    Self.List.RowTagAt(Self.List.LastAddedRowIndex) = ClassString
+		    Self.List.Selected(Self.List.LastAddedRowIndex) = SelectClasses.IndexOf(ClassString) > -1
 		  Next
 		  
 		  Self.List.Sort
@@ -461,23 +456,23 @@ End
 
 #tag Events GlobalMultiplierField
 	#tag Event
-		Sub TextChange()
+		Sub TextChanged()
 		  If Self.SettingUp Then
 		    Return
 		  End If
 		  
 		  Self.SettingUp = True
 		  Dim Config As BeaconConfigs.StackSizes = Self.Config(True)
-		  Config.GlobalMultiplier = CDbl(Me.Text)
-		  Self.ContentsChanged = True
+		  Config.GlobalMultiplier = CDbl(Me.Value)
+		  Self.Changed = True
 		  Self.SettingUp = False
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Header
 	#tag Event
-		Sub Open()
-		  Dim AddButton As New BeaconToolbarItem("AddEngram", IconAdd)
+		Sub Opening()
+		  Dim AddButton As New BeaconToolbarItem("AddEngram", IconToolbarAdd)
 		  AddButton.HelpTag = "Override the stack size of an engram."
 		  
 		  Dim DuplicateButton As New BeaconToolbarItem("Duplicate", IconToolbarClone, False)
@@ -488,7 +483,7 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Action(Item As BeaconToolbarItem)
+		Sub Pressed(Item As BeaconToolbarItem)
 		  Select Case Item.Name
 		  Case "AddEngram"
 		    Self.ShowAddOverride()
@@ -500,14 +495,14 @@ End
 #tag EndEvents
 #tag Events List
 	#tag Event
-		Sub Open()
-		  Me.ColumnAlignment(Self.ColumnStackSize) = Listbox.AlignRight
-		  Me.ColumnType(Self.ColumnStackSize) = Listbox.TypeEditable
+		Sub Opening()
+		  Me.ColumnAlignmentAt(Self.ColumnStackSize) = Listbox.Alignments.Right
+		  Me.ColumnTypeAt(Self.ColumnStackSize) = Listbox.CellTypes.TextField
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
-		  Self.Header.Duplicate.Enabled = Me.SelCount = 1
+		Sub SelectionChanged()
+		  Self.Header.Duplicate.Enabled = Me.SelectedRowCount = 1
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -516,22 +511,22 @@ End
 		    Return
 		  End If
 		  
-		  Dim Size As Integer = Val(Me.Cell(Row, Column))
-		  Dim ClassString As Text = Me.RowTag(Row)
+		  Dim Size As Integer = Val(Me.CellValueAt(Row, Column))
+		  Dim ClassString As String = Me.RowTagAt(Row)
 		  
 		  Dim Config As BeaconConfigs.StackSizes = Self.Config(True)
 		  Config.Override(ClassString) = Size
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function CanCopy() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
 		Function CanDelete() As Boolean
-		  Return Me.SelCount > 0
+		  Return Me.SelectedRowCount > 0
 		End Function
 	#tag EndEvent
 	#tag Event
@@ -543,10 +538,10 @@ End
 		Sub PerformClear(Warn As Boolean)
 		  If Warn Then
 		    Dim Message As String
-		    If Me.SelCount = 1 Then
-		      Message = "Are you sure you want to delete the """ + Me.Cell(Me.ListIndex, 0) + """ stack size override?"
+		    If Me.SelectedRowCount = 1 Then
+		      Message = "Are you sure you want to delete the """ + Me.CellValueAt(Me.SelectedRowIndex, 0) + """ stack size override?"
 		    Else
-		      Message = "Are you sure you want to delete these " + Str(Me.SelCount, "-0") + " stack size overrides?"
+		      Message = "Are you sure you want to delete these " + Str(Me.SelectedRowCount, "-0") + " stack size overrides?"
 		    End If
 		    
 		    If Not Self.ShowConfirm(Message, "This action cannot be undone.", "Delete", "Cancel") Then
@@ -555,66 +550,66 @@ End
 		  End If
 		  
 		  Dim Config As BeaconConfigs.StackSizes = Self.Config(True)
-		  For I As Integer = 0 To Me.ListCount - 1
+		  For I As Integer = 0 To Me.RowCount - 1
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim ClassString As Text = Me.RowTag(I)
+		    Dim ClassString As String = Me.RowTagAt(I)
 		    Config.Override(ClassString) = 0
 		  Next
-		  Self.ContentsChanged = True
+		  Self.Changed = True
 		  Self.UpdateList()
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub PerformCopy(Board As Clipboard)
-		  Dim Items As New Xojo.Core.Dictionary
+		  Dim Items As New Dictionary
 		  Dim Config As BeaconConfigs.StackSizes = Self.Config(False)
-		  For I As Integer = 0 To Me.ListCount - 1
+		  For I As Integer = 0 To Me.RowCount - 1
 		    If Not Me.Selected(I) Then
 		      Continue
 		    End If
 		    
-		    Dim ClassString As Text = Me.RowTag(I)
+		    Dim ClassString As String = Me.RowTagAt(I)
 		    Dim Size As Integer = Config.Override(ClassString)
 		    Items.Value(ClassString) = Size
 		  Next
 		  
-		  Board.AddRawData(Xojo.Data.GenerateJSON(Items), Self.kClipboardType)
+		  Board.AddRawData(Beacon.GenerateJSON(Items, False), Self.kClipboardType)
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub PerformPaste(Board As Clipboard)
 		  If Board.RawDataAvailable(Self.kClipboardType) Then
-		    Dim JSON As Text = Board.RawData(Self.kClipboardType).DefineEncoding(Encodings.UTF8).ToText
-		    Dim Items As Xojo.Core.Dictionary
+		    Dim JSON As String = Board.RawData(Self.kClipboardType).DefineEncoding(Encodings.UTF8)
+		    Dim Items As Dictionary
 		    Try
-		      Items = Xojo.Data.ParseJSON(JSON)
-		    Catch Err As Xojo.Data.InvalidJSONException
-		      Items = New Xojo.Core.Dictionary
+		      Items = Beacon.ParseJSON(JSON)
+		    Catch Err As RuntimeException
+		      Items = New Dictionary
 		    End Try
 		    
-		    If Items.Count = 0 Then
+		    If Items.KeyCount = 0 Then
 		      Return
 		    End If
 		    
 		    Dim Config As BeaconConfigs.StackSizes = Self.Config(True)
-		    Dim SelectClasses() As Text
-		    For Each Entry As Xojo.Core.DictionaryEntry In Items
-		      Dim ClassString As Text = Entry.Key
+		    Dim SelectClasses() As String
+		    For Each Entry As DictionaryEntry In Items
+		      Dim ClassString As String = Entry.Key
 		      Dim Size As Integer = Entry.Value
-		      SelectClasses.Append(ClassString)
+		      SelectClasses.AddRow(ClassString)
 		      Config.Override(ClassString) = Size
 		    Next
-		    Self.ContentsChanged = True
+		    Self.Changed = True
 		    Self.UpdateList(SelectClasses)
 		    Return
 		  End If
 		  
 		  If Board.TextAvailable Then
 		    Dim ImportText As String = Board.Text.GuessEncoding
-		    Self.Parse(ImportText.ToText, "Clipboard")
+		    Self.Parse(ImportText, "Clipboard")
 		    Return
 		  End If
 		End Sub
@@ -622,10 +617,76 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -633,6 +694,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -640,10 +702,13 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -651,15 +716,17 @@ End
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -667,6 +734,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -674,53 +742,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -728,6 +814,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -735,7 +822,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -743,7 +830,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -751,72 +838,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -824,7 +854,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -832,6 +862,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

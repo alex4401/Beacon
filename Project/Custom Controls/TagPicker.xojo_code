@@ -3,7 +3,7 @@ Protected Class TagPicker
 Inherits ControlCanvas
 	#tag Event
 		Function MouseDown(X As Integer, Y As Integer) As Boolean
-		  For I As Integer = 0 To Self.mCells.Ubound
+		  For I As Integer = 0 To Self.mCells.LastRowIndex
 		    If Self.mCells(I) <> Nil And Self.mCells(I).Contains(X, Y) Then
 		      Self.mMouseDownCellIndex = I
 		      Self.mMousePressedIndex = I
@@ -44,15 +44,15 @@ Inherits ControlCanvas
 		    Dim ExcludeIndex As Integer = Self.mExcludeTags.IndexOf(Tag)
 		    
 		    If RequireIndex > -1 Then
-		      Self.mRequireTags.Remove(RequireIndex)
-		      Self.mExcludeTags.Append(Tag)
+		      Self.mRequireTags.RemoveRowAt(RequireIndex)
+		      Self.mExcludeTags.AddRow(Tag)
 		    ElseIf ExcludeIndex > -1 Then
-		      Self.mExcludeTags.Remove(ExcludeIndex)
+		      Self.mExcludeTags.RemoveRowAt(ExcludeIndex)
 		    Else
-		      Self.mRequireTags.Append(Tag)
+		      Self.mRequireTags.AddRow(Tag)
 		    End If
 		    
-		    RaiseEvent Change
+		    RaiseEvent TagsChanged
 		  End If
 		  
 		  Self.mMousePressedIndex = -1
@@ -80,11 +80,11 @@ Inherits ControlCanvas
 		Sub Paint(g As Graphics, areas() As REALbasic.Rect)
 		  #Pragma Unused Areas
 		  
-		  Dim ContentArea As REALbasic.Rect = Self.ContentArea
-		  G.ForeColor = SystemColors.SeparatorColor
-		  G.DrawRect(ContentArea.Left - 1, ContentArea.Top - 1, ContentArea.Width + 2, ContentArea.Height + 2)
-		  G.ForeColor = SystemColors.ControlBackgroundColor
-		  G.FillRect(ContentArea.Left, ContentArea.Top, ContentArea.Width, ContentArea.Height)
+		  Dim ContentArea As Xojo.Rect = Self.ContentArea
+		  G.DrawingColor = SystemColors.SeparatorColor
+		  G.DrawRectangle(ContentArea.Left - 1, ContentArea.Top - 1, ContentArea.Width + 2, ContentArea.Height + 2)
+		  G.DrawingColor = SystemColors.ControlBackgroundColor
+		  G.FillRectangle(ContentArea.Left, ContentArea.Top, ContentArea.Width, ContentArea.Height)
 		  
 		  Const VerticalSpacing = 6
 		  Const HorizontalSpacing = 6
@@ -109,21 +109,21 @@ Inherits ControlCanvas
 		    ExcludedBackgroundColor = SystemColors.SystemBrownColor
 		  End If
 		  
-		  For I As Integer = 0 To Self.mTags.Ubound
+		  For I As Integer = 0 To Self.mTags.LastRowIndex
 		    Dim Tag As String = Self.mTags(I)
 		    Dim Required As Boolean = Self.mRequireTags.IndexOf(Tag) > -1
 		    Dim Excluded As Boolean = Self.mExcludeTags.IndexOf(Tag) > -1
 		    Dim Pressed As Boolean = Self.mMousePressedIndex = I
 		    Tag = Tag.ReplaceAll("_", " ").Titlecase
 		    
-		    Dim CaptionWidth As Integer = Ceil(Clip.StringWidth(Tag))
+		    Dim CaptionWidth As Integer = Ceil(Clip.TextWidth(Tag))
 		    Dim CellWidth As Integer = Min(MaxCellWidth, CaptionWidth + (HorizontalPadding * 2))
 		    If XPos + CellWidth > ContentArea.Right - HorizontalSpacing Then
 		      XPos = ContentArea.Left + HorizontalSpacing
 		      YPos = YPos + VerticalSpacing + CellHeight
 		    End If
 		    
-		    Dim CellRect As New REALbasic.Rect(XPos, YPos - Self.mScrollPosition, CellWidth, CellHeight)
+		    Dim CellRect As New Xojo.Rect(XPos, YPos - Self.mScrollPosition, CellWidth, CellHeight)
 		    Self.mCells(I) = CellRect
 		    
 		    Dim CaptionLeft As Integer = CellRect.Left + HorizontalPadding
@@ -140,17 +140,17 @@ Inherits ControlCanvas
 		      CellColor = NeutralBackgroundColor
 		      CellTextColor = NeutralTextColor
 		    End If
-		    Clip.ForeColor = CellColor
-		    Clip.FillRoundRect(CellRect.Left - ContentArea.Left, CellRect.Top - ContentArea.Top, CellRect.Width, CellRect.Height, CellRect.Height, CellRect.Height)
-		    Clip.ForeColor = CellTextColor
-		    Clip.DrawString(Tag, CaptionLeft - ContentArea.Left, CaptionBottom - ContentArea.Top, CellWidth - (HorizontalPadding * 2), True)
+		    Clip.DrawingColor = CellColor
+		    Clip.FillRoundRectangle(CellRect.Left - ContentArea.Left, CellRect.Top - ContentArea.Top, CellRect.Width, CellRect.Height, CellRect.Height, CellRect.Height)
+		    Clip.DrawingColor = CellTextColor
+		    Clip.DrawText(Tag, CaptionLeft - ContentArea.Left, CaptionBottom - ContentArea.Top, CellWidth - (HorizontalPadding * 2), True)
 		    If Excluded Then
-		      Clip.FillRect(CaptionLeft - ContentArea.Left, CellRect.VerticalCenter - ContentArea.Top, CellRect.Width - (HorizontalPadding * 2), 2)
+		      Clip.FillRectangle(CaptionLeft - ContentArea.Left, CellRect.VerticalCenter - ContentArea.Top, CellRect.Width - (HorizontalPadding * 2), 2)
 		    End If
 		    
 		    If Pressed Then
-		      Clip.ForeColor = &c00000080
-		      Clip.FillRoundRect(CellRect.Left - ContentArea.Left, CellRect.Top - ContentArea.Top, CellRect.Width, CellRect.Height, CellRect.Height, CellRect.Height)
+		      Clip.DrawingColor = &c00000080
+		      Clip.FillRoundRectangle(CellRect.Left - ContentArea.Left, CellRect.Top - ContentArea.Top, CellRect.Width, CellRect.Height, CellRect.Height, CellRect.Height)
 		    End If
 		    
 		    XPos = XPos + HorizontalSpacing + CellRect.Width
@@ -171,8 +171,8 @@ Inherits ControlCanvas
 		    Dim ThumbHeight As Integer = Round(TrackHeight * (ContentArea.Height / Self.mContentHeight))
 		    Dim ThumbTop As Integer = 5 + ((TrackHeight - ThumbHeight) * (Self.mScrollPosition / Self.mOverflowHeight))
 		    
-		    G.ForeColor = SystemColors.LabelColor.AtOpacity(0.1)
-		    G.FillRoundRect(ContentArea.Right - 10, ThumbTop, 5, ThumbHeight, 5, 5)
+		    G.DrawingColor = SystemColors.LabelColor.AtOpacity(0.1)
+		    G.FillRoundRectangle(ContentArea.Right - 10, ThumbTop, 5, ThumbHeight, 5, 5)
 		  End If
 		End Sub
 	#tag EndEvent
@@ -182,7 +182,7 @@ Inherits ControlCanvas
 		Private Shared Function ArrayToString(Source() As String) As String
 		  Dim Clone() As String
 		  For Each Value As String In Source
-		    Clone.Append(Value)
+		    Clone.AddRow(Value)
 		  Next
 		  Clone.Sort
 		  Return Join(Clone, ",")
@@ -213,7 +213,7 @@ Inherits ControlCanvas
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function ContentArea() As REALbasic.Rect
+		Private Function ContentArea() As Xojo.Rect
 		  Dim X, Y, W, H As Integer
 		  W = Self.Width
 		  H = Self.Height
@@ -234,7 +234,7 @@ Inherits ControlCanvas
 		    W = W - 1
 		  End If
 		  
-		  Return New REALbasic.Rect(X, Y, W, H)
+		  Return New Xojo.Rect(X, Y, W, H)
 		End Function
 	#tag EndMethod
 
@@ -242,7 +242,7 @@ Inherits ControlCanvas
 		Function ExcludedTags() As String()
 		  Dim Tags() As String
 		  For Each Tag As String In Self.mExcludeTags
-		    Tags.Append(Tag)
+		    Tags.AddRow(Tag)
 		  Next
 		  Return Tags
 		End Function
@@ -263,14 +263,14 @@ Inherits ControlCanvas
 		Function RequiredTags() As String()
 		  Dim Tags() As String
 		  For Each Tag As String In Self.mRequireTags
-		    Tags.Append(Tag)
+		    Tags.AddRow(Tag)
 		  Next
 		  Return Tags
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub ResizeBy(Delta As Auto)
+		Private Sub ResizeBy(Delta As Variant)
 		  Try
 		    Dim OriginalHeight As Integer = Self.Height
 		    RaiseEvent ShouldAdjustHeight(Delta)
@@ -294,6 +294,17 @@ Inherits ControlCanvas
 		    ExcludedTags = Temp
 		  End If
 		  
+		  For I As Integer = RequiredTags.LastRowIndex DownTo RequiredTags.FirstRowIndex
+		    If RequiredTags(I) <> "object" And Self.mTags.IndexOf(RequiredTags(I)) = -1 Then
+		      RequiredTags.RemoveRowAt(I)
+		    End If
+		  Next
+		  For I As Integer = ExcludedTags.LastRowIndex DownTo ExcludedTags.FirstRowIndex
+		    If Self.mTags.IndexOf(ExcludedTags(I)) = -1 Then
+		      ExcludedTags.RemoveRowAt(I)
+		    End If
+		  Next
+		  
 		  Dim RequireCurrentString As String = Self.ArrayToString(Self.mRequireTags)
 		  Dim RequireNewString As String = Self.ArrayToString(RequiredTags)
 		  Dim Changed As Boolean = RequireCurrentString <> RequireNewString
@@ -312,7 +323,7 @@ Inherits ControlCanvas
 		  Self.mExcludeTags = ExcludedTags.Clone
 		  
 		  If App.CurrentThread = Nil Then
-		    RaiseEvent Change
+		    RaiseEvent TagsChanged
 		    Self.Invalidate
 		  Else
 		    Call CallLater.Schedule(0, AddressOf TriggerChange)
@@ -323,58 +334,11 @@ Inherits ControlCanvas
 	#tag Method, Flags = &h0
 		Function Tags() As String()
 		  Dim Clone() As String
-		  Redim Clone(Self.mTags.Ubound)
-		  For I As Integer = 0 To Self.mTags.Ubound
+		  Redim Clone(Self.mTags.LastRowIndex)
+		  For I As Integer = 0 To Self.mTags.LastRowIndex
 		    Clone(I) = Self.mTags(I)
 		  Next
 		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Tags(Assigns Values As Beacon.TextList)
-		  If Values = Nil Then
-		    Return
-		  End If
-		  
-		  Dim Changed As Boolean
-		  If Self.mTags.Ubound <> Values.Ubound Then
-		    Redim Self.mTags(Values.Ubound)
-		    Changed = True
-		  End If
-		  For I As Integer = 0 To Values.Ubound
-		    If StrComp(Self.mTags(I), Values(I), 0) <> 0 Then
-		      Self.mTags(I) = Values(I)
-		      Changed = True
-		    End If
-		  Next
-		  
-		  If Changed Then
-		    Redim Self.mCells(-1)
-		    Redim Self.mCells(Self.mTags.Ubound)
-		    
-		    Dim FireChangeEvent As Boolean
-		    For I As Integer = Self.mRequireTags.Ubound DownTo 0
-		      If Self.mTags.IndexOf(Self.mRequireTags(I)) = -1 Then
-		        Self.mRequireTags.Remove(I)
-		        FireChangeEvent = True
-		      End
-		      If Self.mTags.IndexOf(Self.mExcludeTags(I)) = -1 Then
-		        Self.mExcludeTags.Remove(I)
-		        FireChangeEvent = True
-		      End If
-		    Next
-		    
-		    If FireChangeEvent Then
-		      If App.CurrentThread = Nil Then
-		        RaiseEvent Change
-		      Else
-		        Call CallLater.Schedule(0, AddressOf TriggerChange)
-		      End If
-		    End If
-		    
-		    Self.Invalidate()
-		  End If
-		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
@@ -384,11 +348,11 @@ Inherits ControlCanvas
 		  End If
 		  
 		  Dim Changed As Boolean
-		  If Self.mTags.Ubound <> Values.Ubound Then
-		    Redim Self.mTags(Values.Ubound)
+		  If Self.mTags.LastRowIndex <> Values.LastRowIndex Then
+		    Redim Self.mTags(Values.LastRowIndex)
 		    Changed = True
 		  End If
-		  For I As Integer = 0 To Values.Ubound
+		  For I As Integer = 0 To Values.LastRowIndex
 		    If StrComp(Self.mTags(I), Values(I), 0) <> 0 Then
 		      Self.mTags(I) = Values(I)
 		      Changed = True
@@ -397,23 +361,23 @@ Inherits ControlCanvas
 		  
 		  If Changed Then
 		    Redim Self.mCells(-1)
-		    Redim Self.mCells(Self.mTags.Ubound)
+		    Redim Self.mCells(Self.mTags.LastRowIndex)
 		    
 		    Dim FireChangeEvent As Boolean
-		    For I As Integer = Self.mRequireTags.Ubound DownTo 0
+		    For I As Integer = Self.mRequireTags.LastRowIndex DownTo 0
 		      If Self.mTags.IndexOf(Self.mRequireTags(I)) = -1 Then
-		        Self.mRequireTags.Remove(I)
+		        Self.mRequireTags.RemoveRowAt(I)
 		        FireChangeEvent = True
 		      End
 		      If Self.mTags.IndexOf(Self.mExcludeTags(I)) = -1 Then
-		        Self.mExcludeTags.Remove(I)
+		        Self.mExcludeTags.RemoveRowAt(I)
 		        FireChangeEvent = True
 		      End If
 		    Next
 		    
 		    If FireChangeEvent Then
 		      If App.CurrentThread = Nil Then
-		        RaiseEvent Change
+		        RaiseEvent TagsChanged
 		      Else
 		        Call CallLater.Schedule(0, AddressOf TriggerChange)
 		      End If
@@ -426,18 +390,18 @@ Inherits ControlCanvas
 
 	#tag Method, Flags = &h21
 		Private Sub TriggerChange()
-		  RaiseEvent Change
+		  RaiseEvent TagsChanged
 		  Self.Invalidate
 		End Sub
 	#tag EndMethod
 
 
 	#tag Hook, Flags = &h0
-		Event Change()
+		Event ShouldAdjustHeight(Delta As Integer)
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event ShouldAdjustHeight(Delta As Integer)
+		Event TagsChanged()
 	#tag EndHook
 
 
@@ -466,7 +430,7 @@ Inherits ControlCanvas
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mCells() As REALbasic.Rect
+		Private mCells() As Xojo.Rect
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -509,10 +473,10 @@ Inherits ControlCanvas
 		#tag Getter
 			Get
 			  Dim Value As String
-			  If Self.mRequireTags.Ubound > -1 Then
+			  If Self.mRequireTags.LastRowIndex > -1 Then
 			    Value = "(""" + Join(Self.mRequireTags, """ AND """) + """)"
 			  End If
-			  If Self.mExcludeTags.Ubound > -1 Then
+			  If Self.mExcludeTags.LastRowIndex > -1 Then
 			    If Value = "" Then
 			      Value = "object"
 			    End If
@@ -528,13 +492,13 @@ Inherits ControlCanvas
 			  Try
 			    Dim RequireStartPos As Integer = Value.IndexOf("(")
 			    Dim RequireEndPos As Integer = Value.IndexOf(RequireStartPos, ")")
-			    RequirePhrase = Value.SubString(RequireStartPos + 2, RequireEndPos - (RequireStartPos + 3))
+			    RequirePhrase = Value.Middle(RequireStartPos + 2, RequireEndPos - (RequireStartPos + 3))
 			    
 			    If RequireStartPos > -1 And RequireEndPos > -1 Then
 			      Dim ExcludeStartPos As Integer = Value.IndexOf(RequireEndPos, "(")
 			      If ExcludeStartPos > -1 Then
 			        Dim ExcludeEndPos As Integer = Value.IndexOf(ExcludeStartPos, ")")
-			        ExcludePhrase = Value.SubString(ExcludeStartPos + 2, ExcludeEndPos - (ExcludeStartPos + 3))
+			        ExcludePhrase = Value.Middle(ExcludeStartPos + 2, ExcludeEndPos - (ExcludeStartPos + 3))
 			      End If
 			      
 			      RequiredTags = RequirePhrase.Split(""" AND """)
@@ -566,25 +530,76 @@ Inherits ControlCanvas
 
 	#tag ViewBehavior
 		#tag ViewProperty
+			Name="DoubleBuffer"
+			Visible=false
+			Group="Behavior"
+			InitialValue="False"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Tooltip"
+			Visible=true
+			Group="Appearance"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowAutoDeactivate"
+			Visible=true
+			Group="Appearance"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowFocusRing"
+			Visible=true
+			Group="Appearance"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowFocus"
+			Visible=true
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AllowTabs"
+			Visible=true
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
 			Name="Index"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="Integer"
-			EditorType="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-			EditorType="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Height"
@@ -592,36 +607,47 @@ Inherits ControlCanvas
 			Group="Position"
 			InitialValue="100"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockBottom"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockLeft"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockRight"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="LockTop"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabIndex"
@@ -629,6 +655,7 @@ Inherits ControlCanvas
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabStop"
@@ -636,12 +663,15 @@ Inherits ControlCanvas
 			Group="Position"
 			InitialValue="True"
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
 			Visible=true
 			Group="Position"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Width"
@@ -649,20 +679,15 @@ Inherits ControlCanvas
 			Group="Position"
 			InitialValue="100"
 			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AutoDeactivate"
-			Visible=true
-			Group="Appearance"
-			InitialValue="True"
-			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Backdrop"
 			Visible=true
 			Group="Appearance"
+			InitialValue=""
 			Type="Picture"
-			EditorType="Picture"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Enabled"
@@ -670,20 +695,7 @@ Inherits ControlCanvas
 			Group="Appearance"
 			InitialValue="True"
 			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="HelpTag"
-			Visible=true
-			Group="Appearance"
-			Type="String"
-			EditorType="MultiLineEditor"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="UseFocusRing"
-			Visible=true
-			Group="Appearance"
-			InitialValue="True"
-			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Visible"
@@ -691,33 +703,7 @@ Inherits ControlCanvas
 			Group="Appearance"
 			InitialValue="True"
 			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AcceptFocus"
-			Visible=true
-			Group="Behavior"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="AcceptTabs"
-			Visible=true
-			Group="Behavior"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="DoubleBuffer"
-			Visible=true
-			Group="Behavior"
-			InitialValue="False"
-			Type="Boolean"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="EraseBackground"
-			Visible=true
-			Group="Behavior"
-			InitialValue="True"
-			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Transparent"
@@ -725,13 +711,15 @@ Inherits ControlCanvas
 			Group="Behavior"
 			InitialValue="True"
 			Type="Boolean"
-			EditorType="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="ScrollSpeed"
+			Visible=false
 			Group="Behavior"
 			InitialValue="20"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Border"
@@ -739,20 +727,29 @@ Inherits ControlCanvas
 			Group="Behavior"
 			InitialValue="15"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="InitialParent"
+			Visible=false
+			Group=""
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="TabPanelIndex"
+			Visible=false
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Spec"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty

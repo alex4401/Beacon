@@ -1,10 +1,10 @@
 #tag Class
 Protected Class ControlGroup
-Implements Xojo.Core.Iterable
+Implements Iterable
 	#tag Method, Flags = &h0
 		Sub Append(Ctl As RectControl)
 		  If Self.IndexOf(Ctl) = -1 Then
-		    Self.mMembers.Append(New WeakRef(Ctl))
+		    Self.mMembers.AddRow(New WeakRef(Ctl))
 		    Self.UpdateBounds()
 		  End If
 		End Sub
@@ -13,7 +13,7 @@ Implements Xojo.Core.Iterable
 	#tag Method, Flags = &h0
 		Sub Constructor(ParamArray Controls() As RectControl)
 		  For Each Ctl As RectControl In Controls
-		    Self.mMembers.Append(New WeakRef(Ctl))
+		    Self.mMembers.AddRow(New WeakRef(Ctl))
 		  Next
 		  Self.UpdateBounds()
 		End Sub
@@ -21,21 +21,13 @@ Implements Xojo.Core.Iterable
 
 	#tag Method, Flags = &h0
 		Function Count() As Integer
-		  Return Self.UBound + 1
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function GetIterator() As Xojo.Core.Iterator
-		  // Part of the Xojo.Core.Iterable interface.
-		  
-		  Return New ControlGroupIterator(Self)
+		  Return Self.LastRowIndex + 1
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function IndexOf(Ctl As RectControl) As Integer
-		  For I As Integer = 0 To Self.mMembers.Ubound
+		  For I As Integer = 0 To Self.mMembers.LastRowIndex
 		    If Self.mMembers(I).Value = Ctl Then
 		      Return I
 		    End If
@@ -48,10 +40,24 @@ Implements Xojo.Core.Iterable
 	#tag Method, Flags = &h0
 		Sub Insert(Index As Integer, Ctl As RectControl)
 		  If Self.IndexOf(Ctl) = -1 Then
-		    Self.mMembers.Insert(Index, New WeakRef(Ctl))
+		    Self.mMembers.AddRowAt(Index, New WeakRef(Ctl))
 		    Self.UpdateBounds()
 		  End If
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function Iterator() As Iterator
+		  // Part of the Iterable interface.
+		  
+		  Return New ControlGroupIterator(Self)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function LastRowIndex() As Integer
+		  Return Self.mMembers.LastRowIndex
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
@@ -102,21 +108,15 @@ Implements Xojo.Core.Iterable
 
 	#tag Method, Flags = &h0
 		Sub Remove(Index As Integer)
-		  Self.mMembers.Remove(Index)
+		  Self.mMembers.RemoveRowAt(Index)
 		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function UBound() As Integer
-		  Return Self.mMembers.Ubound
-		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub UpdateBounds()
 		  Dim Top, Left, Bottom, Right As Integer
 		  Dim First As Boolean = True
-		  For I As Integer = 0 To Self.mMembers.Ubound
+		  For I As Integer = 0 To Self.mMembers.LastRowIndex
 		    Dim Ctl As RectControl = RectControl(Self.mMembers(I).Value)
 		    If Ctl = Nil Then
 		      Continue
@@ -136,7 +136,7 @@ Implements Xojo.Core.Iterable
 		    End If
 		  Next
 		  
-		  Self.mBounds = New REALbasic.Rect(Left, Top, Right - Left, Bottom - Top)
+		  Self.mBounds = New Xojo.Rect(Left, Top, Right - Left, Bottom - Top)
 		End Sub
 	#tag EndMethod
 
@@ -181,7 +181,7 @@ Implements Xojo.Core.Iterable
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h21
-		Private mBounds As REALbasic.Rect
+		Private mBounds As Xojo.Rect
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -235,6 +235,7 @@ Implements Xojo.Core.Iterable
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -242,18 +243,23 @@ Implements Xojo.Core.Iterable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -261,6 +267,39 @@ Implements Xojo.Core.Iterable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Bottom"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Height"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Right"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Width"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

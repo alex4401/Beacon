@@ -6,17 +6,17 @@ Inherits Beacon.Thread
 		  Self.mFinished = False
 		  Self.Invalidate
 		  
-		  Dim LineEnding As Text = Self.LineEndingChar()
+		  Dim LineEnding As String = Self.LineEndingChar()
 		  
 		  // Normalize line endings
-		  Dim Content As String = ReplaceLineEndings(Self.mGameUserSettingsIniContent + LineEnding + Self.mGameIniContent, LineEnding)
+		  Dim Content As String = Self.mGameUserSettingsIniContent.ReplaceLineEndings(LineEnding) + LineEnding + Self.mGameIniContent.ReplaceLineEndings(LineEnding)
 		  Self.mCharactersProcessed = 0
 		  Self.mCharactersTotal = Content.Length
 		  
-		  Self.mParsedData = New Xojo.Core.Dictionary
+		  Self.mParsedData = New Dictionary
 		  
 		  Dim Lines() As String = Content.Split(LineEnding)
-		  Self.mCharactersTotal = Self.mCharactersTotal + ((Lines.Ubound + 1) * LineEnding.Length) // To account for the trailing line ending characters we're adding
+		  Self.mCharactersTotal = Self.mCharactersTotal + ((Lines.LastRowIndex + 1) * LineEnding.Length) // To account for the trailing line ending characters we're adding
 		  For Each Line As String In Lines
 		    If Self.mCancelled Then
 		      Return
@@ -29,35 +29,33 @@ Inherits Beacon.Thread
 		    End If
 		    
 		    Try
-		      Dim Value As Auto = Self.Import(Line + LineEnding)
+		      Dim Value As Variant = Self.Import(Line + LineEnding)
 		      If Value = Nil Then
 		        Continue
 		      End If
-		      Dim ValueInfo As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Value)
-		      If ValueInfo.FullName <> "Beacon.Pair" Then
+		      If Value.Type <> Variant.TypeObject Or Value IsA Beacon.Pair = False Then
 		        Continue
 		      End If
 		      
-		      Dim Key As Text = Beacon.Pair(Value).Key
+		      Dim Key As String = Beacon.Pair(Value).Key
 		      Value = Beacon.Pair(Value).Value
 		      
 		      If Self.mParsedData.HasKey(Key) Then
-		        Dim ExistingValue As Auto = Self.mParsedData.Value(Key)
-		        Dim TypeInfo As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(ExistingValue)
+		        Dim ExistingValue As Variant = Self.mParsedData.Value(Key)
 		        
-		        Dim ValueArray() As Auto
-		        If TypeInfo.IsArray Then
+		        Dim ValueArray() As Variant
+		        If ExistingValue.IsArray Then
 		          ValueArray = ExistingValue
 		        Else
-		          ValueArray.Append(ExistingValue)
+		          ValueArray.AddRow(ExistingValue)
 		        End If
-		        ValueArray.Append(Value)
+		        ValueArray.AddRow(Value)
 		        Self.mParsedData.Value(Key) = ValueArray
 		      Else
 		        Self.mParsedData.Value(Key) = Value
 		      End If
 		    Catch Stop As Beacon.ThreadStopException
-		      Self.mUpdateTimer.Mode = Xojo.Core.Timer.Modes.Off
+		      Self.mUpdateTimer.RunMode = Timer.RunModes.Off
 		      Return
 		    Catch Err As RuntimeException
 		      // Don't let an error halt processing, skip and move on
@@ -91,10 +89,10 @@ Inherits Beacon.Thread
 
 	#tag Method, Flags = &h0
 		Sub Constructor()
-		  Self.mUpdateTimer = New Xojo.Core.Timer
-		  Self.mUpdateTimer.Mode = Xojo.Core.Timer.Modes.Off
+		  Self.mUpdateTimer = New Timer
+		  Self.mUpdateTimer.RunMode = Timer.RunModes.Off
 		  Self.mUpdateTimer.Period = 0
-		  AddHandler Self.mUpdateTimer.Action, WeakAddressOf Self.mUpdateTimer_Action
+		  AddHandler Self.mUpdateTimer.Run, WeakAddressOf Self.mUpdateTimer_Run
 		End Sub
 	#tag EndMethod
 
@@ -105,9 +103,9 @@ Inherits Beacon.Thread
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function Import(Content As String) As Auto
+		Private Function Import(Content As String) As Variant
 		  Dim Parser As New Beacon.ConfigParser
-		  Dim Value As Auto
+		  Dim Value As Variant
 		  Dim Characters() As String = Content.Split("")
 		  For Each Char As String In Characters
 		    If Self.mCancelled Then
@@ -132,20 +130,20 @@ Inherits Beacon.Thread
 		    Return
 		  End If
 		  
-		  If Self.mUpdateTimer.Mode = Xojo.Core.Timer.Modes.Off Then
-		    Self.mUpdateTimer.Mode = Xojo.Core.Timer.Modes.Single
+		  If Self.mUpdateTimer.RunMode = Timer.RunModes.Off Then
+		    Self.mUpdateTimer.RunMode = Timer.RunModes.Single
 		  End If
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function LineEndingChar() As Text
-		  Return Text.FromUnicodeCodepoint(10)
+		Shared Function LineEndingChar() As String
+		  Return Encodings.UTF8.Chr(10)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub mUpdateTimer_Action(Sender As Xojo.Core.Timer)
+		Private Sub mUpdateTimer_Run(Sender As Timer)
 		  #Pragma Unused Sender
 		  
 		  RaiseEvent UpdateUI
@@ -164,52 +162,46 @@ Inherits Beacon.Thread
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Shared Function ToXojoType(Input As Auto) As Auto
+		Private Shared Function ToXojoType(Input As Variant) As Variant
 		  If Input = Nil Then
 		    Return Nil
 		  End If
 		  
-		  Dim Info As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Input)
-		  Select Case Info.FullName
-		  Case "Beacon.Pair"
-		    Dim Original As Beacon.Pair = Input
-		    Return New Beacon.Pair(Original.Key, ToXojoType(Original.Value))
-		  Case "Auto()"
-		    Dim ArrayValue() As Auto = Input
+		  If Input.IsArray And Input.ArrayElementType = Variant.TypeObject Then
+		    Dim ArrayValue() As Variant = Input
 		    Dim IsDict As Boolean = True
-		    For Each Item As Auto In ArrayValue
-		      Dim ItemInfo As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Item)
-		      IsDict = IsDict And ItemInfo.FullName = "Beacon.Pair"
+		    For Each Item As Variant In ArrayValue
+		      IsDict = IsDict And Item.Type = Variant.TypeObject And Item.ObjectValue IsA Beacon.Pair
 		    Next
 		    If IsDict Then
-		      Dim Dict As New Xojo.Core.Dictionary
+		      Dim Dict As New Dictionary
 		      For Each Item As Beacon.Pair In ArrayValue
 		        Dict.Value(Item.Key) = ToXojoType(Item.Value)
 		      Next
 		      Return Dict
 		    Else
-		      Dim Items() As Auto
-		      For Each Item As Auto In ArrayValue
-		        Items.Append(ToXojoType(Item))
+		      Dim Items() As Variant
+		      For Each Item As Variant In ArrayValue
+		        Items.AddRow(ToXojoType(Item))
 		      Next
 		      Return Items
 		    End If
-		  Case "Text", "String"
-		    Dim StringValue As String
-		    If Info.FullName = "Text" Then
-		      Dim TextValue As Text = Input
-		      StringValue = TextValue
-		    Else
-		      StringValue = Input
-		    End If
+		  End If
+		  
+		  Select Case Input.Type
+		  Case Variant.TypeObject
+		    Dim ObjectValue As Object = Input.ObjectValue
+		    Select Case ObjectValue
+		    Case IsA Beacon.Pair
+		      Dim Original As Beacon.Pair = Input
+		      Return New Beacon.Pair(Original.Key, ToXojoType(Original.Value))
+		    End Select
+		  Case Variant.TypeString
+		    Dim StringValue As String = Input.StringValue
 		    If StringValue = "true" Then
 		      Return True
 		    ElseIf StringValue = "false" Then
 		      Return False
-		    ElseIf StringValue = "" Then
-		      // Want to ensure this returns text instead of string
-		      Dim TextValue As Text = ""
-		      Return TextValue
 		    Else
 		      Dim IsNumeric As Boolean = True
 		      Dim DecimalPoints As Integer
@@ -234,23 +226,21 @@ Inherits Beacon.Thread
 		        // Number
 		        Return Val(StringValue)
 		      Else
-		        // Probably Text
-		        Return StringValue.ToText
+		        // Probably String
+		        Return StringValue
 		      End If
 		    End If
-		  Else
-		    Break
 		  End Select
 		End Function
 	#tag EndMethod
 
 
 	#tag Hook, Flags = &h0
-		Event Finished(ParsedData As Xojo.Core.Dictionary)
+		Event Finished(ParsedData As Dictionary)
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event ThreadedParseFinished(ParsedData As Xojo.Core.Dictionary)
+		Event ThreadedParseFinished(ParsedData As Dictionary)
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -266,16 +256,16 @@ Inherits Beacon.Thread
 		#tag EndGetter
 		#tag Setter
 			Set
-			  If Self.State <> Thread.NotRunning Then
+			  If Self.ThreadState <> Thread.ThreadStates.NotRunning Then
 			    Dim Err As New RuntimeException
 			    Err.Reason = "Importer is already running"
 			    Raise Err
 			  End If
 			  
-			  Self.mGameIniContent = Value
+			  Self.mGameIniContent = Value.GuessEncoding
 			End Set
 		#tag EndSetter
-		GameIniContent As Text
+		GameIniContent As String
 	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
@@ -286,16 +276,16 @@ Inherits Beacon.Thread
 		#tag EndGetter
 		#tag Setter
 			Set
-			  If Self.State <> Thread.NotRunning Then
+			  If Self.ThreadState <> Thread.ThreadStates.NotRunning Then
 			    Dim Err As New RuntimeException
 			    Err.Reason = "Importer is already running"
 			    Raise Err
 			  End If
 			  
-			  Self.mGameUserSettingsIniContent = Value
+			  Self.mGameUserSettingsIniContent = Value.GuessEncoding
 			End Set
 		#tag EndSetter
-		GameUserSettingsIniContent As Text
+		GameUserSettingsIniContent As String
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h21
@@ -315,88 +305,78 @@ Inherits Beacon.Thread
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mGameIniContent As Text
+		Private mGameIniContent As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mGameUserSettingsIniContent As Text
+		Private mGameUserSettingsIniContent As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mParsedData As Xojo.Core.Dictionary
+		Private mParsedData As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mUpdateTimer As Xojo.Core.Timer
+		Private mUpdateTimer As Timer
 	#tag EndProperty
 
 
 	#tag ViewBehavior
-		#tag ViewProperty
-			Name="State"
-			Group="Behavior"
-			Type="Beacon.Thread.States"
-			EditorType="Enum"
-			#tag EnumValues
-				"0 - Running"
-				"1 - Waiting"
-				"2 - Suspended"
-				"3 - Sleeping"
-				"4 - NotRunning"
-			#tag EndEnumValues
-		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
 			Visible=true
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Left"
-			Visible=true
-			Group="Position"
-			InitialValue="0"
-			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Priority"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="StackSize"
+			Visible=false
 			Group="Behavior"
-			Type="UInteger"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Top"
-			Visible=true
-			Group="Position"
-			InitialValue="0"
-			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="GameIniContent"
+			Visible=false
 			Group="Behavior"
-			Type="Text"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="GameUserSettingsIniContent"
+			Visible=false
 			Group="Behavior"
-			Type="Text"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

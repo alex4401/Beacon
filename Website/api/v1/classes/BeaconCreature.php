@@ -15,6 +15,7 @@ class BeaconCreature extends BeaconBlueprint {
 	private $breedable;
 	private $incubation_time;
 	private $mature_time;
+	private $stats;
 	
 	protected static function SQLColumns() {
 		$columns = parent::SQLColumns();
@@ -27,6 +28,7 @@ class BeaconCreature extends BeaconBlueprint {
 		$columns[] = 'breedable';
 		$columns[] = 'EXTRACT(epoch FROM incubation_time) AS incubation_time';
 		$columns[] = 'EXTRACT(epoch FROM mature_time) AS mature_time';
+		$columns[] = '(SELECT array_to_json(array_agg(row_to_json(template))) FROM (SELECT stat_index, base_value, per_level_wild_multiplier, per_level_tamed_multiplier, add_multiplier, affinity_multiplier FROM creature_stats WHERE creature_stats.creature_id = creatures.object_id ORDER BY stat_index) AS template) AS stats';
 		return $columns;
 	}
 	
@@ -50,8 +52,90 @@ class BeaconCreature extends BeaconBlueprint {
 			return $this->carryable;
 		case 'breedable':
 			return $this->breedable;
+		case 'incubation_time':
+			return $this->incubation_time;
+		case 'mature_time':
+			return $this->mature_time;
+		case 'stats':
+			return $this->stats;
 		default:
-			parent::GetColumnValue($column);
+			return parent::GetColumnValue($column);
+		}
+	}
+	
+	public function ConsumeJSON(array $json) {
+		parent::ConsumeJSON($json);
+		
+		if (array_key_exists('tamable', $json)) {
+			if (is_bool($json['tamable'])) {
+				$this->tamable = $json['tamable'];
+			} else {
+				throw new Exception('Tamable must be a boolean');
+			}
+		} elseif (array_key_exists('tameable', $json)) {
+			if (is_bool($json['tameable'])) {
+				$this->tamable = $json['tameable'];
+			} else {
+				throw new Exception('Tameable must be a boolean');
+			}
+		}
+		if (array_key_exists('taming_diet', $json)) {
+			$diet_id = $json['taming_diet'];
+			if (is_null($diet_id) || BeaconCommon::IsUUID($diet_id)) {
+				$this->taming_diet_id = $diet_id;
+			} else {
+				throw new Exception('Taming diet must be null or v4 UUID');
+			}
+		}
+		if (array_key_exists('taming_method', $json)) {
+			$method = $json['taming_method'];
+			if ($method === self::TAMING_METHOD_NONE || $method === self::TAMING_METHOD_KNOCKOUT || $method === self::TAMING_METHOD_PASSIVE || $method === self::TAMING_METHOD_TRAP) {
+				$this->taming_method = $method;
+			} else {
+				throw new Exception('Taming method must be one of ' . BeaconCommon::ArrayToEnglish(array(self::TAMING_METHOD_NONE, self::TAMING_METHOD_KNOCKOUT, self::TAMING_METHOD_PASSIVE, self::TAMING_METHOD_TRAP), 'or'));
+			}
+		}
+		if (array_key_exists('rideable', $json)) {
+			if (is_bool($json['rideable'])) {
+				$this->rideable = $json['rideable'];
+			} else {
+				throw new Exception('Rideable must be a boolean');
+			}
+		}
+		if (array_key_exists('carryable', $json)) {
+			if (is_bool($json['carryable'])) {
+				$this->carryable = $json['carryable'];
+			} else {
+				throw new Exception('Carryable must be a boolean');
+			}
+		}
+		if (array_key_exists('breedable', $json)) {
+			if (is_bool($json['breedable'])) {
+				$this->breedable = $json['breedable'];
+			} else {
+				throw new Exception('Breedable must be a boolean');
+			}
+		}
+		if (array_key_exists('incubation_time', $json)) {
+			if (is_int($json['incubation_time'])) {
+				$this->incubation_time = $json['incubation_time'];
+			} else {
+				throw new Exception('Incubation time must be a number of seconds.');
+			}
+		}
+		if (array_key_exists('mature_time', $json)) {
+			if (is_int($json['mature_time'])) {
+				$this->mature_time = $json['mature_time'];
+			} else {
+				throw new Exception('Mature time must be a number of seconds.');
+			}
+		}
+		if (array_key_exists('stats', $json)) {
+			if (BeaconCommon::IsAssoc($json['stats'])) {
+				$this->stats = $json['stats'];
+			} else {
+				throw new Exception('Stats must be a structure.');
+			}
 		}
 	}
 	
@@ -69,6 +153,7 @@ class BeaconCreature extends BeaconBlueprint {
 		$obj->breedable = $row->Field('breedable');
 		$obj->incubation_time = is_null($row->Field('incubation_time')) ? null : intval($row->Field('incubation_time'));
 		$obj->mature_time = is_null($row->Field('mature_time')) ? null : intval($row->Field('mature_time'));
+		$obj->stats = is_null($row->Field('stats')) ? null : json_decode($row->Field('stats'), true);
 		return $obj;
 	}
 	
@@ -84,6 +169,8 @@ class BeaconCreature extends BeaconBlueprint {
 		$json['related_object_ids'] = $this->RelatedObjectIDs();
 		$json['incubation_time'] = $this->incubation_time;
 		$json['mature_time'] = $this->mature_time;
+		$json['resource_url'] = BeaconAPI::URL('/creature/' . urlencode($this->ObjectID()));
+		$json['stats'] = $this->stats;
 		return $json;
 	}
 	

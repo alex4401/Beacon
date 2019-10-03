@@ -3,33 +3,34 @@ Begin BeaconWindow UpdateWindow
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
    CloseButton     =   False
-   Compatibility   =   ""
    Composite       =   True
    Frame           =   0
    FullScreen      =   False
    FullScreenButton=   False
    HasBackColor    =   False
-   Height          =   400
+   Height          =   132
    ImplicitInstance=   False
-   LiveResize      =   True
+   LiveResize      =   "True"
    MacProcID       =   0
    MaxHeight       =   32000
-   MaximizeButton  =   True
+   MaximizeButton  =   False
    MaxWidth        =   32000
    MenuBar         =   0
    MenuBarVisible  =   True
-   MinHeight       =   400
+   MinHeight       =   132
    MinimizeButton  =   True
    MinWidth        =   600
    Placement       =   2
+   Resizable       =   "True"
    Resizeable      =   True
+   SystemUIVisible =   "True"
    Title           =   "Beacon Updates"
    Visible         =   True
    Width           =   600
    Begin PagePanel ViewPanel
       AutoDeactivate  =   True
       Enabled         =   True
-      Height          =   400
+      Height          =   132
       HelpTag         =   ""
       Index           =   -2147483648
       InitialParent   =   ""
@@ -44,7 +45,7 @@ Begin BeaconWindow UpdateWindow
       Scope           =   2
       TabIndex        =   0
       TabPanelIndex   =   0
-      TabStop         =   True
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   1
@@ -90,6 +91,7 @@ Begin BeaconWindow UpdateWindow
          Enabled         =   True
          Height          =   20
          HelpTag         =   ""
+         Indeterminate   =   False
          Index           =   -2147483648
          InitialParent   =   "ViewPanel"
          Left            =   20
@@ -102,17 +104,17 @@ Begin BeaconWindow UpdateWindow
          Scope           =   2
          TabIndex        =   1
          TabPanelIndex   =   1
-         TabStop         =   True
+         TabStop         =   "True"
          Top             =   52
          Transparent     =   False
-         Value           =   0
+         Value           =   0.0
          Visible         =   True
          Width           =   560
       End
       Begin UITweaks.ResizedPushButton CheckCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -146,9 +148,8 @@ Begin BeaconWindow UpdateWindow
          AcceptTabs      =   False
          AutoDeactivate  =   True
          Backdrop        =   0
-         DoubleBuffer    =   True
+         DoubleBuffer    =   False
          Enabled         =   True
-         EraseBackground =   False
          Height          =   64
          HelpTag         =   ""
          Index           =   -2147483648
@@ -205,32 +206,10 @@ Begin BeaconWindow UpdateWindow
          Visible         =   True
          Width           =   484
       End
-      Begin HTMLViewer ResultsNotesViewer
-         AutoDeactivate  =   True
-         Enabled         =   True
-         Height          =   294
-         HelpTag         =   ""
-         Index           =   -2147483648
-         InitialParent   =   "ViewPanel"
-         Left            =   97
-         LockBottom      =   True
-         LockedInPosition=   False
-         LockLeft        =   True
-         LockRight       =   True
-         LockTop         =   True
-         Renderer        =   1
-         Scope           =   2
-         TabIndex        =   4
-         TabPanelIndex   =   2
-         TabStop         =   True
-         Top             =   53
-         Visible         =   True
-         Width           =   482
-      End
       Begin UITweaks.ResizedPushButton ResultsActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Download"
          Default         =   True
@@ -240,7 +219,7 @@ Begin BeaconWindow UpdateWindow
          Index           =   -2147483648
          InitialParent   =   "ViewPanel"
          Italic          =   False
-         Left            =   500
+         Left            =   490
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   False
@@ -253,16 +232,16 @@ Begin BeaconWindow UpdateWindow
          TextFont        =   "System"
          TextSize        =   0.0
          TextUnit        =   0
-         Top             =   360
+         Top             =   92
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   80
+         Width           =   90
       End
       Begin UITweaks.ResizedPushButton ResultsCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -272,7 +251,7 @@ Begin BeaconWindow UpdateWindow
          Index           =   -2147483648
          InitialParent   =   "ViewPanel"
          Italic          =   False
-         Left            =   408
+         Left            =   388
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   False
@@ -285,95 +264,11 @@ Begin BeaconWindow UpdateWindow
          TextFont        =   "System"
          TextSize        =   0.0
          TextUnit        =   0
-         Top             =   360
+         Top             =   92
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   80
-      End
-      Begin Canvas Borders
-         AcceptFocus     =   False
-         AcceptTabs      =   False
-         AutoDeactivate  =   True
-         Backdrop        =   0
-         DoubleBuffer    =   True
-         Enabled         =   True
-         EraseBackground =   False
-         Height          =   1
-         HelpTag         =   ""
-         Index           =   0
-         InitialParent   =   "ViewPanel"
-         Left            =   96
-         LockBottom      =   False
-         LockedInPosition=   False
-         LockLeft        =   True
-         LockRight       =   True
-         LockTop         =   True
-         Scope           =   2
-         TabIndex        =   2
-         TabPanelIndex   =   2
-         TabStop         =   True
-         Top             =   52
-         Transparent     =   False
-         UseFocusRing    =   True
-         Visible         =   True
-         Width           =   484
-      End
-      Begin Canvas Borders
-         AcceptFocus     =   False
-         AcceptTabs      =   False
-         AutoDeactivate  =   True
-         Backdrop        =   0
-         DoubleBuffer    =   True
-         Enabled         =   True
-         EraseBackground =   False
-         Height          =   1
-         HelpTag         =   ""
-         Index           =   1
-         InitialParent   =   "ViewPanel"
-         Left            =   96
-         LockBottom      =   True
-         LockedInPosition=   False
-         LockLeft        =   True
-         LockRight       =   True
-         LockTop         =   False
-         Scope           =   2
-         TabIndex        =   6
-         TabPanelIndex   =   2
-         TabStop         =   True
-         Top             =   347
-         Transparent     =   False
-         UseFocusRing    =   True
-         Visible         =   True
-         Width           =   484
-      End
-      Begin Canvas Borders
-         AcceptFocus     =   False
-         AcceptTabs      =   False
-         AutoDeactivate  =   True
-         Backdrop        =   0
-         DoubleBuffer    =   True
-         Enabled         =   True
-         EraseBackground =   False
-         Height          =   294
-         HelpTag         =   ""
-         Index           =   3
-         InitialParent   =   "ViewPanel"
-         Left            =   579
-         LockBottom      =   True
-         LockedInPosition=   False
-         LockLeft        =   False
-         LockRight       =   True
-         LockTop         =   True
-         Scope           =   2
-         TabIndex        =   5
-         TabPanelIndex   =   2
-         TabStop         =   True
-         Top             =   52
-         Transparent     =   False
-         UseFocusRing    =   True
-         Visible         =   True
-         Width           =   1
+         Width           =   90
       End
       Begin Label DownloadMessageLabel
          AutoDeactivate  =   True
@@ -410,39 +305,12 @@ Begin BeaconWindow UpdateWindow
          Visible         =   True
          Width           =   560
       End
-      Begin Canvas Borders
-         AcceptFocus     =   False
-         AcceptTabs      =   False
-         AutoDeactivate  =   True
-         Backdrop        =   0
-         DoubleBuffer    =   True
-         Enabled         =   True
-         EraseBackground =   False
-         Height          =   294
-         HelpTag         =   ""
-         Index           =   2
-         InitialParent   =   "ViewPanel"
-         Left            =   96
-         LockBottom      =   True
-         LockedInPosition=   False
-         LockLeft        =   True
-         LockRight       =   False
-         LockTop         =   True
-         Scope           =   2
-         TabIndex        =   3
-         TabPanelIndex   =   2
-         TabStop         =   True
-         Top             =   53
-         Transparent     =   False
-         UseFocusRing    =   True
-         Visible         =   True
-         Width           =   1
-      End
       Begin ProgressBar DownloadProgressBar
          AutoDeactivate  =   True
          Enabled         =   True
          Height          =   20
          HelpTag         =   ""
+         Indeterminate   =   False
          Index           =   -2147483648
          InitialParent   =   "ViewPanel"
          Left            =   20
@@ -455,17 +323,17 @@ Begin BeaconWindow UpdateWindow
          Scope           =   2
          TabIndex        =   1
          TabPanelIndex   =   3
-         TabStop         =   True
+         TabStop         =   "True"
          Top             =   52
          Transparent     =   False
-         Value           =   0
+         Value           =   0.0
          Visible         =   True
          Width           =   560
       End
       Begin UITweaks.ResizedPushButton DownloadCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -494,6 +362,73 @@ Begin BeaconWindow UpdateWindow
          Visible         =   True
          Width           =   80
       End
+      Begin UITweaks.ResizedPushButton ResultsNotesButton
+         AutoDeactivate  =   True
+         Bold            =   False
+         ButtonStyle     =   0
+         Cancel          =   False
+         Caption         =   "Release Notes"
+         Default         =   False
+         Enabled         =   True
+         Height          =   20
+         HelpTag         =   ""
+         Index           =   -2147483648
+         InitialParent   =   "ViewPanel"
+         Italic          =   False
+         Left            =   96
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   False
+         Scope           =   2
+         TabIndex        =   9
+         TabPanelIndex   =   2
+         TabStop         =   True
+         TextFont        =   "System"
+         TextSize        =   0.0
+         TextUnit        =   0
+         Top             =   92
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   120
+      End
+      Begin Label Label1
+         AutoDeactivate  =   True
+         Bold            =   False
+         DataField       =   ""
+         DataSource      =   ""
+         Enabled         =   True
+         Height          =   20
+         HelpTag         =   ""
+         Index           =   -2147483648
+         InitialParent   =   "ViewPanel"
+         Italic          =   False
+         Left            =   96
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         Multiline       =   False
+         Scope           =   2
+         Selectable      =   False
+         TabIndex        =   10
+         TabPanelIndex   =   2
+         TabStop         =   True
+         Text            =   "After downloading, the update will install only when you're ready."
+         TextAlign       =   0
+         TextColor       =   &c00000000
+         TextFont        =   "System"
+         TextSize        =   0.0
+         TextUnit        =   0
+         Top             =   52
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   484
+      End
    End
    Begin UpdateChecker Checker
       Enabled         =   True
@@ -502,26 +437,27 @@ Begin BeaconWindow UpdateWindow
       Scope           =   2
       TabPanelIndex   =   0
    End
-   Begin Xojo.Net.HTTPSocket Downloader
+   Begin URLConnection Downloader
+      AllowCertificateValidation=   False
       Enabled         =   True
+      HTTPStatusCode  =   0
       Index           =   -2147483648
       LockedInPosition=   False
       Scope           =   2
       TabPanelIndex   =   0
-      ValidateCertificates=   False
    End
 End
 #tag EndWindow
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
+		Sub Closing()
 		  Self.mInstance = Nil
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.SwapButtons()
 		End Sub
 	#tag EndEvent
@@ -543,39 +479,23 @@ End
 		    mInstance = New UpdateWindow
 		  End If
 		  
-		  mInstance.ViewPanel.Value = UpdateWindow.ViewCheck
+		  mInstance.ViewPanel.SelectedPanelIndex = UpdateWindow.ViewCheck
 		  mInstance.Show
 		  mInstance.Checker.Check(False)
 		End Sub
 	#tag EndMethod
 
-	#tag Method, Flags = &h0
-		Shared Sub Present(Version As String, Notes As String, URL As String, Signature As String)
-		  // Will show the results of an update check
-		  
-		  If mInstance = Nil Then
-		    mInstance = New UpdateWindow
-		  End If
-		  
-		  mInstance.ShowResults(Version, Notes, URL, Signature)
-		  mInstance.Show
-		End Sub
-	#tag EndMethod
-
 	#tag Method, Flags = &h21
-		Private Sub ShowResults(Version As String, Notes As String, URL As String, Signature As String)
-		  #Pragma Unused Version
-		  
-		  Static Temp As FolderItem = GetTemporaryFolderItem
-		  ResultsNotesViewer.LoadPage(Notes, Temp)
-		  
+		Private Sub ShowResults(Version As String, NotesURL As String, URL As String, Signature As String)
 		  Self.mURL = URL
 		  Self.mSignature = Signature
+		  Self.mNotesURL = NotesURL
+		  Self.ResultsNotesButton.Enabled = NotesURL.BeginsWith("https://")
 		  
-		  Dim PathComponents() As String = Split(NthField(URL, "?", 1), "/")
-		  Dim Filename As String = NthField(PathComponents(UBound(PathComponents)), "#", 1)
-		  Dim FilenameParts() As String = Split(Filename, ".")
-		  Dim Extension As String = FilenameParts(UBound(FilenameParts))
+		  Dim PathComponents() As String = FrameworkExtensions.FieldAtPosition(URL, "?", 1).Split("/")
+		  Dim Filename As String = FrameworkExtensions.FieldAtPosition(PathComponents(PathComponents.LastRowIndex), "#", 1)
+		  Dim FilenameParts() As String = Filename.Split(".")
+		  Dim Extension As String = FilenameParts(FilenameParts.LastRowIndex)
 		  
 		  Self.mFilename = "Beacon " + Version + "." + Extension
 		  
@@ -587,7 +507,7 @@ End
 		    Self.mFile = Folder.Child(Self.mFilename)
 		  #endif
 		  
-		  Self.ViewPanel.Value = Self.ViewResults
+		  Self.ViewPanel.SelectedPanelIndex = Self.ViewResults
 		End Sub
 	#tag EndMethod
 
@@ -605,6 +525,10 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
+		Private mNotesURL As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
 		Private mSignature As String
 	#tag EndProperty
 
@@ -619,7 +543,7 @@ End
 	#tag Constant, Name = HeightDownload, Type = Double, Dynamic = False, Default = \"124", Scope = Private
 	#tag EndConstant
 
-	#tag Constant, Name = HeightResults, Type = Double, Dynamic = False, Default = \"400", Scope = Private
+	#tag Constant, Name = HeightResults, Type = Double, Dynamic = False, Default = \"132", Scope = Private
 	#tag EndConstant
 
 	#tag Constant, Name = ViewCheck, Type = Double, Dynamic = False, Default = \"0", Scope = Private
@@ -636,8 +560,8 @@ End
 
 #tag Events ViewPanel
 	#tag Event
-		Sub Change()
-		  Select Case Me.Value
+		Sub PanelChanged()
+		  Select Case Me.SelectedPanelIndex
 		  Case Self.ViewCheck
 		    Self.Height = Self.HeightCheck
 		    Self.Resizeable = False
@@ -653,7 +577,7 @@ End
 #tag EndEvents
 #tag Events CheckCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.Checker.Cancel
 		  Self.Close
 		End Sub
@@ -670,9 +594,9 @@ End
 #tag EndEvents
 #tag Events ResultsActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  If Self.mFile = Nil Then
-		    Dim Dialog As New SaveAsDialog
+		    Dim Dialog As New SaveFileDialog
 		    Dialog.SuggestedFileName = Self.mFilename
 		    Dialog.PromptText = "Choose a location for the update file"
 		    
@@ -689,38 +613,35 @@ End
 		      Self.LaunchUpdate()
 		      Return
 		    Else
-		      Self.mFile.Delete
+		      Self.mFile.Remove
 		    End If
 		  End If
 		  
-		  Self.Downloader.Send("GET", Self.mURL.ToText)
-		  Self.DownloadProgressBar.Maximum = 0
-		  Self.ViewPanel.Value = Self.ViewDownload
+		  Self.Downloader.Send("GET", Self.mURL)
+		  Self.DownloadProgressBar.MaximumValue = 0
+		  Self.ViewPanel.SelectedPanelIndex = Self.ViewDownload
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ResultsCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.Close
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events Borders
-	#tag Event
-		Sub Paint(index as Integer, g As Graphics, areas() As REALbasic.Rect)
-		  #Pragma Unused areas
-		  
-		  G.ForeColor = &cCCCCCC
-		  G.FillRect(0, 0, G.Width, G.Height)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events DownloadCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Self.Downloader.Disconnect
 		  Self.Close
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events ResultsNotesButton
+	#tag Event
+		Sub Pressed()
+		  ShowURL(Self.mNotesURL)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -756,29 +677,30 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub UpdateAvailable(Version As String, PreviewText As String, Notes As String, URL As String, Signature As String)
+		Sub UpdateAvailable(Version As String, PreviewText As String, Notes As String, NotesURL As String, URL As String, Signature As String)
 		  #Pragma Unused PreviewText
+		  #Pragma Unused Notes
 		  
-		  Self.ShowResults(Version, Notes, URL, Signature)
+		  Self.ShowResults(Version, NotesURL, URL, Signature)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events Downloader
 	#tag Event
-		Sub Error(err as RuntimeException)
+		Sub Error(e As RuntimeException)
 		  Me.Disconnect
 		  
 		  Dim Dialog As New MessageDialog
 		  Dialog.Title = ""
 		  Dialog.Message = "Unable to Download Update"
-		  Dialog.Explanation = Err.Reason
+		  Dialog.Explanation = e.Reason
 		  Call Dialog.ShowModalWithin(Self)
 		  
 		  Self.Close
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub HeadersReceived(URL as Text, HTTPStatus as Integer)
+		Sub HeadersReceived(URL As String, HTTPStatus As Integer)
 		  If HTTPStatus <> 200 Then
 		    Me.Disconnect
 		    
@@ -793,23 +715,25 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub ReceiveProgress(BytesReceived as Int64, TotalBytes as Int64, NewData as xojo.Core.MemoryBlock)
+		Sub ReceivingProgressed(bytesReceived As Int64, totalBytes As Int64, newData As String)
 		  #Pragma Unused NewData
 		  
-		  If Self.DownloadProgressBar.Maximum <> 1000 Then
-		    Self.DownloadProgressBar.Maximum = 1000
+		  If Self.DownloadProgressBar.MaximumValue <> 1000 Then
+		    Self.DownloadProgressBar.MaximumValue = 1000
 		  End If
-		  Self.DownloadProgressBar.Value = (BytesReceived / TotalBytes) * Self.DownloadProgressBar.Maximum
+		  Self.DownloadProgressBar.Value = (BytesReceived / TotalBytes) * Self.DownloadProgressBar.MaximumValue
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub PageReceived(URL as Text, HTTPStatus as Integer, Content as xojo.Core.MemoryBlock)
+		Sub ContentReceived(URL As String, HTTPStatus As Integer, content As String)
 		  #Pragma Unused URL
 		  #Pragma Unused HTTPStatus
 		  
-		  Dim Stream As BinaryStream = BinaryStream.Create(Self.mFile, True)
-		  Stream.Write(Beacon.ConvertMemoryBlock(Content))
-		  Stream.Close
+		  If Self.mFile.Write(Content) = False Then
+		    Self.ShowAlert("There was an error saving the new version.", "Attempted to save the new version to " + Self.mFile.NativePath)
+		    Self.Close
+		    Return
+		  End If
 		  
 		  If UpdateChecker.VerifyFile(Self.mFile, Self.mSignature) Then
 		    Self.Hide
@@ -840,7 +764,7 @@ End
 		    Return
 		  End If
 		  
-		  Self.mFile.Delete
+		  Self.mFile.Remove
 		  Self.mFile = Nil
 		  
 		  Dim Dialog As New MessageDialog
@@ -861,39 +785,59 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Backdrop"
-		Visible=true
-		Group="Background"
-		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="CloseButton"
-		Visible=true
+		Name="Resizeable"
+		Visible=false
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Composite"
-		Group="OS X (Carbon)"
-		InitialValue="False"
+		Name="MenuBarVisible"
+		Visible=true
+		Group="Deprecated"
+		InitialValue="True"
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Frame"
+		Name="MinimumWidth"
+		Visible=true
+		Group="Size"
+		InitialValue="64"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MinimumHeight"
+		Visible=true
+		Group="Size"
+		InitialValue="64"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MaximumWidth"
+		Visible=true
+		Group="Size"
+		InitialValue="32000"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MaximumHeight"
+		Visible=true
+		Group="Size"
+		InitialValue="32000"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Type"
 		Visible=true
 		Group="Frame"
 		InitialValue="0"
-		Type="Integer"
+		Type="Types"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Document"
@@ -910,134 +854,43 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="FullScreen"
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="FullScreenButton"
-		Visible=true
-		Group="Frame"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Height"
-		Visible=true
-		Group="Size"
-		InitialValue="400"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="ImplicitInstance"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="Interfaces"
-		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="LiveResize"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MacProcID"
-		Group="OS X (Carbon)"
-		InitialValue="0"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MaxHeight"
-		Visible=true
-		Group="Size"
-		InitialValue="32000"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MaximizeButton"
+		Name="HasCloseButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MaxWidth"
-		Visible=true
-		Group="Size"
-		InitialValue="32000"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBar"
-		Visible=true
-		Group="Menus"
-		Type="MenuBar"
-		EditorType="MenuBar"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MenuBarVisible"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinHeight"
-		Visible=true
-		Group="Size"
-		InitialValue="64"
-		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="MinimizeButton"
+		Name="HasMaximizeButton"
 		Visible=true
 		Group="Frame"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="MinWidth"
+		Name="HasMinimizeButton"
 		Visible=true
-		Group="Size"
-		InitialValue="64"
-		Type="Integer"
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Name"
+		Name="HasFullScreenButton"
 		Visible=true
-		Group="ID"
-		Type="String"
-		EditorType="String"
+		Group="Frame"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Placement"
+		Name="DefaultLocation"
 		Visible=true
 		Group="Behavior"
 		InitialValue="0"
-		Type="Integer"
+		Type="Locations"
 		EditorType="Enum"
 		#tag EnumValues
 			"0 - Default"
@@ -1048,19 +901,100 @@ End
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="Resizeable"
+		Name="HasBackgroundColor"
 		Visible=true
-		Group="Frame"
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Backdrop"
+		Visible=true
+		Group="Background"
+		InitialValue=""
+		Type="Picture"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="FullScreen"
+		Visible=false
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MenuBar"
+		Visible=true
+		Group="Menus"
+		InitialValue=""
+		Type="MenuBar"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Title"
@@ -1068,6 +1002,7 @@ End
 		Group="Frame"
 		InitialValue="Untitled"
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1075,7 +1010,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1083,5 +1018,6 @@ End
 		Group="Size"
 		InitialValue="600"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

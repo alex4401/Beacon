@@ -4,7 +4,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag Method, Flags = &h0
 		Sub Append(Item As Beacon.ItemSet)
 		  // Check for duplicates and rename if necessary.
-		  For I As Integer = 0 To Self.mSets.Ubound
+		  For I As Integer = 0 To Self.mSets.LastRowIndex
 		    If Self.mSets(I) = Item Then
 		      Item.Label = Item.Label.AddSuffix("Copy")
 		      
@@ -14,7 +14,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    End If
 		  Next
 		  
-		  Self.mSets.Append(Item)
+		  Self.mSets.AddRow(Item)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
@@ -26,15 +26,15 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ClassString() As Text
+		Function ClassString() As String
 		  Return Self.mClassString
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Shared Sub ComputeSimulationFigures(ItemSetPool() As Beacon.ItemSet, WeightScale As Integer, ByRef WeightSum As Double, ByRef Weights() As Double, ByRef WeightLookup As Xojo.Core.Dictionary)
+		Private Shared Sub ComputeSimulationFigures(ItemSetPool() As Beacon.ItemSet, WeightScale As Integer, ByRef WeightSum As Double, ByRef Weights() As Double, ByRef WeightLookup As Dictionary)
 		  Redim Weights(-1)
-		  WeightLookup = New Xojo.Core.Dictionary
+		  WeightLookup = New Dictionary
 		  WeightSum = 0
 		  
 		  For Each Set As Beacon.ItemSet In ItemSetPool
@@ -42,7 +42,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		      Continue
 		    End If
 		    WeightSum = WeightSum + Set.RawWeight
-		    Weights.Append(WeightSum * WeightScale)
+		    Weights.AddRow(WeightSum * WeightScale)
 		    WeightLookup.Value(WeightSum * WeightScale) = Set
 		  Next
 		  Weights.Sort
@@ -51,7 +51,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Sub ComputeWeightStatistics(ByRef TotalWeight As Double, ByRef AverageWeight As Double, ByRef MinWeight As Double, ByRef MaxWeight As Double)
-		  Dim NumSets As Integer = Self.mSets.Ubound + 1
+		  Dim NumSets As Integer = Self.mSets.LastRowIndex + 1
 		  If NumSets = 0 Then
 		    Return
 		  End If
@@ -60,7 +60,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  MinWeight = Self.mSets(0).RawWeight
 		  MaxWeight = Self.mSets(0).RawWeight
 		  
-		  For I As Integer = 1 To Self.mSets.Ubound
+		  For I As Integer = 1 To Self.mSets.LastRowIndex
 		    TotalWeight = TotalWeight + Self.mSets(I).RawWeight
 		    MinWeight = Min(MinWeight, Self.mSets(I).RawWeight)
 		    MaxWeight = Max(MaxWeight, Self.mSets(I).RawWeight)
@@ -94,8 +94,8 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    Raise Err
 		  End If
 		  
-		  Redim Self.mSets(Source.mSets.Ubound)
-		  Redim Self.mMandatoryItemSets(Source.mMandatoryItemSets.Ubound)
+		  Redim Self.mSets(Source.mSets.LastRowIndex)
+		  Redim Self.mMandatoryItemSets(Source.mMandatoryItemSets.LastRowIndex)
 		  
 		  Self.mMaxItemSets = Source.mMaxItemSets
 		  Self.mMinItemSets = Source.mMinItemSets
@@ -113,11 +113,11 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  Self.mExperimental = Source.mExperimental
 		  Self.mNotes = Source.mNotes
 		  
-		  For I As Integer = 0 To Source.mSets.Ubound
+		  For I As Integer = 0 To Source.mSets.LastRowIndex
 		    Self.mSets(I) = New Beacon.ItemSet(Source.mSets(I))
 		  Next
 		  
-		  For I As Integer = 0 To Source.mMandatoryItemSets.Ubound
+		  For I As Integer = 0 To Source.mMandatoryItemSets.LastRowIndex
 		    Self.mMandatoryItemSets(I) = New Beacon.ItemSet(Source.mMandatoryItemSets(I))
 		  Next
 		End Sub
@@ -133,7 +133,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Function Count() As Integer
-		  Return UBound(Self.mSets) + 1
+		  Return Self.mSets.LastRowIndex + 1
 		End Function
 	#tag EndMethod
 
@@ -144,15 +144,15 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Export() As Xojo.Core.Dictionary
-		  Dim Children() As Xojo.Core.Dictionary
+		Function Export() As Dictionary
+		  Dim Children() As Dictionary
 		  For Each Set As Beacon.ItemSet In Self.mSets
-		    Children.Append(Set.Export)
+		    Children.AddRow(Set.Export)
 		  Next
 		  
 		  // Mandatory item sets should not be part of this.
 		  
-		  Dim Keys As New Xojo.Core.Dictionary
+		  Dim Keys As New Dictionary
 		  Keys.Value("ItemSets") = Children
 		  Keys.Value("MaxItemSets") = Self.MaxItemSets
 		  Keys.Value("MinItemSets") = Self.MinItemSets
@@ -175,12 +175,6 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetIterator() As Xojo.Core.Iterator
-		  Return New Beacon.LootSourceIterator(Self)
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Function ImplementedPresetCount() As UInteger
 		  Dim Total As UInteger
 		  For Each Set As Beacon.ItemSet In Self.mSets
@@ -193,8 +187,8 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function ImportFromBeacon(Dict As Xojo.Core.DIctionary) As Beacon.LootSource
-		  Dim ClassString As Text
+		Shared Function ImportFromBeacon(Dict As Dictionary) As Beacon.LootSource
+		  Dim ClassString As String
 		  If Dict.HasKey("SupplyCrateClassString") Then
 		    ClassString = Dict.Value("SupplyCrateClassString")
 		  ElseIf Dict.HasKey("Type") Then
@@ -212,11 +206,11 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    LootSource = Beacon.Data.GetLootSource(ClassString)
 		  End If
 		  If LootSource = Nil Then
-		    Dim UIColor As Text = Dict.Lookup("UIColor", "FFFFFF00")
+		    Dim UIColor As String = Dict.Lookup("UIColor", "FFFFFF00")
 		    Dim MutableSource As New Beacon.MutableLootSource(ClassString, False)
 		    MutableSource.Multipliers = New Beacon.Range(Dict.Lookup("Multiplier_Min", 1), Dict.Lookup("Multiplier_Max", 1))
 		    MutableSource.Availability = Beacon.Maps.All.Mask
-		    MutableSource.UIColor = Color.RGBA(Integer.FromHex(UIColor.Mid(0, 2)), Integer.FromHex(UIColor.Mid(2, 2)), Integer.FromHex(UIColor.Mid(4, 2)), Integer.FromHex(UIColor.Mid(6, 2)))
+		    MutableSource.UIColor = Color.RGBA(Integer.FromHex(UIColor.Middle(0, 2)), Integer.FromHex(UIColor.Middle(2, 2)), Integer.FromHex(UIColor.Middle(4, 2)), Integer.FromHex(UIColor.Middle(6, 2)))
 		    MutableSource.SortValue = Dict.Lookup("SortValue", 99)
 		    MutableSource.Label = Dict.Lookup("Label", ClassString)
 		    MutableSource.UseBlueprints = Dict.Lookup("UseBlueprints", False)
@@ -226,18 +220,18 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    LootSource = New Beacon.LootSource(MutableSource)
 		  End If
 		  
-		  Dim Children() As Auto
+		  Dim Children() As Variant
 		  If Dict.HasKey("ItemSets") Then
 		    Children = Dict.Value("ItemSets")
 		  Else
 		    Children = Dict.Value("Items")
 		  End If
-		  Dim AddedHashes As New Xojo.Core.Dictionary
-		  For Each Child As Xojo.Core.Dictionary In Children
+		  Dim AddedHashes As New Dictionary
+		  For Each Child As Dictionary In Children
 		    Dim Set As Beacon.ItemSet = Beacon.ItemSet.ImportFromBeacon(Child)
-		    Dim Hash As Text = Set.Hash
+		    Dim Hash As String = Set.Hash
 		    If Set <> Nil And AddedHashes.HasKey(Hash) = False Then
-		      LootSource.mSets.Append(Set)
+		      LootSource.mSets.AddRow(Set)
 		      AddedHashes.Value(Hash) = True
 		    End If
 		  Next
@@ -267,8 +261,8 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function ImportFromConfig(Dict As Xojo.Core.Dictionary, DifficultyValue As Double) As Beacon.LootSource
-		  Dim ClassString As Text
+		Shared Function ImportFromConfig(Dict As Dictionary, Difficulty As BeaconConfigs.Difficulty) As Beacon.LootSource
+		  Dim ClassString As String
 		  If Dict.HasKey("SupplyCrateClassString") Then
 		    ClassString = Dict.Value("SupplyCrateClassString")
 		  End If
@@ -278,11 +272,11 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    LootSource = Beacon.Data.GetLootSource(ClassString)
 		  End If
 		  If LootSource = Nil Then
-		    Dim UIColor As Text = Dict.Lookup("UIColor", "FFFFFF00")
+		    Dim UIColor As String = Dict.Lookup("UIColor", "FFFFFF00")
 		    Dim MutableSource As New Beacon.MutableLootSource(ClassString, False)
 		    MutableSource.Multipliers = New Beacon.Range(Dict.Lookup("Multiplier_Min", 1), Dict.Lookup("Multiplier_Max", 1))
 		    MutableSource.Availability = Beacon.Maps.All.Mask
-		    MutableSource.UIColor = Color.RGBA(Integer.FromHex(UIColor.Mid(0, 2)), Integer.FromHex(UIColor.Mid(2, 2)), Integer.FromHex(UIColor.Mid(4, 2)), Integer.FromHex(UIColor.Mid(6, 2)))
+		    MutableSource.UIColor = Color.RGBA(Integer.FromHex(UIColor.Middle(0, 2)), Integer.FromHex(UIColor.Middle(2, 2)), Integer.FromHex(UIColor.Middle(4, 2)), Integer.FromHex(UIColor.Middle(6, 2)))
 		    MutableSource.SortValue = Dict.Lookup("SortValue", 99)
 		    MutableSource.Label = Dict.Lookup("Label", ClassString)
 		    MutableSource.UseBlueprints = Dict.Lookup("UseBlueprints", False)
@@ -292,14 +286,14 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    LootSource = New Beacon.LootSource(MutableSource)
 		  End If
 		  
-		  Dim Children() As Auto
+		  Dim Children() As Variant
 		  If Dict.HasKey("ItemSets") Then
 		    Children = Dict.Value("ItemSets")
 		  End If
-		  Dim AddedHashes As New Xojo.Core.Dictionary
-		  For Each Child As Xojo.Core.Dictionary In Children
-		    Dim Set As Beacon.ItemSet = Beacon.ItemSet.ImportFromConfig(Child, LootSource.Multipliers, DifficultyValue)
-		    Dim Hash As Text = Set.Hash
+		  Dim AddedHashes As New Dictionary
+		  For Each Child As Dictionary In Children
+		    Dim Set As Beacon.ItemSet = Beacon.ItemSet.ImportFromConfig(Child, LootSource.Multipliers, Difficulty)
+		    Dim Hash As String = Set.Hash
 		    If Set <> Nil And AddedHashes.HasKey(Hash) = False Then
 		      LootSource.Append(Set)
 		      AddedHashes.Value(Hash) = True
@@ -329,7 +323,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Function IndexOf(Item As Beacon.ItemSet) As Integer
-		  For I As Integer = 0 To UBound(Self.mSets)
+		  For I As Integer = 0 To Self.mSets.LastRowIndex
 		    If Self.mSets(I) = Item Then
 		      Return I
 		    End If
@@ -340,7 +334,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Sub Insert(Index As Integer, Item As Beacon.ItemSet)
-		  Self.mSets.Insert(Index, Item)
+		  Self.mSets.AddRowAt(Index, Item)
 		  Self.mModified = True
 		End Sub
 	#tag EndMethod
@@ -358,12 +352,23 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		      Return False
 		    End If
 		  Next
-		  Return Self.mSets.Ubound > -1
+		  Return Self.mSets.LastRowIndex > -1
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Label() As Text
+		Function Iterator() As Iterator
+		  Dim Sets() As Variant
+		  Redim Sets(Self.mSets.LastRowIndex)
+		  For I As Integer = 0 To Self.mSets.LastRowIndex
+		    Sets(I) = Self.mSets(I)
+		  Next
+		  Return New Beacon.GenericIterator(Sets)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function Label() As String
 		  If Self.mLabel <> "" Then
 		    Return Self.mLabel
 		  Else
@@ -373,7 +378,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Lookup(ClassString As Text) As Beacon.LootSource
+		Shared Function Lookup(ClassString As String) As Beacon.LootSource
 		  Dim Source As Beacon.LootSource = Beacon.Data.GetLootSource(ClassString)
 		  If Source = Nil Then
 		    Source = New Beacon.LootSource
@@ -386,8 +391,8 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag Method, Flags = &h0
 		Function MandatoryItemSets() As Beacon.ItemSet()
 		  Dim Arr() As Beacon.ItemSet
-		  Redim Arr(Self.mMandatoryItemSets.Ubound)
-		  For I As Integer = 0 To Self.mMandatoryItemSets.Ubound
+		  Redim Arr(Self.mMandatoryItemSets.LastRowIndex)
+		  For I As Integer = 0 To Self.mMandatoryItemSets.LastRowIndex
 		    Arr(I) = New Beacon.ItemSet(Self.mMandatoryItemSets(I))
 		  Next
 		  Return Arr
@@ -400,7 +405,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  Dim AllowedMaps() As Beacon.Map
 		  For Each Map As Beacon.Map In AllMaps
 		    If Self.ValidForMap(Map) Then
-		      AllowedMaps.Append(Map)
+		      AllowedMaps.AddRow(Map)
 		    End If
 		  Next
 		  Return AllowedMaps
@@ -440,7 +445,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Notes() As Text
+		Function Notes() As String
 		  Return Self.mNotes
 		End Function
 	#tag EndMethod
@@ -451,7 +456,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    Return 1
 		  End If
 		  
-		  Return Self.mClassString.Compare(Other.mClassString, Text.CompareCaseSensitive)
+		  Return Self.mClassString.Compare(Other.mClassString, ComparisonOptions.CaseSensitive)
 		End Function
 	#tag EndMethod
 
@@ -476,7 +481,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ReconfigurePresets(Mask As UInt64, Mods As Beacon.TextList) As UInteger
+		Function ReconfigurePresets(Mask As UInt64, Mods As Beacon.StringList) As UInteger
 		  Dim NumChanged As UInteger
 		  For Each Set As Beacon.ItemSet In Self.mSets
 		    If Set.SourcePresetID = "" Then
@@ -493,7 +498,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Sub Remove(Index As Integer)
-		  Self.mSets.Remove(Index)
+		  Self.mSets.RemoveRowAt(Index)
 		  Self.mModified = True
 		End Sub
 	#tag EndMethod
@@ -507,7 +512,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag Method, Flags = &h0
 		Function Simulate() As Beacon.SimulatedSelection()
 		  Dim Selections() As Beacon.SimulatedSelection
-		  Dim NumSets As Integer = Self.mSets.Ubound + Self.mMandatoryItemSets.Ubound + 2
+		  Dim NumSets As Integer = Self.mSets.LastRowIndex + Self.mMandatoryItemSets.LastRowIndex + 2
 		  If NumSets = 0 Then
 		    Return Selections
 		  End If
@@ -519,27 +524,27 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  If NumSets = MinSets And MinSets = MaxSets And Self.SetsRandomWithoutReplacement Then
 		    // All
 		    For Each Set As Beacon.ItemSet In Self.mSets
-		      SelectedSets.Append(Set)
+		      SelectedSets.AddRow(Set)
 		    Next
 		    For Each Set As Beacon.ItemSet In Self.mMandatoryItemSets
-		      SelectedSets.Append(Set)
+		      SelectedSets.AddRow(Set)
 		    Next
 		  Else
 		    Const WeightScale = 100000
 		    Dim ItemSetPool() As Beacon.ItemSet
-		    For I As Integer = 0 To Self.mSets.Ubound
-		      ItemSetPool.Append(Self.mSets(I))
+		    For I As Integer = 0 To Self.mSets.LastRowIndex
+		      ItemSetPool.AddRow(Self.mSets(I))
 		    Next
-		    For I As Integer = 0 To Self.mMandatoryItemSets.Ubound
-		      ItemSetPool.Append(Self.mMandatoryItemSets(I))
+		    For I As Integer = 0 To Self.mMandatoryItemSets.LastRowIndex
+		      ItemSetPool.AddRow(Self.mMandatoryItemSets(I))
 		    Next
 		    
 		    Dim RecomputeFigures As Boolean = True
-		    Dim ChooseSets As Integer = Xojo.Math.RandomInt(MinSets, MaxSets)
+		    Dim ChooseSets As Integer = System.Random.InRange(MinSets, MaxSets)
 		    Dim WeightSum, Weights() As Double
-		    Dim WeightLookup As Xojo.Core.Dictionary
+		    Dim WeightLookup As Dictionary
 		    For I As Integer = 1 To ChooseSets
-		      If ItemSetPool.Ubound = -1 Then
+		      If ItemSetPool.LastRowIndex = -1 Then
 		        Exit For I
 		      End If
 		      
@@ -549,10 +554,10 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		      End If
 		      
 		      Do
-		        Dim Decision As Double = Xojo.Math.RandomInt(WeightScale, WeightScale + (WeightSum * WeightScale)) - WeightScale
+		        Dim Decision As Double = System.Random.InRange(WeightScale, WeightScale + (WeightSum * WeightScale)) - WeightScale
 		        Dim SelectedSet As Beacon.ItemSet
 		        
-		        For X As Integer = 0 To Weights.Ubound
+		        For X As Integer = 0 To Weights.LastRowIndex
 		          If Weights(X) >= Decision Then
 		            Dim SelectedWeight As Double = Weights(X)
 		            SelectedSet = WeightLookup.Value(SelectedWeight)
@@ -564,11 +569,11 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		          Continue
 		        End If
 		        
-		        SelectedSets.Append(SelectedSet)
+		        SelectedSets.AddRow(SelectedSet)
 		        If Self.SetsRandomWithoutReplacement Then
-		          For X As Integer = 0 To ItemSetPool.Ubound
+		          For X As Integer = 0 To ItemSetPool.LastRowIndex
 		            If ItemSetPool(X) = SelectedSet Then
-		              ItemSetPool.Remove(X)
+		              ItemSetPool.RemoveRowAt(X)
 		              Exit For X
 		            End If
 		          Next
@@ -583,7 +588,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  For Each Set As Beacon.ItemSet In SelectedSets
 		    Dim SetSelections() As Beacon.SimulatedSelection = Set.Simulate
 		    For Each Selection As Beacon.SimulatedSelection In SetSelections
-		      Selections.Append(Selection)
+		      Selections.AddRow(Selection)
 		    Next
 		  Next
 		  Return Selections
@@ -597,42 +602,42 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function TextValue(Difficulty As BeaconConfigs.Difficulty) As Text
-		  Dim Values() As Text
+		Function StringValue(Difficulty As BeaconConfigs.Difficulty) As String
+		  Dim Values() As String
 		  
 		  // This is terrible, but Ark uses the same code for both Scorched Desert Crates and Island Sea Crates
 		  If Self.mClassString = "Beacon:ScorchedEarthDesertCrate_C" Then
-		    Values.Append("SupplyCrateClassString=""SupplyCreate_OceanInstant_High_C""")
+		    Values.AddRow("SupplyCrateClassString=""SupplyCreate_OceanInstant_High_C""")
 		  Else
-		    Values.Append("SupplyCrateClassString=""" + Self.mClassString + """")
+		    Values.AddRow("SupplyCrateClassString=""" + Self.mClassString + """")
 		  End If
 		  
 		  If Self.mAppendMode Then
-		    Values.Append("bAppendItemSets=true")
+		    Values.AddRow("bAppendItemSets=true")
 		  Else
 		    Dim MinSets As Integer = Min(Self.MinItemSets, Self.MaxItemSets)
 		    Dim MaxSets As Integer = Max(Self.MaxItemSets, Self.MinItemSets)
 		    
-		    Values.Append("MinItemSets=" + MinSets.ToText)
-		    Values.Append("MaxItemSets=" + MaxSets.ToText)
-		    Values.Append("NumItemSetsPower=" + Self.mNumItemSetsPower.PrettyText)
-		    Values.Append("bSetsRandomWithoutReplacement=" + if(Self.mSetsRandomWithoutReplacement, "true", "false"))
+		    Values.AddRow("MinItemSets=" + MinSets.ToString)
+		    Values.AddRow("MaxItemSets=" + MaxSets.ToString)
+		    Values.AddRow("NumItemSetsPower=" + Self.mNumItemSetsPower.PrettyText)
+		    Values.AddRow("bSetsRandomWithoutReplacement=" + if(Self.mSetsRandomWithoutReplacement, "true", "false"))
 		  End If
 		  
 		  Dim Sets() As Beacon.ItemSet
-		  If Self.mMandatoryItemSets.Ubound = -1 Or Self.mAppendMode Then
+		  If Self.mMandatoryItemSets.LastRowIndex = -1 Or Self.mAppendMode Then
 		    // Don't include the mandatory sets in append mode
 		    Sets = Self.mSets
 		  Else
 		    For Each Set As Beacon.ItemSet In Self.mSets
-		      Sets.Append(Set)
+		      Sets.AddRow(Set)
 		    Next
 		    For Each Set As Beacon.ItemSet In Self.mMandatoryItemSets
-		      Sets.Append(Set)
+		      Sets.AddRow(Set)
 		    Next
 		  End If
 		  
-		  Values.Append("ItemSets=(" + Beacon.ItemSet.Join(Sets, ",", Self.mMultipliers, Self.mUseBlueprints, Difficulty) + ")")
+		  Values.AddRow("ItemSets=(" + Beacon.ItemSet.Join(Sets, ",", Self.mMultipliers, Self.mUseBlueprints, Difficulty) + ")")
 		  Return "(" + Values.Join(",") + ")"
 		End Function
 	#tag EndMethod
@@ -657,7 +662,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Function ValidForMask(Mask As UInt64) As Boolean
-		  Return Mask = 0 Or (Self.mAvailability And Mask) > 0
+		  Return (Self.mAvailability And Mask) > 0
 		End Function
 	#tag EndMethod
 
@@ -707,7 +712,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h1
-		Protected mClassString As Text
+		Protected mClassString As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
@@ -738,7 +743,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mLabel As Text
+		Protected mLabel As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
@@ -762,7 +767,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected mNotes As Text
+		Protected mNotes As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -836,8 +841,11 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="AppendMode"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -845,6 +853,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -852,38 +861,55 @@ Implements Beacon.Countable,Beacon.DocumentItem
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="MaxItemSets"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="MinItemSets"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="NumItemSetsPower"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Double"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="SetsRandomWithoutReplacement"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -891,6 +917,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

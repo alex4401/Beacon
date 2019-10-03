@@ -2,21 +2,21 @@
 Protected Class ShelfItem
 Implements ObservationKit.Observable
 	#tag Method, Flags = &h0
-		Sub AddObserver(Observer As ObservationKit.Observer, Key As Text)
+		Sub AddObserver(Observer As ObservationKit.Observer, Key As String)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		    
@@ -26,7 +26,7 @@ Implements ObservationKit.Observable
 		    End If
 		  Next
 		  
-		  Refs.Append(Xojo.Core.WeakRef.Create(Observer))
+		  Refs.AddRow(New WeakRef(Observer))
 		  Self.mObservers.Value(Key) = Refs
 		End Sub
 	#tag EndMethod
@@ -47,7 +47,7 @@ Implements ObservationKit.Observable
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub mPulseTimer_Action(Sender As Timer)
+		Private Sub mPulseTimer_Run(Sender As Timer)
 		  #Pragma Unused Sender
 		  
 		  Dim Amount As Double = Self.PulseAmount
@@ -71,21 +71,21 @@ Implements ObservationKit.Observable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub NotifyObservers(Key As Text, Value As Auto)
+		Sub NotifyObservers(Key As String, Value As Variant)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		    
@@ -96,21 +96,21 @@ Implements ObservationKit.Observable
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub RemoveObserver(Observer As ObservationKit.Observer, Key As Text)
+		Sub RemoveObserver(Observer As ObservationKit.Observer, Key As String)
 		  // Part of the ObservationKit.Observable interface.
 		  
 		  If Self.mObservers = Nil Then
-		    Self.mObservers = New Xojo.Core.Dictionary
+		    Self.mObservers = New Dictionary
 		  End If
 		  
-		  Dim Refs() As Xojo.Core.WeakRef
+		  Dim Refs() As WeakRef
 		  If Self.mObservers.HasKey(Key) Then
 		    Refs = Self.mObservers.Value(Key)
 		  End If
 		  
-		  For I As Integer = UBound(Refs) DownTo 0
+		  For I As Integer = Refs.LastRowIndex DownTo 0
 		    If Refs(I).Value = Nil Or Refs(I).Value = Observer Then
-		      Refs.Remove(I)
+		      Refs.RemoveRowAt(I)
 		      Continue
 		    End If
 		  Next
@@ -159,7 +159,7 @@ Implements ObservationKit.Observable
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mObservers As Xojo.Core.Dictionary
+		Private mObservers As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -184,15 +184,15 @@ Implements ObservationKit.Observable
 			Set
 			  If Self.mNotificationColor <> Value Then
 			    Self.mNotificationColor = Value
-			    Self.mLastPulseTime = Microseconds - (Self.PulseTimeout * 1000) // To trigger a pulse immediately
+			    Self.mLastPulseTime = System.Microseconds - (Self.PulseTimeout * 1000) // To trigger a pulse immediately
 			    If Value = ShelfItem.NotificationColors.None And Self.mPulseTimer <> Nil Then
-			      RemoveHandler mPulseTimer.Action, WeakAddressOf mPulseTimer_Action
+			      RemoveHandler mPulseTimer.Run, WeakAddressOf mPulseTimer_Run
 			      Self.mPulseTimer = Nil
 			    ElseIf Value <> ShelfItem.NotificationColors.None And Self.mPulseTimer = Nil Then
 			      Self.mPulseTimer = New Timer
 			      Self.mPulseTimer.Period = 5
-			      Self.mPulseTimer.Mode = Timer.ModeMultiple
-			      AddHandler mPulseTimer.Action, WeakAddressOf mPulseTimer_Action
+			      Self.mPulseTimer.RunMode = Timer.RunModes.Multiple
+			      AddHandler mPulseTimer.Run, WeakAddressOf mPulseTimer_Run
 			    End If
 			    Self.NotifyObservers("PulseAmount", 0.0)
 			  End If
@@ -204,14 +204,14 @@ Implements ObservationKit.Observable
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  If Microseconds - Self.mLastPulseTime < Self.PulseTimeout * 1000 Then
+			  If System.Microseconds - Self.mLastPulseTime < Self.PulseTimeout * 1000 Then
 			    Return 0
 			  End If
 			  
-			  Dim Elapsed As Double = (Microseconds - Self.mLastPulseTime) - (Self.PulseTimeout * 1000)
+			  Dim Elapsed As Double = (System.Microseconds - Self.mLastPulseTime) - (Self.PulseTimeout * 1000)
 			  Dim Amount As Double = Elapsed / (Self.PulseDuration * 1000)
 			  If Amount >= 1.0 Then
-			    Self.mLastPulseTime = Microseconds
+			    Self.mLastPulseTime = System.Microseconds
 			  End If
 			  Return Max(Min(Amount, 1.0), 0.0)
 			End Get
@@ -275,6 +275,7 @@ Implements ObservationKit.Observable
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -282,18 +283,23 @@ Implements ObservationKit.Observable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -301,38 +307,67 @@ Implements ObservationKit.Observable
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Caption"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Icon"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Picture"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Tag"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="String"
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Type"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="NotificationColor"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="ShelfItem.NotificationColors"
+			EditorType="Enum"
+			#tag EnumValues
+				"0 - None"
+				"1 - Blue"
+				"2 - Brown"
+				"3 - Gray"
+				"4 - Green"
+				"5 - Orange"
+				"6 - Pink"
+				"7 - Purple"
+				"8 - Red"
+				"9 - Yellow"
+			#tag EndEnumValues
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="PulseAmount"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Double"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

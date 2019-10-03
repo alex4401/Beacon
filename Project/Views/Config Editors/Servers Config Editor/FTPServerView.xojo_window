@@ -5,7 +5,6 @@ Begin ServerViewContainer FTPServerView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,6 @@ Begin ServerViewContainer FTPServerView
       Caption         =   "Untitled"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -65,7 +63,6 @@ Begin ServerViewContainer FTPServerView
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
       Height          =   1
       HelpTag         =   ""
       Index           =   -2147483648
@@ -807,15 +804,15 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.Header.Caption = Self.mProfile.Name
-		  Self.ServerNameField.Text = Self.mProfile.Name
-		  Self.HostField.Text = Self.mProfile.Host
-		  Self.PortField.Text = Self.mProfile.Port.ToText
-		  Self.UserField.Text = Self.mProfile.Username
-		  Self.PassField.Text = Self.mProfile.Password
-		  Self.GameIniPathField.Text = Self.mProfile.GameIniPath
-		  Self.GameUserSettingsIniPathField.Text = Self.mProfile.GameUserSettingsIniPath
+		  Self.ServerNameField.Value = Self.mProfile.Name
+		  Self.HostField.Value = Self.mProfile.Host
+		  Self.PortField.Value = Self.mProfile.Port.ToString
+		  Self.UserField.Value = Self.mProfile.Username
+		  Self.PassField.Value = Self.mProfile.Password
+		  Self.GameIniPathField.Value = Self.mProfile.GameIniPath
+		  Self.GameUserSettingsIniPathField.Value = Self.mProfile.GameUserSettingsIniPath
 		  Self.ModeMenu.SelectByTag(Self.mProfile.Mode)
 		  Self.MapMenu.SelectByTag(Self.mProfile.Mask)
 		End Sub
@@ -838,65 +835,65 @@ End
 
 #tag Events ServerNameField
 	#tag Event
-		Sub TextChange()
-		  Self.mProfile.Name = Me.Text.ToText
-		  Self.Header.Caption = Me.Text
-		  Self.ContentsChanged = Self.mProfile.Modified
+		Sub TextChanged()
+		  Self.mProfile.Name = Me.Value
+		  Self.Header.Caption = Me.Value
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events HostField
 	#tag Event
-		Sub TextChange()
-		  Self.mProfile.Host = Me.Text.ToText
-		  Self.ContentsChanged = Self.mProfile.Modified
+		Sub TextChanged()
+		  Self.mProfile.Host = Me.Value
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events PortField
 	#tag Event
-		Sub TextChange()
-		  Self.mProfile.Port = Integer.FromText(Me.Text.ToText)
-		  Self.ContentsChanged = Self.mProfile.Modified
+		Sub TextChanged()
+		  Self.mProfile.Port = Integer.FromString(Me.Value)
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events UserField
 	#tag Event
-		Sub TextChange()
-		  Self.mProfile.Username = Me.Text.ToText
-		  Self.ContentsChanged = Self.mProfile.Modified
+		Sub TextChanged()
+		  Self.mProfile.Username = Me.Value
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events PassField
 	#tag Event
-		Sub TextChange()
-		  Self.mProfile.Password = Me.Text.ToText
-		  Self.ContentsChanged = Self.mProfile.Modified
+		Sub TextChanged()
+		  Self.mProfile.Password = Me.Value
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events GameIniPathField
 	#tag Event
-		Sub TextChange()
-		  Self.mProfile.GameIniPath = Me.Text.ToText
-		  Self.ContentsChanged = Self.mProfile.Modified
+		Sub TextChanged()
+		  Self.mProfile.GameIniPath = Me.Value
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events GameUserSettingsIniPathField
 	#tag Event
-		Sub TextChange()
-		  Self.mProfile.GameUserSettingsIniPath = Me.Text.ToText
-		  Self.ContentsChanged = Self.mProfile.Modified
+		Sub TextChanged()
+		  Self.mProfile.GameUserSettingsIniPath = Me.Value
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ModeMenu
 	#tag Event
-		Sub Open()
-		  Me.DeleteAllRows
+		Sub Opening()
+		  Me.RemoveAllRows
 		  Me.AddRow("Autodetect", Beacon.FTPServerProfile.ModeAuto)
 		  Me.AddRow("FTP", Beacon.FTPServerProfile.ModeFTP)
 		  Me.AddRow("FTP with TLS", Beacon.FTPServerProfile.ModeFTPTLS)
@@ -904,15 +901,15 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
+		Sub SelectionChanged()
 		  Self.mProfile.Mode = Me.Tag
-		  Self.ContentsChanged = Self.mProfile.Modified
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events MapMenu
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Me.AddRow("All Maps", Beacon.Maps.All.Mask)
 		  
 		  Dim Maps() As Beacon.Map = Beacon.Maps.All
@@ -922,28 +919,96 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Change()
+		Sub SelectionChanged()
 		  Dim Mask As UInt64
-		  If Me.ListIndex = -1 Then
+		  If Me.SelectedRowIndex = -1 Then
 		    Mask = Beacon.Maps.All.Mask
 		  Else
-		    Mask = Me.RowTag(Me.ListIndex)
+		    Mask = Me.RowTagAt(Me.SelectedRowIndex)
 		  End If
 		  Self.mProfile.Mask = Mask
-		  Self.ContentsChanged = Self.mProfile.Modified
+		  Self.Changed = Self.mProfile.Modified
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -953,6 +1018,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -960,20 +1026,23 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -981,6 +1050,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -988,53 +1058,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -1042,6 +1130,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -1049,7 +1138,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1057,7 +1146,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -1065,72 +1154,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -1138,7 +1170,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -1146,6 +1178,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

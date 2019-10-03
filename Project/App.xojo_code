@@ -9,7 +9,18 @@ Implements NotificationKit.Receiver
 	#tag EndEvent
 
 	#tag Event
-		Sub Close()
+		Function AppleEventReceived(theEvent As AppleEvent, eventClass As String, eventID As String) As Boolean
+		  If eventClass = "GURL" And eventID = "GURL" Then
+		    Dim URL As String = theEvent.StringParam("----")
+		    Return Self.HandleURL(URL)
+		  Else
+		    Return False
+		  End If
+		End Function
+	#tag EndEvent
+
+	#tag Event
+		Sub Closing()
 		  Try
 		    Self.UninstallTemporaryFont(Self.ResourcesFolder.Child("Fonts").Child("SourceCodePro").Child("SourceCodePro-Regular.otf"))
 		  Catch Err As RuntimeException
@@ -30,7 +41,14 @@ Implements NotificationKit.Receiver
 	#tag EndEvent
 
 	#tag Event
-		Sub EnableMenuItems()
+		Sub DocumentOpened(item As FolderItem)
+		  Self.OpenFile(Item, False)
+		  
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Sub MenuSelected()
 		  FileNew.Enable
 		  FileNewPreset.Enable
 		  FileOpen.Enable
@@ -48,18 +66,7 @@ Implements NotificationKit.Receiver
 	#tag EndEvent
 
 	#tag Event
-		Function HandleAppleEvent(theEvent As AppleEvent, eventClass As String, eventID As String) As Boolean
-		  If eventClass = "GURL" And eventID = "GURL" Then
-		    Dim URL As String = theEvent.StringParam("----")
-		    Return Self.HandleURL(URL)
-		  Else
-		    Return False
-		  End If
-		End Function
-	#tag EndEvent
-
-	#tag Event
-		Sub Open()
+		Sub Opening()
 		  #If TargetMacOS
 		    Self.Log("Beacon " + Str(Self.BuildNumber, "-0") + " for Mac.")
 		  #ElseIf TargetWin32
@@ -77,7 +84,7 @@ Implements NotificationKit.Receiver
 		        PushSocket.Poll
 		      Loop
 		      If PushSocket.IsConnected Then
-		        PushSocket.Write(System.CommandLine + Chr(0))
+		        PushSocket.Write(System.CommandLine + Encodings.UTF8.Chr(0))
 		        Do Until PushSocket.BytesLeftToSend = 0 Or Microseconds - StartTime > 5000000
 		          PushSocket.Poll
 		        Loop
@@ -112,6 +119,7 @@ Implements NotificationKit.Receiver
 		  
 		  Dim IdentityFile As FolderItem = Self.ApplicationSupport.Child("Default" + BeaconFileTypes.BeaconIdentity.PrimaryExtension)
 		  Self.mIdentityManager = New IdentityManager(IdentityFile)
+		  AddHandler mIdentityManager.NeedsLogin, WeakAddressOf mIdentityManager_NeedsLogin
 		  
 		  Try
 		    Self.TemporarilyInstallFont(Self.ResourcesFolder.Child("Fonts").Child("SourceCodePro").Child("SourceCodePro-Regular.otf"))
@@ -119,29 +127,23 @@ Implements NotificationKit.Receiver
 		    // Not critically important
 		  End Try
 		  
-		  Self.mLaunchQueue.Append(AddressOf LaunchQueue_CheckBetaExpiration)
-		  Self.mLaunchQueue.Append(AddressOf LaunchQueue_PrivacyCheck)
-		  Self.mLaunchQueue.Append(AddressOf LaunchQueue_SetupDatabase)
-		  Self.mLaunchQueue.Append(AddressOf LaunchQueue_ShowMainWindow)
-		  Self.mLaunchQueue.Append(AddressOf LaunchQueue_RequestUser)
-		  Self.mLaunchQueue.Append(AddressOf LaunchQueue_CheckUpdates)
-		  Self.mLaunchQueue.Append(AddressOf LaunchQueue_NewsletterPrompt)
-		  Self.mLaunchQueue.Append(AddressOf LaunchQueue_GettingStarted)
+		  Self.mLaunchQueue.AddRow(AddressOf LaunchQueue_CheckBetaExpiration)
+		  Self.mLaunchQueue.AddRow(AddressOf LaunchQueue_PrivacyCheck)
+		  Self.mLaunchQueue.AddRow(AddressOf LaunchQueue_SetupDatabase)
+		  Self.mLaunchQueue.AddRow(AddressOf LaunchQueue_ShowMainWindow)
+		  Self.mLaunchQueue.AddRow(AddressOf LaunchQueue_RequestUser)
+		  Self.mLaunchQueue.AddRow(AddressOf LaunchQueue_CheckUpdates)
+		  Self.mLaunchQueue.AddRow(AddressOf LaunchQueue_NewsletterPrompt)
+		  Self.mLaunchQueue.AddRow(AddressOf LaunchQueue_GettingStarted)
 		  Self.NextLaunchQueueTask
 		  
 		  #If TargetWin32
 		    Self.HandleCommandLineData(System.CommandLine, True)
 		  #EndIf
 		  
-		  BeaconUI.RegisterSheetPositionHandler
+		  Self.AllowAutoQuit = True
 		  
-		  Self.AutoQuit = True
-		End Sub
-	#tag EndEvent
-
-	#tag Event
-		Sub OpenDocument(item As FolderItem)
-		  Self.OpenFile(Item, False)
+		  Tests.RunTests()
 		End Sub
 	#tag EndEvent
 
@@ -156,10 +158,10 @@ Implements NotificationKit.Receiver
 
 	#tag MenuHandler
 		Function FileImport() As Boolean Handles FileImport.Action
-			Dim Dialog As New OpenDialog
+			Dim Dialog As New OpenFileDialog
 			Dialog.Filter = BeaconFileTypes.IniFile + BeaconFileTypes.BeaconPreset + BeaconFileTypes.JsonFile + BeaconFileTypes.BeaconIdentity
 			
-			Dim File As Beacon.FolderItem = Dialog.ShowModal
+			Dim File As FolderItem = Dialog.ShowModal
 			If File <> Nil Then
 			Self.OpenFile(File, True)
 			End If
@@ -212,7 +214,7 @@ Implements NotificationKit.Receiver
 
 	#tag MenuHandler
 		Function HelpCreateOfflineAuthorizationRequest() As Boolean Handles HelpCreateOfflineAuthorizationRequest.Action
-			Dim Dialog As New SaveAsDialog
+			Dim Dialog As New SaveFileDialog
 			Dialog.SuggestedFileName = "Authorization Request" + BeaconFileTypes.BeaconAuth.PrimaryExtension
 			
 			Dim File As FolderItem = Dialog.ShowModal()
@@ -222,19 +224,18 @@ Implements NotificationKit.Receiver
 			
 			Dim Identity As Beacon.Identity = Self.IdentityManager.CurrentIdentity
 			
-			Dim HardwareID As Text = Beacon.HardwareID
-			Dim SigningData As Xojo.Core.MemoryBlock = Xojo.Core.TextEncoding.UTF8.ConvertTextToData(HardwareID)
-			Dim Signed As Xojo.Core.MemoryBlock = Identity.Sign(SigningData)
+			Dim HardwareID As String = Beacon.HardwareID
+			Dim Signed As MemoryBlock = Identity.Sign(HardwareID)
 			
-			Dim Dict As New Xojo.Core.Dictionary
+			Dim Dict As New Dictionary
 			Dict.Value("UserID") = Identity.Identifier
-			Dict.Value("Signed") = Beacon.EncodeHex(Signed)
+			Dict.Value("Signed") = EncodeHex(Signed)
 			Dict.Value("Device") = HardwareID
 			
-			Dim JSON As Text = Xojo.Data.GenerateJSON(Dict)
-			Dim Stream As TextOutputStream = TextOutputStream.Create(File)
-			Stream.Write(JSON)
-			Stream.Close
+			Dim JSON As String = Beacon.GenerateJSON(Dict, False)
+			If Not File.Write(JSON) Then
+			BeaconUI.ShowAlert("Could not create offline authorization request.", "There was a problem writing the file to disk.")
+			End If
 			
 			Return True
 		End Function
@@ -300,7 +301,7 @@ Implements NotificationKit.Receiver
 	#tag Method, Flags = &h0
 		Function BuildVersion() As String
 		  Dim VersionString As String = Str(Self.MajorVersion, "0") + "." + Str(Self.MinorVersion, "0")
-		  If Self.BugVersion > 0 Or (Self.StageCode = Application.Final And Self.NonReleaseVersion > 0) Then
+		  If Self.BugVersion > 0 Or (Self.StageCode = Application.Final And Self.NonReleaseVersion > 0) Or Self.StageCode <> Application.Final Then
 		    VersionString = VersionString + "." + Str(Self.BugVersion, "0")
 		  End If
 		  Select Case Self.StageCode
@@ -323,8 +324,8 @@ Implements NotificationKit.Receiver
 	#tag Method, Flags = &h21
 		Private Sub CheckFolder(Folder As FolderItem)
 		  If Folder.Exists Then
-		    If Not Folder.Directory Then
-		      Folder.Delete
+		    If Not Folder.IsFolder Then
+		      Folder.Remove
 		      Folder.CreateAsFolder
 		    End If
 		  Else
@@ -374,8 +375,8 @@ Implements NotificationKit.Receiver
 		  Dim Args() As String
 		  
 		  BreakChar = " "
-		  For I As Integer = 1 To Data.Len
-		    Char = Data.Mid(I, 1)
+		  For I As Integer = 0 To Data.Length - 1
+		    Char = Data.Middle(I, 1)
 		    If Char = """" Then
 		      If BreakChar = " " Then
 		        BreakChar = """"
@@ -386,7 +387,7 @@ Implements NotificationKit.Receiver
 		    End If
 		    
 		    If Char = BreakChar Then
-		      Args.Append(Arg)
+		      Args.AddRow(Arg)
 		      Arg = ""
 		    Else
 		      Arg = Arg + Char
@@ -394,17 +395,21 @@ Implements NotificationKit.Receiver
 		  Next
 		  
 		  If Arg <> "" Then
-		    Args.Append(Arg)
+		    Args.AddRow(Arg)
 		  End If
 		  
-		  If Args.Ubound > 0 Then
+		  If Args.LastRowIndex > 0 Then
 		    Dim Path As String = DefineEncoding(Args(1), Encodings.UTF8)
 		    If Beacon.IsBeaconURL(Path) Then
 		      // Given a url
 		      Call Self.HandleURL(Path, True)
 		    ElseIf URLOnly = False Then
 		      // Given a file
-		      Dim File As FolderItem = GetFolderItem(Path, FolderItem.PathTypeNative)
+		      Dim File As FolderItem
+		      Try
+		        File = New FolderItem(Path, FolderItem.PathModes.Native)
+		      Catch Err As RuntimeException
+		      End Try
 		      If File <> Nil And File.Exists Then
 		        Self.OpenFile(File, False)
 		      End If
@@ -419,14 +424,14 @@ Implements NotificationKit.Receiver
 		    Return
 		  End If
 		  
-		  Dim Info As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Error)
-		  Dim Stack() As Xojo.Core.StackFrame = Error.CallStack
-		  While Stack.Ubound >= 0 And (Stack(0).Name = "RuntimeRaiseException" Or (Stack(0).Name.BeginsWith("Raise") And Stack(0).Name.EndsWith("Exception")))
-		    Stack.Remove(0)
+		  Dim Info As Introspection.TypeInfo = Introspection.GetType(Error)
+		  Dim Stack() As StackFrame = Error.StackFrames
+		  While Stack.LastRowIndex >= 0 And (Stack(0).Name = "RuntimeRaiseException" Or (Stack(0).Name.BeginsWith("Raise") And Stack(0).Name.EndsWith("Exception")))
+		    Stack.RemoveRowAt(0)
 		  Wend
 		  
 		  Dim Location As String = "Unknown"
-		  If Stack.Ubound >= 0 Then
+		  If Stack.LastRowIndex >= 0 Then
 		    Location = Stack(0).Name
 		  End If
 		  Dim Reason As String = Error.Reason
@@ -436,10 +441,10 @@ Implements NotificationKit.Receiver
 		  
 		  Self.Log("Unhandled " + Info.FullName + " in " + Location + ": " + Reason)
 		  
-		  Dim Dict As New Xojo.Core.Dictionary
+		  Dim Dict As New Dictionary
 		  Dict.Value("Object") = Error
 		  Dict.Value("Reason") = Error.Explanation
-		  Dict.Value("Location") = Location.ToText
+		  Dict.Value("Location") = Location
 		  Dict.Value("Type") = Info.FullName
 		  Dict.Value("Trace") = Stack
 		  If Self.IdentityManager <> Nil And Self.IdentityManager.CurrentIdentity <> Nil Then
@@ -460,17 +465,11 @@ Implements NotificationKit.Receiver
 		    Return False
 		  End If
 		  
-		  If Beacon.OAuth2Client.HandleURL(URL.ToText) Then
-		    Return True
-		  End If
-		  
 		  If URL.Left(7) = "action/" Then
-		    Dim Instructions As String = Mid(URL, 8)
-		    Dim ParamsPos As Integer = InStr(Instructions, "?") - 1
-		    Dim Params As String
+		    Dim Instructions As String = URL.Middle(7)
+		    Dim ParamsPos As Integer = Instructions.IndexOf("?")
 		    If ParamsPos > -1 Then
-		      Params = Mid(Instructions, ParamsPos + 1)
-		      Instructions = Left(Instructions, ParamsPos)
+		      Instructions = Instructions.Left(ParamsPos)
 		    End If
 		    
 		    Select Case Instructions
@@ -504,16 +503,15 @@ Implements NotificationKit.Receiver
 		      Break
 		    End Select
 		  Else
-		    Dim LegacyURL As Text = "thezaz.com/beacon/documents.php/"
-		    Dim TextURL As Text = URL.ToText
-		    Dim Idx As Integer = TextURL.IndexOf(LegacyURL)
+		    Dim LegacyURL As String = "thezaz.com/beacon/documents.php/"
+		    Dim Idx As Integer = URL.IndexOf(LegacyURL)
 		    If Idx > -1 Then
-		      Dim DocID As Text = TextURL.Mid(Idx + LegacyURL.Length)
+		      Dim DocID As String = URL.Middle(Idx + LegacyURL.Length)
 		      URL = BeaconAPI.URL("/document.php/" + DocID)
 		    End If
 		    
 		    Dim FileURL As String = "https://" + URL
-		    MainWindow.Documents.OpenURL(FileURL.ToText)
+		    MainWindow.Documents.OpenURL(FileURL)
 		  End If
 		  
 		  Return True
@@ -559,9 +557,9 @@ Implements NotificationKit.Receiver
 		  Dim Contents As String = Stream.ReadAll(Encodings.UTF8)
 		  Stream.Close
 		  
-		  Dim Dict As Xojo.Core.Dictionary
+		  Dim Dict As Dictionary
 		  Try
-		    Dict = Xojo.Data.ParseJSON(Contents.ToText)
+		    Dict = Beacon.ParseJSON(Contents)
 		  Catch Err As RuntimeException
 		    ParentWindow.ShowAlert("Cannot import identity", "File is not an identity file.")
 		    Return
@@ -597,9 +595,8 @@ Implements NotificationKit.Receiver
 		    Return
 		  End If
 		  
-		  Dim Limit As New Date(Self.BuildDate)
-		  Limit.Day = Limit.Day + 30
-		  Dim Now As New Date
+		  Dim Limit As DateTime = Self.BuildDateTime + New DateInterval(0, 0, 30)
+		  Dim Now As DateTime = DateTime.Now
 		  If Now > Limit Then
 		    BeaconUI.ShowAlert("This beta has expired.", "Please download a new version from " + Beacon.WebURL("/download/"))
 		    Quit
@@ -693,18 +690,18 @@ Implements NotificationKit.Receiver
 		  
 		  Self.mLogLock.Enter
 		  
-		  Dim Now As Xojo.Core.Date = Xojo.Core.Date.Now
-		  Dim DetailedMessage As String = Now.ToText + Str(Now.Nanosecond / 1000000000, ".0000000000") + " " + Now.TimeZone.Abbreviation + Chr(9) + Message
+		  Dim Now As DateTime = DateTime.Now
+		  Dim DetailedMessage As String = Now.ToString(Locale.Raw) + Str(Now.Nanosecond / 1000000000, ".0000000000") + " " + Now.TimeZone.Abbreviation + Encodings.UTF8.Chr(9) + Message
 		  
 		  #if DebugBuild
 		    System.DebugLog(DetailedMessage)
 		  #else
 		    Try
-		      Self.mQueuedLogMessages.Append(DetailedMessage)
+		      Self.mQueuedLogMessages.AddRow(DetailedMessage)
 		      
 		      Dim LogFile As FolderItem = Self.ApplicationSupport.Child("Events.log")
-		      Dim Stream As TextOutputStream = TextOutputStream.Append(LogFile)
-		      While Self.mQueuedLogMessages.Ubound > -1
+		      Dim Stream As TextOutputStream = TextOutputStream.Open(LogFile)
+		      While Self.mQueuedLogMessages.LastRowIndex > -1
 		        Stream.WriteLine(Self.mQueuedLogMessages(0))
 		        Self.mQueuedLogMessages.Remove(0)
 		      Wend
@@ -717,17 +714,31 @@ Implements NotificationKit.Receiver
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Sub LogAPIException(Err As RuntimeException, Location As String, HTTPStatus As Integer, RawContent As MemoryBlock)
+		  If Err = Nil Then
+		    Return
+		  End If
+		  Dim Info As Introspection.TypeInfo = Introspection.GetType(Err)
+		  Dim Base64 As String
+		  If RawContent <> Nil And RawContent.Size > 0 Then
+		    Base64 = EncodeBase64(RawContent, 0)
+		  End If
+		  Self.Log("Unhandled " + Info.FullName + " in " + Location + ": HTTP " + Str(HTTPStatus, "-0") + " " + Base64)
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h21
 		Private Sub mHandoffSocket_DataAvailable(Sender As IPCSocket)
 		  Do
 		    Dim Buffer As String = DefineEncoding(Sender.Lookahead, Encodings.UTF8)
-		    Dim Pos As Integer = Buffer.InStr(Chr(0))
-		    If Pos = 0 Then
+		    Dim Pos As Integer = Buffer.IndexOf(Encodings.UTF8.Chr(0))
+		    If Pos = -1 Then
 		      Exit
 		    End If
 		    
 		    Dim Command As String = DefineEncoding(Sender.Read(Pos), Encodings.UTF8)
-		    Command = Command.Left(Command.Len - 1) // Drop the null byte
+		    Command = Command.Left(Command.Length) // Drop the null byte
 		    Self.Log("Received command line data: " + Command)
 		    Self.HandleCommandLineData(Command, False)
 		  Loop
@@ -735,12 +746,23 @@ Implements NotificationKit.Receiver
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub mHandoffSocket_Error(Sender As IPCSocket)
-		  Dim Code As Integer = Sender.LastErrorCode
+		Private Sub mHandoffSocket_Error(Sender As IPCSocket, Err As RuntimeException)
+		  Dim Code As Integer = Err.ErrorNumber
 		  If Code = 102 Then
 		    Call CallLater.Schedule(100, AddressOf Sender.Listen)
 		  Else
 		    App.Log("IPC error " + Str(Code, "-0"))
+		  End If
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub mIdentityManager_NeedsLogin(Sender As IdentityManager)
+		  #Pragma Unused Sender
+		  
+		  If Self.CurrentThread = Nil Then
+		    Dim WelcomeWindow As New UserWelcomeWindow
+		    WelcomeWindow.ShowModal()
 		  End If
 		End Sub
 	#tag EndMethod
@@ -772,15 +794,16 @@ Implements NotificationKit.Receiver
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub mUpdateChecker_UpdateAvailable(Sender As UpdateChecker, Version As String, PreviewText As String, Notes As String, URL As String, Signature As String)
+		Private Sub mUpdateChecker_UpdateAvailable(Sender As UpdateChecker, Version As String, PreviewText As String, Notes As String, NotesURL As String, URL As String, Signature As String)
 		  #Pragma Unused Sender
 		  
-		  Dim Data As New Xojo.Core.Dictionary
-		  Data.Value("Version") = Version.ToText
-		  Data.Value("Notes") = Notes.ToText
-		  Data.Value("Download") = URL.ToText
-		  Data.Value("Signature") = Signature.ToText
-		  Data.Value("Preview") = PreviewText.ToText
+		  Dim Data As New Dictionary
+		  Data.Value("Version") = Version
+		  Data.Value("Notes") = Notes
+		  Data.Value("Download") = URL
+		  Data.Value("Signature") = Signature
+		  Data.Value("Preview") = PreviewText
+		  Data.Value("Notes URL") = NotesURL
 		  Self.mUpdateData = Data
 		  
 		  NotificationKit.Post(Self.Notification_UpdateFound, Data)
@@ -791,12 +814,12 @@ Implements NotificationKit.Receiver
 
 	#tag Method, Flags = &h0
 		Sub NextLaunchQueueTask()
-		  If Self.mLaunchQueue.Ubound = -1 Then
+		  If Self.mLaunchQueue.LastRowIndex = -1 Then
 		    Return
 		  End If
 		  
 		  Dim Task As LaunchQueueTask = Self.mLaunchQueue(0)
-		  Self.mLaunchQueue.Remove(0)
+		  Self.mLaunchQueue.RemoveRowAt(0)
 		  
 		  Task.Invoke()
 		End Sub
@@ -816,7 +839,7 @@ Implements NotificationKit.Receiver
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub OpenFile(File As Beacon.FolderItem, Import As Boolean)
+		Sub OpenFile(File As FolderItem, Import As Boolean)
 		  If Self.mIdentityManager = Nil Or Self.mIdentityManager.CurrentIdentity = Nil Then
 		    Return
 		  End If
@@ -827,7 +850,7 @@ Implements NotificationKit.Receiver
 		  
 		  If File.IsType(BeaconFileTypes.JsonFile) Then
 		    Try
-		      Dim Content As Text = File.Read(Xojo.Core.TextEncoding.UTF8)
+		      Dim Content As String = File.Read(Encodings.UTF8)
 		      LocalData.SharedInstance.Import(Content)
 		    Catch Err As RuntimeException
 		      
@@ -867,7 +890,7 @@ Implements NotificationKit.Receiver
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub PresentException(Details As Auto)
+		Private Sub PresentException(Details As Variant)
 		  ExceptionWindow.Present(Details)
 		End Sub
 	#tag EndMethod
@@ -875,7 +898,7 @@ Implements NotificationKit.Receiver
 	#tag Method, Flags = &h21
 		Private Sub RebuildRecentMenu()
 		  While FileOpenRecent.Count > 0
-		    FileOpenRecent.Remove(0)
+		    FileOpenRecent.RemoveMenuAt(0)
 		  Wend
 		  
 		  Dim Documents() As Beacon.DocumentURL = Preferences.RecentDocuments
@@ -883,20 +906,20 @@ Implements NotificationKit.Receiver
 		    Dim Item As New MenuItem(Document.Name)
 		    Item.Tag = Document
 		    Item.Enable
-		    AddHandler Item.Action, WeakAddressOf mOpenRecent_OpenFile
-		    FileOpenRecent.Append(Item)
+		    AddHandler Item.MenuItemSelected, WeakAddressOf mOpenRecent_OpenFile
+		    FileOpenRecent.AddMenu(Item)
 		  Next
-		  If Documents.Ubound > -1 Then
-		    FileOpenRecent.Append(New MenuItem(MenuItem.TextSeparator))
+		  If Documents.LastRowIndex > -1 Then
+		    FileOpenRecent.AddMenu(New MenuItem(MenuItem.TextSeparator))
 		    
 		    Dim Item As New MenuItem("Clear Menu")
 		    Item.Enable
-		    AddHandler Item.Action, WeakAddressOf mOpenRecent_ClearMenu
-		    FileOpenRecent.Append(Item)
+		    AddHandler Item.MenuItemSelected, WeakAddressOf mOpenRecent_ClearMenu
+		    FileOpenRecent.AddMenu(Item)
 		  Else
 		    Dim Item As New MenuItem("No Items")
 		    Item.Enabled = False
-		    FileOpenRecent.Append(Item)
+		    FileOpenRecent.AddMenu(Item)
 		  End If
 		End Sub
 	#tag EndMethod
@@ -918,8 +941,8 @@ Implements NotificationKit.Receiver
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub ShowBugReporter(ExceptionHash As Text = "")
-		  Dim Path As Text = "/reportaproblem.php?build=" + Self.BuildNumber.ToText
+		Sub ShowBugReporter(ExceptionHash As String = "")
+		  Dim Path As String = "/reportaproblem.php?build=" + Self.BuildNumber.ToString
 		  If ExceptionHash <> "" Then
 		    Path = Path + "&exception=" + ExceptionHash
 		  End If
@@ -947,7 +970,7 @@ Implements NotificationKit.Receiver
 
 	#tag Method, Flags = &h0
 		Sub ShowReleaseNotes()
-		  ShowURL(Beacon.WebURL("/history.php?stage=" + Self.StageCode.ToText(Xojo.Core.Locale.Raw, "0") + "#build" + Self.BuildNumber.ToText(Xojo.Core.Locale.Raw, "0")))
+		  ShowURL(Beacon.WebURL("/history.php?stage=" + Self.StageCode.ToString(Locale.Raw, "0") + "#build" + Self.BuildNumber.ToString(Locale.Raw, "0")))
 		End Sub
 	#tag EndMethod
 
@@ -1002,9 +1025,9 @@ Implements NotificationKit.Receiver
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function UpdateDetails() As Xojo.Core.Dictionary
+		Function UpdateDetails() As Dictionary
 		  If Self.mUpdateData <> Nil Then
-		    Return Beacon.Clone(Self.mUpdateData)
+		    Return Self.mUpdateData.Clone
 		  End If
 		End Function
 	#tag EndMethod
@@ -1047,7 +1070,7 @@ Implements NotificationKit.Receiver
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mUpdateData As Xojo.Core.Dictionary
+		Private mUpdateData As Dictionary
 	#tag EndProperty
 
 

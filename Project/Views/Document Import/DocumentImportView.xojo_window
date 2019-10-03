@@ -5,7 +5,6 @@ Begin ContainerControl DocumentImportView
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -39,12 +38,12 @@ Begin ContainerControl DocumentImportView
       LockLeft        =   True
       LockRight       =   True
       LockTop         =   True
-      PanelCount      =   6
+      PanelCount      =   7
       Panels          =   ""
       Scope           =   2
       TabIndex        =   0
       TabPanelIndex   =   0
-      TabStop         =   True
+      TabStop         =   "True"
       Top             =   0
       Transparent     =   False
       Value           =   4
@@ -138,7 +137,7 @@ Begin ContainerControl DocumentImportView
          TextFont        =   "System"
          TextSize        =   0.0
          TextUnit        =   0
-         Top             =   84
+         Top             =   148
          Transparent     =   False
          Underline       =   False
          Value           =   False
@@ -178,7 +177,7 @@ Begin ContainerControl DocumentImportView
       Begin UITweaks.ResizedPushButton SourceCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -201,7 +200,7 @@ Begin ContainerControl DocumentImportView
          TextFont        =   "System"
          TextSize        =   0.0
          TextUnit        =   0
-         Top             =   180
+         Top             =   212
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -210,7 +209,7 @@ Begin ContainerControl DocumentImportView
       Begin UITweaks.ResizedPushButton SourceActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Continue"
          Default         =   False
@@ -233,7 +232,7 @@ Begin ContainerControl DocumentImportView
          TextFont        =   "System"
          TextSize        =   0.0
          TextUnit        =   0
-         Top             =   180
+         Top             =   212
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -251,7 +250,6 @@ Begin ContainerControl DocumentImportView
          HasBackColor    =   False
          Height          =   456
          HelpTag         =   ""
-         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -281,7 +279,6 @@ Begin ContainerControl DocumentImportView
          HasBackColor    =   False
          Height          =   456
          HelpTag         =   ""
-         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -311,7 +308,6 @@ Begin ContainerControl DocumentImportView
          HasBackColor    =   False
          Height          =   456
          HelpTag         =   ""
-         Index           =   -2147483648
          InitialParent   =   "Views"
          Left            =   0
          LockBottom      =   True
@@ -367,7 +363,7 @@ Begin ContainerControl DocumentImportView
       Begin UITweaks.ResizedPushButton StatusCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -428,7 +424,6 @@ Begin ContainerControl DocumentImportView
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -453,7 +448,7 @@ Begin ContainerControl DocumentImportView
       Begin UITweaks.ResizedPushButton StatusActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Import"
          Default         =   False
@@ -505,7 +500,7 @@ Begin ContainerControl DocumentImportView
          TextFont        =   "System"
          TextSize        =   0.0
          TextUnit        =   0
-         Top             =   148
+         Top             =   180
          Transparent     =   False
          Underline       =   False
          Value           =   False
@@ -550,7 +545,7 @@ Begin ContainerControl DocumentImportView
       Begin UITweaks.ResizedPushButton OtherDocsActionButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   False
          Caption         =   "Continue"
          Default         =   True
@@ -582,7 +577,7 @@ Begin ContainerControl DocumentImportView
       Begin UITweaks.ResizedPushButton OtherDocsCancelButton
          AutoDeactivate  =   True
          Bold            =   False
-         ButtonStyle     =   "0"
+         ButtonStyle     =   0
          Cancel          =   True
          Caption         =   "Cancel"
          Default         =   False
@@ -643,7 +638,6 @@ Begin ContainerControl DocumentImportView
          LockRight       =   True
          LockTop         =   True
          RequiresSelection=   False
-         RowCount        =   0
          Scope           =   2
          ScrollbarHorizontal=   False
          ScrollBarVertical=   True
@@ -665,9 +659,67 @@ Begin ContainerControl DocumentImportView
          _ScrollOffset   =   0
          _ScrollWidth    =   -1
       End
+      Begin ConnectorDiscoveryView ConnectorDiscoveryView1
+         AllowAutoDeactivate=   True
+         AllowFocus      =   False
+         AllowFocusRing  =   False
+         AllowTabs       =   True
+         Backdrop        =   0
+         BackgroundColor =   &cFFFFFF00
+         DoubleBuffer    =   False
+         Enabled         =   True
+         EraseBackground =   True
+         HasBackgroundColor=   False
+         Height          =   456
+         InitialParent   =   "Views"
+         Left            =   0
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Scope           =   2
+         TabIndex        =   0
+         TabPanelIndex   =   7
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   0
+         Transparent     =   False
+         Visible         =   True
+         Width           =   600
+      End
+      Begin RadioButton SourceRadio
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Caption         =   "Server with Beacon Connector"
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   4
+         InitialParent   =   "Views"
+         Italic          =   False
+         Left            =   20
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Scope           =   2
+         TabIndex        =   7
+         TabPanelIndex   =   1
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   84
+         Transparent     =   False
+         Underline       =   False
+         Value           =   False
+         Visible         =   True
+         Width           =   560
+      End
    End
    Begin Timer DiscoveryWatcher
-      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Mode            =   0
@@ -680,7 +732,7 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  Self.SwapButtons
 		  Self.Reset
 		End Sub
@@ -688,42 +740,42 @@ End
 
 
 	#tag Method, Flags = &h21
-		Private Sub BeginDiscovery(Engines() As Beacon.DiscoveryEngine, OAuthProvider As Text, OAuthData As Xojo.Core.Dictionary)
+		Private Sub BeginDiscovery(Engines() As Beacon.DiscoveryEngine, OAuthProvider As String, OAuthData As Dictionary)
 		  Self.mEngines = Engines
 		  Self.mOAuthProvider = OAuthProvider
 		  Self.mOAuthData = OAuthData
 		  
 		  // Make sure the importers and engines stay in order because they need to be matched up later
 		  Redim Self.mImporters(-1) // To empty the array
-		  Redim Self.mImporters(Engines.Ubound)
+		  Redim Self.mImporters(Engines.LastRowIndex)
 		  Redim Self.mParsedData(-1)
-		  Redim Self.mParsedData(Engines.Ubound)
+		  Redim Self.mParsedData(Engines.LastRowIndex)
 		  Redim Self.mDocuments(-1)
-		  Redim Self.mDocuments(Engines.Ubound)
+		  Redim Self.mDocuments(Engines.LastRowIndex)
 		  
-		  Self.DiscoveryWatcher.Mode = Timer.ModeMultiple
+		  Self.DiscoveryWatcher.RunMode = Timer.RunModes.Multiple
 		  
-		  Self.StatusList.DeleteAllRows
+		  Self.StatusList.RemoveAllRows
 		  For Each Engine As Beacon.DiscoveryEngine In Engines
 		    Self.StatusList.AddRow(Engine.Name + EndOfLine + Engine.Status)
-		    Self.StatusList.RowTag(Self.StatusList.LastIndex) = Engine
+		    Self.StatusList.RowTagAt(Self.StatusList.LastAddedRowIndex) = Engine
 		    
 		    Engine.Begin()
 		  Next
 		  
-		  Self.Views.Value = Self.PageStatus
+		  Self.Views.SelectedPanelIndex = Self.PageStatus
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub Finish()
 		  Dim Documents() As Beacon.Document
-		  For I As Integer = 0 To Self.mDocuments.Ubound
+		  For I As Integer = 0 To Self.mDocuments.LastRowIndex
 		    If Self.mDocuments(I) <> Nil Then
-		      Documents.Append(Self.mDocuments(I))
+		      Documents.AddRow(Self.mDocuments(I))
 		    End If
 		  Next
-		  If Documents.Ubound > -1 Then
+		  If Documents.LastRowIndex > -1 Then
 		    RaiseEvent DocumentsImported(Documents)
 		  End If
 		  RaiseEvent ShouldDismiss
@@ -733,15 +785,15 @@ End
 	#tag Method, Flags = &h0
 		Sub Import(File As FolderItem)
 		  Self.QuickCancel = True
-		  Self.Views.Value = 3
+		  Self.Views.SelectedPanelIndex = 3
 		  Self.LocalDiscoveryView1.AddFile(File)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Importer_ThreadedParseFinished(Sender As Beacon.ImportThread, ParsedData As Xojo.Core.Dictionary)
+		Private Sub Importer_ThreadedParseFinished(Sender As Beacon.ImportThread, ParsedData As Dictionary)
 		  Dim Idx As Integer = -1
-		  For I As Integer = 0 To Self.mImporters.Ubound
+		  For I As Integer = 0 To Self.mImporters.LastRowIndex
 		    If Self.mImporters(I) = Sender Then
 		      Self.mParsedData(I) = ParsedData
 		      Idx = I
@@ -754,23 +806,23 @@ End
 		  End If
 		  
 		  Dim Engine As Beacon.DiscoveryEngine = Self.mEngines(Idx)
-		  Dim CommandLineOptions As Xojo.Core.Dictionary = Engine.CommandLineOptions
+		  Dim CommandLineOptions As Dictionary = Engine.CommandLineOptions
 		  If CommandLineOptions = Nil Then
-		    CommandLineOptions = New Xojo.Core.Dictionary
+		    CommandLineOptions = New Dictionary
 		  End If
 		  Dim Document As New Beacon.Document
 		  Document.MapCompatibility = Engine.Map
 		  
 		  Try
 		    Dim Maps() As Beacon.Map = Beacon.Maps.ForMask(Engine.Map)
-		    If Maps.Ubound = -1 Then
-		      Maps.Append(Beacon.Maps.TheIsland)
+		    If Maps.LastRowIndex = -1 Then
+		      Maps.AddRow(Beacon.Maps.TheIsland)
 		    End If
 		    Dim DifficultyTotal, DifficultyScale As Double
 		    For Each Map As Beacon.Map In Maps
 		      DifficultyTotal = DifficultyTotal + Map.DifficultyScale
 		    Next
-		    DifficultyScale = DifficultyTotal / (Maps.Ubound + 1)
+		    DifficultyScale = DifficultyTotal / (Maps.LastRowIndex + 1)
 		    
 		    Dim DifficultyValue As Double
 		    If CommandLineOptions.HasKey("OverrideOfficialDifficulty") And CommandLineOptions.DoubleValue("OverrideOfficialDifficulty") > 0 Then
@@ -801,8 +853,8 @@ End
 		  Dim Profile As Beacon.ServerProfile = Engine.Profile
 		  If Profile <> Nil Then
 		    If ParsedData.HasKey("SessionName") Then
-		      Dim SessionNames() As Auto = ParsedData.AutoArrayValue("SessionName")
-		      For Each SessionName As Auto In SessionNames
+		      Dim SessionNames() As Variant = ParsedData.AutoArrayValue("SessionName")
+		      For Each SessionName As Variant In SessionNames
 		        Try
 		          Profile.Name = SessionName
 		          Exit
@@ -814,23 +866,29 @@ End
 		    Document.Add(Profile)
 		  End If
 		  
-		  Dim ConfigNames() As Text = BeaconConfigs.AllConfigNames()
-		  For Each ConfigName As Text In ConfigNames
+		  Dim ConfigNames() As String = BeaconConfigs.AllConfigNames()
+		  Dim PurchasedOmniVersion As Integer = App.IdentityManager.CurrentIdentity.OmniVersion
+		  For Each ConfigName As String In ConfigNames
 		    If ConfigName = BeaconConfigs.Difficulty.ConfigName Or ConfigName = BeaconConfigs.CustomContent.ConfigName Then
 		      // Difficulty and custom content area special
 		      Continue For ConfigName
 		    End If
 		    
-		    Dim ConfigInfo As Xojo.Introspection.TypeInfo = BeaconConfigs.TypeInfoForConfigName(ConfigName)
-		    Dim Methods() As Xojo.Introspection.MethodInfo = ConfigInfo.Methods
-		    For Each Signature As Xojo.Introspection.MethodInfo In Methods
+		    If BeaconConfigs.ConfigPurchased(ConfigName, PurchasedOmniVersion) = False Then
+		      // Do not import code for groups that the user has not purchased
+		      Continue For ConfigName
+		    End If
+		    
+		    Dim ConfigInfo As Introspection.TypeInfo = BeaconConfigs.TypeInfoForConfigName(ConfigName)
+		    Dim Methods() As Introspection.MethodInfo = ConfigInfo.GetMethods
+		    For Each Signature As Introspection.MethodInfo In Methods
 		      Try
-		        If Signature.IsShared And Signature.Name = "FromImport" And Signature.Parameters.Ubound = 3 And Signature.ReturnType <> Nil And Signature.ReturnType.IsSubclassOf(GetTypeInfo(Beacon.ConfigGroup)) Then
-		          Dim Params(3) As Auto
+		        If Signature.IsShared And Signature.Name = "FromImport" And Signature.GetParameters.LastRowIndex = 3 And Signature.ReturnType <> Nil And Signature.ReturnType.IsSubclassOf(GetTypeInfo(Beacon.ConfigGroup)) Then
+		          Dim Params(3) As Variant
 		          Params(0) = ParsedData
 		          Params(1) = CommandLineOptions
 		          Params(2) = Document.MapCompatibility
-		          Params(3) = Document.DifficultyValue
+		          Params(3) = Document.Difficulty
 		          Dim Group As Beacon.ConfigGroup = Signature.Invoke(Nil, Params)
 		          If Group <> Nil Then
 		            Document.AddConfigGroup(Group)
@@ -845,13 +903,14 @@ End
 		  
 		  // Now figure out what configs we'll generate so CustomContent can figure out what NOT to capture.
 		  // Do not do this in the loop above to ensure all configs are loaded first, in case they rely on each other.
-		  Dim GameIniValues As New Xojo.Core.Dictionary
-		  Dim GameUserSettingsIniValues As New Xojo.Core.Dictionary
+		  Dim GameIniValues As New Dictionary
+		  Dim GameUserSettingsIniValues As New Dictionary
 		  Dim Configs() As Beacon.ConfigGroup = Document.ImplementedConfigs
-		  Dim Mask As UInt64 = Beacon.Maps.All.Mask
+		  Dim GenericProfile As New Beacon.GenericServerProfile(Document.Title, Beacon.Maps.All.Mask)
+		  Dim Identity As Beacon.Identity = App.IdentityManager.CurrentIdentity
 		  For Each Config As Beacon.ConfigGroup In Configs
-		    Beacon.ConfigValue.FillConfigDict(GameIniValues, Config.GameIniValues(Document, App.IdentityManager.CurrentIdentity, Mask))
-		    Beacon.ConfigValue.FillConfigDict(GameUserSettingsIniValues, Config.GameUserSettingsIniValues(Document, App.IdentityManager.CurrentIdentity, Mask))
+		    Beacon.ConfigValue.FillConfigDict(GameIniValues, Config.GameIniValues(Document, Identity, GenericProfile))
+		    Beacon.ConfigValue.FillConfigDict(GameUserSettingsIniValues, Config.GameUserSettingsIniValues(Document, Identity, GenericProfile))
 		  Next
 		  
 		  Dim CustomContent As New BeaconConfigs.CustomContent
@@ -877,12 +936,13 @@ End
 		  Self.FTPDiscoveryView1.PullValuesFromDocument(Document)
 		  Self.LocalDiscoveryView1.PullValuesFromDocument(Document)
 		  Self.NitradoDiscoveryView1.PullValuesFromDocument(Document)
+		  Self.ConnectorDiscoveryView1.PullValuesFromDocument(Document)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub Reset()
-		  For I As Integer = 0 To Self.mImporters.Ubound
+		  For I As Integer = 0 To Self.mImporters.LastRowIndex
 		    If Self.mImporters(I) <> Nil And Not Self.mImporters(I).Finished Then
 		      Self.mImporters(I).Cancel
 		    End If
@@ -893,8 +953,8 @@ End
 		  Redim Self.mParsedData(-1)
 		  Redim Self.mDocuments(-1)
 		  
-		  If Self.Views.Value <> 0 Then
-		    Self.Views.Value = 0
+		  If Self.Views.SelectedPanelIndex <> 0 Then
+		    Self.Views.SelectedPanelIndex = 0
 		  Else
 		    RaiseEvent ShouldResize(Self.SourcesPageHeight)
 		  End If
@@ -904,7 +964,7 @@ End
 	#tag Method, Flags = &h0
 		Sub SetOtherDocuments(Documents() As Beacon.Document)
 		  Self.mOtherDocuments = Documents
-		  Self.SourceRadio(3).Enabled = Documents.Ubound > -1
+		  Self.SourceRadio(3).Enabled = Documents.LastRowIndex > -1
 		  Self.SourceRadio(3).Caption = "Other Beacon Document" + If(Self.SourceRadio(3).Enabled, "", " (No Other Documents Open)")
 		End Sub
 	#tag EndMethod
@@ -936,11 +996,11 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mOAuthData As Xojo.Core.Dictionary
+		Private mOAuthData As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mOAuthProvider As Text
+		Private mOAuthProvider As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -948,13 +1008,16 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mParsedData() As Xojo.Core.Dictionary
+		Private mParsedData() As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
 		QuickCancel As Boolean
 	#tag EndProperty
 
+
+	#tag Constant, Name = PageConnector, Type = Double, Dynamic = False, Default = \"6", Scope = Private
+	#tag EndConstant
 
 	#tag Constant, Name = PageFTP, Type = Double, Dynamic = False, Default = \"2", Scope = Private
 	#tag EndConstant
@@ -974,7 +1037,7 @@ End
 	#tag Constant, Name = PageStatus, Type = Double, Dynamic = False, Default = \"4", Scope = Private
 	#tag EndConstant
 
-	#tag Constant, Name = SourcesPageHeight, Type = Double, Dynamic = False, Default = \"220", Scope = Private
+	#tag Constant, Name = SourcesPageHeight, Type = Double, Dynamic = False, Default = \"252", Scope = Private
 	#tag EndConstant
 
 	#tag Constant, Name = StatusPageHeight, Type = Double, Dynamic = False, Default = \"456", Scope = Private
@@ -985,8 +1048,8 @@ End
 
 #tag Events Views
 	#tag Event
-		Sub Change()
-		  Select Case Me.Value
+		Sub PanelChanged()
+		  Select Case Me.SelectedPanelIndex
 		  Case Self.PageSources
 		    RaiseEvent ShouldResize(Self.SourcesPageHeight)
 		  Case Self.PageNitrado
@@ -997,45 +1060,49 @@ End
 		    LocalDiscoveryView1.Begin
 		  Case Self.PageStatus, Self.PageOtherDocuments
 		    RaiseEvent ShouldResize(Self.StatusPageHeight)
+		  Case Self.PageConnector
+		    ConnectorDiscoveryView1.Begin
 		  End Select
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events SourceRadio
 	#tag Event
-		Sub Action(index as Integer)
-		  SourceActionButton.Enabled = SourceRadio(0).Value Or SourceRadio(1).Value Or SourceRadio(2).Value Or (SourceRadio(3).Value And SourceRadio(3).Enabled And Self.mOtherDocuments.Ubound > -1)
+		Sub ValueChanged(index as Integer)
+		  SourceActionButton.Enabled = SourceRadio(0).Value Or SourceRadio(1).Value Or SourceRadio(2).Value Or (SourceRadio(3).Value And SourceRadio(3).Enabled And Self.mOtherDocuments.LastRowIndex > -1) Or SourceRadio(4).Value
 		  SourceActionButton.Default = SourceActionButton.Enabled
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events SourceCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  RaiseEvent ShouldDismiss
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events SourceActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Select Case True
 		  Case SourceRadio(0).Value
-		    Views.Value = Self.PageNitrado
+		    Views.SelectedPanelIndex = Self.PageNitrado
 		  Case SourceRadio(1).Value
-		    Views.Value = Self.PageFTP
+		    Views.SelectedPanelIndex = Self.PageFTP
 		  Case SourceRadio(2).Value
-		    Views.Value = Self.PageLocal
+		    Views.SelectedPanelIndex = Self.PageLocal
+		  Case SourceRadio(4).Value
+		    Views.SelectedPanelIndex = Self.PageConnector
 		  Case SourceRadio(3).Value
-		    OtherDocsList.DeleteAllRows
-		    OtherDocsList.ColumnType(0) = ListBox.TypeCheckbox
+		    OtherDocsList.RemoveAllRows
+		    OtherDocsList.ColumnTypeAt(0) = Listbox.CellTypes.CheckBox
 		    For Each Doc As Beacon.Document In Self.mOtherDocuments
 		      OtherDocsList.AddRow("", Doc.Title)
-		      OtherDocsList.RowTag(OtherDocsList.LastIndex) = Doc
+		      OtherDocsList.RowTagAt(OtherDocsList.LastAddedRowIndex) = Doc
 		    Next
 		    OtherDocsList.Sort()
 		    OtherDocsActionButton.Enabled = False
-		    Views.Value = Self.PageOtherDocuments
+		    Views.SelectedPanelIndex = Self.PageOtherDocuments
 		  End Select
 		End Sub
 	#tag EndEvent
@@ -1046,12 +1113,12 @@ End
 		  If Self.QuickCancel Then
 		    RaiseEvent ShouldDismiss
 		  Else
-		    Views.Value = 0
+		    Views.SelectedPanelIndex = 0
 		  End If
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Finished(Engines() As Beacon.DiscoveryEngine, OAuthProvider As Text, OAuthData As Xojo.Core.Dictionary)
+		Sub Finished(Engines() As Beacon.DiscoveryEngine, OAuthProvider As String, OAuthData As Dictionary)
 		  Self.BeginDiscovery(Engines, OAuthProvider, OAuthData)
 		End Sub
 	#tag EndEvent
@@ -1067,12 +1134,12 @@ End
 		  If Self.QuickCancel Then
 		    RaiseEvent ShouldDismiss
 		  Else
-		    Views.Value = 0
+		    Views.SelectedPanelIndex = 0
 		  End If
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Finished(Engines() As Beacon.DiscoveryEngine, OAuthProvider As Text, OAuthData As Xojo.Core.Dictionary)
+		Sub Finished(Engines() As Beacon.DiscoveryEngine, OAuthProvider As String, OAuthData As Dictionary)
 		  Self.BeginDiscovery(Engines, OAuthProvider, OAuthData)
 		End Sub
 	#tag EndEvent
@@ -1088,12 +1155,12 @@ End
 		  If Self.QuickCancel Then
 		    RaiseEvent ShouldDismiss
 		  Else
-		    Views.Value = 0
+		    Views.SelectedPanelIndex = 0
 		  End If
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Sub Finished(Engines() As Beacon.DiscoveryEngine, OAuthProvider As Text, OAuthData As Xojo.Core.Dictionary)
+		Sub Finished(Engines() As Beacon.DiscoveryEngine, OAuthProvider As String, OAuthData As Dictionary)
 		  Self.BeginDiscovery(Engines, OAuthProvider, OAuthData)
 		End Sub
 	#tag EndEvent
@@ -1105,7 +1172,7 @@ End
 #tag EndEvents
 #tag Events StatusCancelButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  If Self.QuickCancel Then
 		    Self.Close
 		  Else
@@ -1116,15 +1183,15 @@ End
 #tag EndEvents
 #tag Events OtherDocsActionButton
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  Redim Self.mDocuments(-1)
-		  For I As Integer = 0 To OtherDocsList.ListCount - 1
-		    If Not OtherDocsList.CellCheck(I, 0) Then
+		  For I As Integer = 0 To OtherDocsList.RowCount - 1
+		    If Not OtherDocsList.CellCheckBoxValueAt(I, 0) Then
 		      Continue
 		    End If
 		    
-		    Dim Doc As Beacon.Document = OtherDocsList.RowTag(I)
-		    Self.mDocuments.Append(Doc)
+		    Dim Doc As Beacon.Document = OtherDocsList.RowTagAt(I)
+		    Self.mDocuments.AddRow(Doc)
 		  Next
 		  Self.Finish()
 		End Sub
@@ -1132,8 +1199,8 @@ End
 #tag EndEvents
 #tag Events OtherDocsCancelButton
 	#tag Event
-		Sub Action()
-		  Views.Value = Self.PageSources
+		Sub Pressed()
+		  Views.SelectedPanelIndex = Self.PageSources
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -1147,8 +1214,8 @@ End
 		  End If
 		  
 		  Dim Enabled As Boolean
-		  For I As Integer = 0 To Me.ListCount - 1
-		    If Me.CellCheck(I, Column) Then
+		  For I As Integer = 0 To Me.RowCount - 1
+		    If Me.CellCheckBoxValueAt(I, Column) Then
 		      Enabled = True
 		      Exit For I
 		    End If
@@ -1158,13 +1225,34 @@ End
 		End Sub
 	#tag EndEvent
 #tag EndEvents
+#tag Events ConnectorDiscoveryView1
+	#tag Event
+		Sub ShouldCancel()
+		  If Self.QuickCancel Then
+		    RaiseEvent ShouldDismiss
+		  Else
+		    Views.SelectedPanelIndex = 0
+		  End If
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub ShouldResize(NewHeight As Integer)
+		  RaiseEvent ShouldResize(NewHeight)
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub Finished(Engines() As Beacon.DiscoveryEngine, OAuthProvider As String, OAuthData As Dictionary)
+		  Self.BeginDiscovery(Engines, OAuthProvider, OAuthData)
+		End Sub
+	#tag EndEvent
+#tag EndEvents
 #tag Events DiscoveryWatcher
 	#tag Event
-		Sub Action()
+		Sub Run()
 		  Dim AllFinished As Boolean = True
 		  Dim SuccessCount As Integer
 		  Dim Errors As Boolean
-		  For I As Integer = 0 To Self.mEngines.Ubound
+		  For I As Integer = 0 To Self.mEngines.LastRowIndex
 		    Dim Engine As Beacon.DiscoveryEngine = Self.mEngines(I)
 		    Dim Finished As Boolean
 		    Dim Status As String
@@ -1176,7 +1264,7 @@ End
 		        AddHandler Importer.ThreadedParseFinished, WeakAddressOf Importer_ThreadedParseFinished      
 		        Self.mImporters(I) = Importer
 		        Status = "Parsing Config Files…"
-		        Importer.Run
+		        Importer.Start
 		      ElseIf Self.mImporters(I).Finished Then
 		        // Show import finished
 		        Finished = True
@@ -1193,7 +1281,7 @@ End
 		        If Self.mImporters(I).Progress >= 1 Then
 		          Status = "Finishing…"
 		        Else
-		          Status = "Parsing Config Files… (" + Progress.ToText() + "%)"
+		          Status = "Parsing Config Files… (" + Progress.ToString() + "%)"
 		        End If
 		      End If
 		    Else
@@ -1206,15 +1294,15 @@ End
 		    End If
 		    
 		    Status = Engine.Name + EndOfLine + Status
-		    If Self.StatusList.Cell(I, 0) <> Status Then
-		      Self.StatusList.Cell(I, 0) = Status
+		    If Self.StatusList.CellValueAt(I, 0) <> Status Then
+		      Self.StatusList.CellValueAt(I, 0) = Status
 		    End If
 		    
 		    AllFinished = AllFinished And Finished
 		  Next
 		  
 		  If AllFinished Then
-		    Me.Mode = Timer.ModeOff
+		    Me.RunMode = Timer.RunModes.Off
 		    If Errors = False Then
 		      Self.Finish()
 		    ElseIf SuccessCount > 0 Then
@@ -1239,49 +1327,84 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="DoubleBuffer"
 		Visible=true
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -1289,22 +1412,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -1312,66 +1420,79 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="QuickCancel"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -1379,12 +1500,15 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -1392,13 +1516,15 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -1406,15 +1532,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -1422,7 +1540,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -1430,5 +1548,6 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

@@ -5,7 +5,6 @@ Begin LibrarySubview LibraryPaneNotifications Implements NotificationKit.Receive
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -34,7 +33,7 @@ Begin LibrarySubview LibraryPaneNotifications Implements NotificationKit.Receive
       Caption         =   "Notifications"
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   False
+      EraseBackground =   "False"
       Height          =   40
       HelpTag         =   ""
       Index           =   -2147483648
@@ -65,7 +64,7 @@ Begin LibrarySubview LibraryPaneNotifications Implements NotificationKit.Receive
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   260
       HelpTag         =   ""
       Index           =   -2147483648
@@ -92,13 +91,13 @@ End
 
 #tag WindowCode
 	#tag Event
-		Sub Close()
+		Sub Closing()
 		  NotificationKit.Ignore(Self, LocalData.Notification_NewAppNotification)
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
+		Sub Opening()
 		  NotificationKit.Watch(Self, LocalData.Notification_NewAppNotification)
 		  
 		  Self.RefreshNotifications()
@@ -133,9 +132,9 @@ End
 		  Const CellPadding = 10
 		  Const CloseHitBox = 20
 		  
-		  G.TextFont = "System"
-		  G.TextUnit = FontUnits.Point
-		  G.TextSize = 0
+		  G.FontName = "System"
+		  G.FontUnit = FontUnits.Point
+		  G.FontSize = 0
 		  
 		  Dim OldUnreadCount As Integer = Self.UnreadCount
 		  
@@ -143,17 +142,17 @@ End
 		  Dim CellWidth As Double = G.Width - (CellPadding * 2)
 		  Dim Pos As Double = VerticalOffset
 		  Dim ContentHeight As Integer
-		  Redim Self.mNotificationRects(Self.mNotifications.Ubound)
-		  Redim Self.mCloseRects(Self.mNotifications.Ubound)
-		  For I As Integer = 0 To Self.mNotifications.Ubound
-		    Dim DrawBottomBorder As Boolean = I < Self.mNotifications.Ubound
+		  Redim Self.mNotificationRects(Self.mNotifications.LastRowIndex)
+		  Redim Self.mCloseRects(Self.mNotifications.LastRowIndex)
+		  For I As Integer = 0 To Self.mNotifications.LastRowIndex
+		    Dim DrawBottomBorder As Boolean = I < Self.mNotifications.LastRowIndex
 		    
 		    Dim Message As String = Self.mNotifications(I).Message
 		    Dim MessageTop As Double = Pos + CellPadding
 		    Dim MessageHeight As Double = G.ActualStringHeight(Message, CellWidth)
-		    Dim MessageBaseline As Double = MessageTop + G.TextAscent
-		    G.ForeColor = SystemColors.LabelColor
-		    G.DrawString(Message, CellPadding, MessageBaseline, CellWidth, False)
+		    Dim MessageBaseline As Double = MessageTop + G.FontAscent
+		    G.DrawingColor = SystemColors.LabelColor
+		    G.DrawText(Message, CellPadding, MessageBaseline, CellWidth, False)
 		    
 		    Dim CellHeight As Double = CellPadding + MessageHeight + CellPadding
 		    
@@ -161,9 +160,9 @@ End
 		    If SecondaryMessage <> "" Then
 		      Dim SecondaryMessageTop As Double = MessageTop + MessageHeight + (CellPadding / 2)
 		      Dim SecondaryMessageHeight As Double = G.ActualStringHeight(SecondaryMessage, CellWidth)
-		      Dim SecondaryMessageBaseline As Double = SecondaryMessageTop + G.TextAscent
-		      G.ForeColor = SystemColors.SecondaryLabelColor
-		      G.DrawString(SecondaryMessage, CellPadding, SecondaryMessageBaseline, CellWidth, False)
+		      Dim SecondaryMessageBaseline As Double = SecondaryMessageTop + G.FontAscent
+		      G.DrawingColor = SystemColors.SecondaryLabelColor
+		      G.DrawText(SecondaryMessage, CellPadding, SecondaryMessageBaseline, CellWidth, False)
 		      CellHeight = CellHeight + SecondaryMessageHeight + (CellPadding / 2)
 		    End If
 		    
@@ -176,11 +175,11 @@ End
 		    Self.mCloseRects(I) = New BeaconUI.Rect(NotificationRect.Right - CloseHitBox, NotificationRect.Top, CloseHitBox, CloseHitBox)
 		    G.DrawPicture(CloseIcon, Self.mCloseRects(I).Left + ((Self.mCloseRects(I).Width - CloseIcon.Width) / 2), Self.mCloseRects(I).Top + ((Self.mCloseRects(I).Height - CloseIcon.Height) / 2))
 		    If Self.mPressed And Self.mDownIndex = I Then
-		      G.ForeColor = &c00000080
+		      G.DrawingColor = &c00000080
 		      If Self.mPressedOnClose Then
-		        G.FillRoundRect(Self.mCloseRects(I).Left, Self.mCloseRects(I).Top, Self.mCloseRects(I).Width, Self.mCloseRects(I).Height, 2, 2)
+		        G.FillRoundRectangle(Self.mCloseRects(I).Left, Self.mCloseRects(I).Top, Self.mCloseRects(I).Width, Self.mCloseRects(I).Height, 2, 2)
 		      Else
-		        G.FillRect(NotificationRect.Left, NotificationRect.Top, NotificationRect.Width, NotificationRect.Height)
+		        G.FillRectangle(NotificationRect.Left, NotificationRect.Top, NotificationRect.Width, NotificationRect.Height)
 		      End If
 		    End If
 		    
@@ -192,8 +191,8 @@ End
 		      LocalData.SharedInstance.SaveNotification(Self.mNotifications(I))
 		    End If
 		    If DrawBottomBorder Then
-		      G.ForeColor = SystemColors.SeparatorColor
-		      G.FillRect(0, Pos, G.Width, 1)
+		      G.DrawingColor = SystemColors.SeparatorColor
+		      G.FillRectangle(0, Pos, G.Width, 1)
 		      Pos = Pos + 1
 		      ContentHeight = ContentHeight + 1
 		    End If
@@ -214,8 +213,8 @@ End
 		  Dim OldUnreadCount As Integer = Self.UnreadCount
 		  
 		  Self.mNotifications = LocalData.SharedInstance.GetNotifications
-		  Redim Self.mNotificationRects(Self.mNotifications.Ubound)
-		  Redim Self.mCloseRects(Self.mNotifications.Ubound)
+		  Redim Self.mNotificationRects(Self.mNotifications.LastRowIndex)
+		  Redim Self.mCloseRects(Self.mNotifications.LastRowIndex)
 		  Self.DrawCanvas.Invalidate
 		  
 		  Dim NewUnreadCount As Integer = Self.UnreadCount
@@ -289,8 +288,8 @@ End
 		  #Pragma Unused Areas
 		  
 		  If Self.mScrollPosition > 0 Then
-		    G.ForeColor = SystemColors.SeparatorColor
-		    G.FillRect(0, 0, G.Width, 1)
+		    G.DrawingColor = SystemColors.SeparatorColor
+		    G.FillRectangle(0, 0, G.Width, 1)
 		    Self.PaintInto(G.Clip(0, 1, G.Width, G.Height - 1), (Self.mScrollPosition * -1) - 1)
 		  Else
 		    Self.PaintInto(G, 0)
@@ -312,7 +311,7 @@ End
 	#tag EndEvent
 	#tag Event
 		Function MouseDown(X As Integer, Y As Integer) As Boolean
-		  For I As Integer = 0 To Self.mNotificationRects.Ubound
+		  For I As Integer = 0 To Self.mNotificationRects.LastRowIndex
 		    Try
 		      If Self.mNotificationRects(I).Contains(X, Y) Then
 		        If Self.mCloseRects(I).Contains(X, Y) Then
@@ -372,10 +371,10 @@ End
 		  End If
 		  
 		  Try
-		    If Self.mDownRect <> Nil And Self.mDownIndex <= Self.mNotifications.Ubound And Self.mDownRect.Contains(X, Y) Then
+		    If Self.mDownRect <> Nil And Self.mDownIndex <= Self.mNotifications.LastRowIndex And Self.mDownRect.Contains(X, Y) Then
 		      Dim OldUnreadCount As Integer = Self.UnreadCount
 		      If Not Self.mPressedOnClose Then
-		        Dim URL As Text = Self.mNotifications(Self.mDownIndex).ActionURL
+		        Dim URL As String = Self.mNotifications(Self.mDownIndex).ActionURL
 		        If Beacon.IsBeaconURL(URL) Then
 		          Call App.HandleURL(URL, True)
 		        ElseIf URL.BeginsWith("https://") Then
@@ -389,9 +388,9 @@ End
 		      
 		      // Clicking a notification dismisses it
 		      LocalData.SharedInstance.DeleteNotification(Self.mNotifications(Self.mDownIndex))
-		      Self.mNotifications.Remove(Self.mDownIndex)
-		      Self.mCloseRects.Remove(Self.mDownIndex)
-		      Self.mNotificationRects.Remove(Self.mDownIndex)
+		      Self.mNotifications.RemoveRowAt(Self.mDownIndex)
+		      Self.mCloseRects.RemoveRowAt(Self.mDownIndex)
+		      Self.mNotificationRects.RemoveRowAt(Self.mDownIndex)
 		      
 		      // Update counts. Painting should handle this, but just in case.
 		      Dim NewUnreadCount As Integer = Self.UnreadCount
@@ -412,10 +411,76 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Progress"
+		Visible=false
 		Group="Behavior"
 		InitialValue="ProgressNone"
 		Type="Double"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
@@ -423,6 +488,7 @@ End
 		Group="Behavior"
 		InitialValue="400"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumHeight"
@@ -430,10 +496,13 @@ End
 		Group="Behavior"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="ToolbarCaption"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty
@@ -441,15 +510,17 @@ End
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -457,6 +528,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -464,53 +536,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -518,6 +608,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -525,7 +616,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -533,7 +624,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -541,72 +632,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -614,7 +648,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -622,6 +656,6 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

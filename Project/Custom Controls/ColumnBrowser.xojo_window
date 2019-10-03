@@ -5,7 +5,6 @@ Begin BeaconContainer ColumnBrowser
    AutoDeactivate  =   True
    BackColor       =   &cFFFFFF00
    Backdrop        =   0
-   Compatibility   =   ""
    DoubleBuffer    =   False
    Enabled         =   True
    EraseBackground =   True
@@ -87,7 +86,7 @@ Begin BeaconContainer ColumnBrowser
       LockRight       =   False
       LockTop         =   True
       RequiresSelection=   False
-      RowCount        =   0
+      RowCount        =   "0"
       Scope           =   2
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
@@ -116,7 +115,7 @@ Begin BeaconContainer ColumnBrowser
       Backdrop        =   0
       DoubleBuffer    =   False
       Enabled         =   True
-      EraseBackground =   True
+      EraseBackground =   "True"
       Height          =   285
       HelpTag         =   ""
       Index           =   0
@@ -152,8 +151,8 @@ End
 	#tag EndEvent
 
 	#tag Event
-		Sub Open()
-		  RaiseEvent Open
+		Sub Opening()
+		  RaiseEvent Opening
 		  Self.Reset()
 		End Sub
 	#tag EndEvent
@@ -162,8 +161,8 @@ End
 		Sub Paint(g As Graphics, areas() As REALbasic.Rect)
 		  #Pragma Unused Areas
 		  
-		  G.ForeColor = SystemColors.UnderPageBackgroundColor
-		  G.FillRect(0, 0, G.Width, G.Height)
+		  G.DrawingColor = SystemColors.UnderPageBackgroundColor
+		  G.FillRectangle(0, 0, G.Width, G.Height)
 		End Sub
 	#tag EndEvent
 
@@ -180,7 +179,7 @@ End
 	#tag Method, Flags = &h0
 		Sub AppendChildren(Children() As String)
 		  // Create new list if there is a selection
-		  Dim NewList As Boolean = Self.Lists(Self.mListBound).ListIndex > -1
+		  Dim NewList As Boolean = Self.Lists(Self.mListBound).SelectedRowIndex > -1
 		  Dim TargetList As BeaconListbox
 		  
 		  If NewList Then
@@ -204,11 +203,11 @@ End
 		      Self.mScrollTask = Nil
 		    End If
 		    
-		    If Self.Scroller.Value <> Self.Scroller.Maximum Then
+		    If Self.Scroller.Value <> Self.Scroller.MaximumValue Then
 		      Self.mScrollTask = New AnimationKit.ScrollTask(Self.Scroller)
 		      Self.mScrollTask.DurationInSeconds = 0.15
 		      Self.mScrollTask.Curve = AnimationKit.Curve.CreateEaseOut
-		      Self.mScrollTask.Position = Self.Scroller.Maximum
+		      Self.mScrollTask.Position = Self.Scroller.MaximumValue
 		      Self.mScrollTask.Run
 		    End If
 		  Else
@@ -225,15 +224,15 @@ End
 		  Dim RestoreUpdating As Boolean = Self.mUpdating
 		  Self.mUpdating = True
 		  
-		  List.DeleteAllRows
-		  For I As Integer = 0 To Children.Ubound  
+		  List.RemoveAllRows
+		  For I As Integer = 0 To Children.LastRowIndex  
 		    Dim Child As String = Children(I)
 		    If Child.EndsWith("/") Then
 		      Child = Child.Left(Child.Length - 1)
 		    End If
 		    
 		    List.AddRow("", Child)
-		    List.RowTag(List.LastIndex) = Parent + Children(I)
+		    List.RowTagAt(List.LastAddedRowIndex) = Parent + Children(I)
 		  Next
 		  List.Sort
 		  
@@ -250,7 +249,7 @@ End
 
 	#tag Method, Flags = &h0
 		Sub Reset()
-		  Self.Lists(0).ListIndex = -1
+		  Self.Lists(0).SelectedRowIndex = -1
 		  
 		  Dim DefaultChildren() As String
 		  Self.AppendChildren(DefaultChildren)
@@ -269,8 +268,8 @@ End
 		  If Self.Scroller.Value <> Position Then
 		    Self.Scroller.Value = Position
 		  End If
-		  If Self.Scroller.Maximum <> Overflow Then
-		    Self.Scroller.Maximum = Overflow
+		  If Self.Scroller.MaximumValue <> Overflow Then
+		    Self.Scroller.MaximumValue = Overflow
 		  End If
 		  
 		  Dim ListHeight As Integer
@@ -301,7 +300,7 @@ End
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event Open()
+		Event Opening()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
@@ -360,19 +359,19 @@ End
 #tag EndEvents
 #tag Events Lists
 	#tag Event
-		Sub Change(index as Integer)
+		Sub SelectionChanged(index as Integer)
 		  If Self.mUpdating Then
 		    Return
 		  End If
 		  
 		  Dim NewPath As String
 		  Dim TriggerEvent As Boolean
-		  If Me.ListIndex > -1 Then
-		    NewPath = Me.RowTag(Me.ListIndex)
+		  If Me.SelectedRowIndex > -1 Then
+		    NewPath = Me.RowTagAt(Me.SelectedRowIndex)
 		    TriggerEvent = True
 		  Else
 		    If Index > 0 Then
-		      NewPath = Self.Lists(Index - 1).RowTag(Self.Lists(Index - 1).ListIndex)
+		      NewPath = Self.Lists(Index - 1).RowTagAt(Self.Lists(Index - 1).SelectedRowIndex)
 		    Else
 		      NewPath = "/"
 		    End If
@@ -420,11 +419,11 @@ End
 		  #Pragma Unused BackgroundColor
 		  #Pragma Unused IsHighlighted
 		  
-		  If Column <> 0 Or Row >= Me.ListCount Then
+		  If Column <> 0 Or Row >= Me.RowCount Then
 		    Return
 		  End If
 		  
-		  Dim Path As String = Me.RowTag(Row)
+		  Dim Path As String = Me.RowTagAt(Row)
 		  Dim IsDir As Boolean = Path.EndsWith("/")
 		  Dim Mask As Picture
 		  If IsDir Then
@@ -440,18 +439,84 @@ End
 #tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
+		Name="EraseBackground"
+		Visible=false
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Tooltip"
+		Visible=true
+		Group="Appearance"
+		InitialValue=""
+		Type="String"
+		EditorType="MultiLineEditor"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowAutoDeactivate"
+		Visible=true
+		Group="Appearance"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocusRing"
+		Visible=true
+		Group="Appearance"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&hFFFFFF"
+		Type="Color"
+		EditorType="Color"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowFocus"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="AllowTabs"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
 		Name="Name"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Super"
 		Visible=true
 		Group="ID"
+		InitialValue=""
 		Type="String"
-		EditorType="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Width"
@@ -459,6 +524,7 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Height"
@@ -466,53 +532,71 @@ End
 		Group="Size"
 		InitialValue="300"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="InitialParent"
+		Visible=false
 		Group="Position"
+		InitialValue=""
 		Type="String"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Left"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Top"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockLeft"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockTop"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockRight"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="LockBottom"
 		Visible=true
 		Group="Position"
+		InitialValue=""
 		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabPanelIndex"
+		Visible=false
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabIndex"
@@ -520,6 +604,7 @@ End
 		Group="Position"
 		InitialValue="0"
 		Type="Integer"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="TabStop"
@@ -527,7 +612,7 @@ End
 		Group="Position"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Visible"
@@ -535,7 +620,7 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Enabled"
@@ -543,72 +628,15 @@ End
 		Group="Appearance"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AutoDeactivate"
-		Visible=true
-		Group="Appearance"
-		InitialValue="True"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HelpTag"
-		Visible=true
-		Group="Appearance"
-		Type="String"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="UseFocusRing"
-		Visible=true
-		Group="Appearance"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="HasBackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="False"
-		Type="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BackColor"
-		Visible=true
-		Group="Background"
-		InitialValue="&hFFFFFF"
-		Type="Color"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
 		Visible=true
 		Group="Background"
+		InitialValue=""
 		Type="Picture"
-		EditorType="Picture"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptFocus"
-		Visible=true
-		Group="Behavior"
-		InitialValue="False"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="AcceptTabs"
-		Visible=true
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="EraseBackground"
-		Group="Behavior"
-		InitialValue="True"
-		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Transparent"
@@ -616,7 +644,7 @@ End
 		Group="Behavior"
 		InitialValue="True"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="DoubleBuffer"
@@ -624,11 +652,13 @@ End
 		Group="Windows Behavior"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="CurrentPath"
+		Visible=false
 		Group="Behavior"
+		InitialValue=""
 		Type="String"
 		EditorType="MultiLineEditor"
 	#tag EndViewProperty

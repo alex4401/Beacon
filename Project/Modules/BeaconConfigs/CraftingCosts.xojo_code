@@ -2,27 +2,49 @@
  Attributes ( OmniVersion = 1 ) Protected Class CraftingCosts
 Inherits Beacon.ConfigGroup
 	#tag Event
-		Sub GameIniValues(SourceDocument As Beacon.Document, Values() As Beacon.ConfigValue, Mask As UInt64)
-		  #Pragma Unused Mask
-		  #Pragma Unused SourceDocument
+		Sub DetectIssues(Document As Beacon.Document, Issues() As Beacon.Issue)
+		  #Pragma Unused Document
 		  
-		  For Each Cost As Beacon.CraftingCost In Self.mCosts
-		    Dim TextValue As Text = Cost.TextValue
-		    Values.Append(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "ConfigOverrideItemCraftingCosts", TextValue))
+		  Dim ConfigName As String = ConfigKey
+		  For I As Integer = 0 To Self.mCosts.LastRowIndex
+		    If Self.mCosts(I).IsValid Then
+		      Continue
+		    End If
+		    
+		    If Self.mCosts(I).Engram = Nil Then
+		      Issues.AddRow(New Beacon.Issue(ConfigName, "Crafting cost has no engram", Self.mCosts(I)))
+		    End If
+		    
+		    If Self.mCosts(I).LastRowIndex = -1 Then
+		      Issues.AddRow(New Beacon.Issue(ConfigName, "Crafting cost override of """ + Self.mCosts(I).Label + """ has no resources.", Self.mCosts(I)))
+		    End If
 		  Next
 		End Sub
 	#tag EndEvent
 
 	#tag Event
-		Sub ReadDictionary(Dict As Xojo.Core.Dictionary, Identity As Beacon.Identity)
+		Sub GameIniValues(SourceDocument As Beacon.Document, Values() As Beacon.ConfigValue, Profile As Beacon.ServerProfile)
+		  #Pragma Unused Profile
+		  #Pragma Unused SourceDocument
+		  
+		  For Each Cost As Beacon.CraftingCost In Self.mCosts
+		    Dim StringValue As String = Cost.StringValue
+		    Values.AddRow(New Beacon.ConfigValue(Beacon.ShooterGameHeader, "ConfigOverrideItemCraftingCosts", StringValue))
+		  Next
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Sub ReadDictionary(Dict As Dictionary, Identity As Beacon.Identity, Document As Beacon.Document)
 		  #Pragma Unused Identity
+		  #Pragma Unused Document
 		  
 		  If Dict.HasKey("Costs") Then
-		    Dim Costs() As Auto = Dict.Value("Costs")
-		    For Each CostData As Xojo.Core.Dictionary In Costs
+		    Dim Costs() As Variant = Dict.Value("Costs")
+		    For Each CostData As Dictionary In Costs
 		      Dim Cost As Beacon.CraftingCost = Beacon.CraftingCost.ImportFromBeacon(CostData)
 		      If Cost <> Nil Then
-		        Self.mCosts.Append(Cost)
+		        Self.mCosts.AddRow(Cost)
 		      End If
 		    Next
 		  End If
@@ -30,12 +52,12 @@ Inherits Beacon.ConfigGroup
 	#tag EndEvent
 
 	#tag Event
-		Sub WriteDictionary(Dict As Xojo.Core.DIctionary, Identity As Beacon.Identity)
-		  #Pragma Unused Identity
+		Sub WriteDictionary(Dict As Dictionary, Document As Beacon.Document)
+		  #Pragma Unused Document
 		  
-		  Dim Costs() As Xojo.Core.Dictionary
+		  Dim Costs() As Dictionary
 		  For Each Cost As Beacon.CraftingCost In Self.mCosts
-		    Costs.Append(Cost.Export)
+		    Costs.AddRow(Cost.Export)
 		  Next
 		  Dict.Value("Costs") = Costs
 		End Sub
@@ -50,47 +72,47 @@ Inherits Beacon.ConfigGroup
 		  
 		  Dim Idx As Integer = Self.IndexOf(Cost)
 		  If Idx = -1 Then
-		    Self.mCosts.Append(Cost)
+		    Self.mCosts.AddRow(Cost)
 		    Self.Modified = True
 		  End If
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function ConfigName() As Text
-		  Return "CraftingCosts"
+		Shared Function ConfigName() As String
+		  Return ConfigKey
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function FromImport(ParsedData As Xojo.Core.Dictionary, CommandLineOptions As Xojo.Core.Dictionary, MapCompatibility As UInt64, QualityMultiplier As Double) As BeaconConfigs.CraftingCosts
+		Shared Function FromImport(ParsedData As Dictionary, CommandLineOptions As Dictionary, MapCompatibility As UInt64, Difficulty As BeaconConfigs.Difficulty) As BeaconConfigs.CraftingCosts
 		  #Pragma Unused CommandLineOptions
 		  #Pragma Unused MapCompatibility
-		  #Pragma Unused QualityMultiplier
+		  #Pragma Unused Difficulty
 		  
 		  If Not ParsedData.HasKey("ConfigOverrideItemCraftingCosts") Then
 		    Return Nil
 		  End If
 		  
-		  Dim Values As Auto = ParsedData.Value("ConfigOverrideItemCraftingCosts")
-		  Dim ValuesInfo As Xojo.Introspection.TypeInfo = Xojo.Introspection.GetType(Values)
-		  Dim Overrides() As Auto
-		  If ValuesInfo.FullName = "Auto()" Then
+		  Dim Values As Variant = ParsedData.Value("ConfigOverrideItemCraftingCosts")
+		  Dim ValuesInfo As Introspection.TypeInfo = Introspection.GetType(Values)
+		  Dim Overrides() As Variant
+		  If ValuesInfo.FullName = "Object()" Then
 		    Overrides = Values
-		  ElseIf ValuesInfo.FullName = "Xojo.Core.Dictionary" Then
-		    Overrides.Append(Values)
+		  ElseIf ValuesInfo.FullName = "Dictionary" Then
+		    Overrides.AddRow(Values)
 		  Else
 		    Return Nil
 		  End If
 		  
 		  Dim Config As New BeaconConfigs.CraftingCosts
-		  For Each Dict As Xojo.Core.Dictionary In Overrides
+		  For Each Dict As Dictionary In Overrides
 		    Dim Cost As Beacon.CraftingCost = Beacon.CraftingCost.ImportFromConfig(Dict)
 		    If Cost <> Nil Then
 		      Config.Append(Cost)
 		    End If
 		  Next
-		  If Config.Ubound > -1 Then
+		  If Config.LastRowIndex > -1 Then
 		    Return Config
 		  End If
 		End Function
@@ -102,7 +124,7 @@ Inherits Beacon.ConfigGroup
 		    Return -1
 		  End If
 		  
-		  For I As Integer = 0 To Self.mCosts.Ubound
+		  For I As Integer = 0 To Self.mCosts.LastRowIndex
 		    If Self.mCosts(I).Engram = Cost.Engram Or Self.mCosts(I) = Cost Then
 		      Return I
 		    End If
@@ -119,32 +141,15 @@ Inherits Beacon.ConfigGroup
 		  
 		  Dim Idx As Integer = Self.IndexOf(Cost)
 		  If Idx = -1 Then
-		    Self.mCosts.Insert(Index, Cost)
+		    Self.mCosts.AddRowAt(Index, Cost)
 		    Self.Modified = True
 		  End If
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Issues(Document As Beacon.Document) As Beacon.Issue()
-		  #Pragma Unused Document
-		  
-		  Dim Issues() As Beacon.Issue
-		  Dim ConfigName As Text = "CraftingCosts"
-		  For I As Integer = 0 To Self.mCosts.Ubound
-		    If Self.mCosts(I).IsValid Then
-		      Continue
-		    End If
-		    
-		    If Self.mCosts(I).Engram = Nil Then
-		      Issues.Append(New Beacon.Issue(ConfigName, "Crafting cost has no engram", Self.mCosts(I)))
-		    End If
-		    
-		    If Self.mCosts(I).Ubound = -1 Then
-		      Issues.Append(New Beacon.Issue(ConfigName, "Crafting cost override of """ + Self.mCosts(I).Label + """ has no resources.", Self.mCosts(I)))
-		    End If
-		  Next
-		  Return Issues
+		Function LastRowIndex() As Integer
+		  Return Self.mCosts.LastRowIndex
 		End Function
 	#tag EndMethod
 
@@ -154,7 +159,7 @@ Inherits Beacon.ConfigGroup
 		    Return True
 		  End If
 		  
-		  For I As Integer = 0 To Self.mCosts.Ubound
+		  For I As Integer = 0 To Self.mCosts.LastRowIndex
 		    If Self.mCosts(I).Modified Then
 		      Return True
 		    End If
@@ -167,7 +172,7 @@ Inherits Beacon.ConfigGroup
 		  Super.Modified = Value
 		  
 		  If Not Value Then
-		    For I As Integer = 0 To Self.mCosts.Ubound
+		    For I As Integer = 0 To Self.mCosts.LastRowIndex
 		      Self.mCosts(I).Modified = False
 		    Next
 		  End If
@@ -208,15 +213,9 @@ Inherits Beacon.ConfigGroup
 
 	#tag Method, Flags = &h0
 		Sub Remove(Index As Integer)
-		  Self.mCosts.Remove(Index)
+		  Self.mCosts.RemoveRowAt(Index)
 		  Self.Modified = True
 		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function Ubound() As Integer
-		  Return Self.mCosts.Ubound
-		End Function
 	#tag EndMethod
 
 
@@ -225,12 +224,18 @@ Inherits Beacon.ConfigGroup
 	#tag EndProperty
 
 
+	#tag Constant, Name = ConfigKey, Type = Text, Dynamic = False, Default = \"CraftingCosts", Scope = Private
+	#tag EndConstant
+
+
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -238,12 +243,15 @@ Inherits Beacon.ConfigGroup
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -251,6 +259,7 @@ Inherits Beacon.ConfigGroup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -258,11 +267,15 @@ Inherits Beacon.ConfigGroup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="IsImplicit"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

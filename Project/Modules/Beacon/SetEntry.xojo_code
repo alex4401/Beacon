@@ -3,7 +3,7 @@ Protected Class SetEntry
 Implements Beacon.Countable,Beacon.DocumentItem
 	#tag Method, Flags = &h0
 		Sub Append(Item As Beacon.SetEntryOption)
-		  Self.mOptions.Append(Item)
+		  Self.mOptions.AddRow(Item)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
@@ -19,19 +19,19 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ClassesLabel() As Text
-		  If UBound(Self.mOptions) = -1 Then
+		Function ClassesLabel() As String
+		  If Self.mOptions.LastRowIndex = -1 Then
 		    Return "No Items"
-		  ElseIf UBound(Self.mOptions) = 0 Then
+		  ElseIf Self.mOptions.LastRowIndex = 0 Then
 		    Return Self.mOptions(0).Engram.ClassString
-		  ElseIf UBound(Self.mOptions) = 1 Then
+		  ElseIf Self.mOptions.LastRowIndex = 1 Then
 		    Return Self.mOptions(0).Engram.ClassString + " or " + Self.mOptions(1).Engram.ClassString
 		  Else
-		    Dim Labels() As Text
-		    For I As Integer = 0 To UBound(Self.mOptions) - 1
-		      Labels.Append(Self.mOptions(I).Engram.ClassString)
+		    Dim Labels() As String
+		    For I As Integer = 0 To Self.mOptions.LastRowIndex - 1
+		      Labels.AddRow(Self.mOptions(I).Engram.ClassString)
 		    Next
-		    Labels.Append("or " + Self.mOptions(UBound(Self.mOptions)).Engram.ClassString)
+		    Labels.AddRow("or " + Self.mOptions(Self.mOptions.LastRowIndex).Engram.ClassString)
 		    
 		    Return Labels.Join(", ")
 		  End If
@@ -54,7 +54,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		Sub Constructor(Source As Beacon.SetEntry)
 		  Self.Constructor()
 		  
-		  Redim Self.mOptions(UBound(Source.mOptions))
+		  Redim Self.mOptions(Source.mOptions.LastRowIndex)
 		  
 		  Self.mChanceToBeBlueprint = Source.mChanceToBeBlueprint
 		  Self.mMaxQuality = Source.mMaxQuality
@@ -68,7 +68,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  Self.mLastModifiedTime = Source.mLastModifiedTime
 		  Self.mLastSaveTime = Source.mLastSaveTime
 		  
-		  For I As Integer = 0 To UBound(Source.mOptions)
+		  For I As Integer = 0 To Source.mOptions.LastRowIndex
 		    Self.mOptions(I) = New Beacon.SetEntryOption(Source.mOptions(I))
 		  Next
 		End Sub
@@ -81,7 +81,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  Next
 		  
 		  ' Dim Modified As Boolean
-		  ' For I As Integer = 0 To UBound(Self.mOptions)
+		  ' For I As Integer = 0 To Self.mOptions.LastRowIndex
 		  ' Dim Option As Beacon.SetEntryOption = Self.mOptions(I)
 		  ' For Each Engram As Beacon.Engram In Engrams
 		  ' If Option.Engram <> Nil And Option.Engram.IsValid = False And Option.Engram.ClassString = Engram.ClassString Then
@@ -96,25 +96,25 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Function Count() As Integer
-		  Return UBound(Self.mOptions) + 1
+		  Return Self.mOptions.LastRowIndex + 1
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Shared Function CreateBlueprintEntry(Entries() As Beacon.SetEntry) As Beacon.SetEntry
-		  If UBound(Entries) = -1 Then
+		  If Entries.LastRowIndex = -1 Then
 		    Return Nil
 		  End If
 		  
 		  Dim MinQualitySum, MaxQualitySum As Double
-		  Dim Options As New Xojo.Core.Dictionary
+		  Dim Options As New Dictionary
 		  For Each Entry As Beacon.SetEntry In Entries
 		    For Each Option As Beacon.SetEntryOption In Entry
 		      If Option.Engram = Nil Or Option.Engram.IsValid = False Or Option.Engram.IsTagged("blueprintable") = False Then
 		        Continue
 		      End If
 		      
-		      Dim Key As Text = Option.Engram.Path
+		      Dim Key As String = Option.Engram.Path
 		      If Key = "" Then
 		        Continue
 		      End If
@@ -126,20 +126,20 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		      If Options.HasKey(Key) Then
 		        Arr = Options.Value(Key)
 		      End If
-		      Arr.Append(Option)
+		      Arr.AddRow(Option)
 		      Options.Value(Key) = Arr
 		    Next
 		  Next
 		  
-		  If Options.Count = 0 Then
+		  If Options.KeyCount = 0 Then
 		    Return Nil
 		  End If
 		  
 		  Dim BlueprintEntry As New Beacon.SetEntry
-		  For Each Entry As Xojo.Core.DictionaryEntry In Options
-		    Dim Path As Text = Entry.Key
+		  For Each Entry As DictionaryEntry In Options
+		    Dim Path As String = Entry.Key
 		    Dim Arr() As Beacon.SetEntryOption = Entry.Value
-		    Dim Count As Integer = UBound(Arr) + 1
+		    Dim Count As Integer = Arr.LastRowIndex + 1
 		    Dim WeightSum As Double
 		    For Each Option As Beacon.SetEntryOption In Arr
 		      WeightSum = WeightSum + Option.Weight
@@ -157,21 +157,21 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  BlueprintEntry.ChanceToBeBlueprint = 1.0
 		  BlueprintEntry.MaxQuantity = 1
 		  BlueprintEntry.MinQuantity = 1
-		  BlueprintEntry.MinQuality = Beacon.Qualities.ForBaseValue(MinQualitySum / Options.Count)
-		  BlueprintEntry.MaxQuality = Beacon.Qualities.ForBaseValue(MaxQualitySum / Options.Count)
+		  BlueprintEntry.MinQuality = Beacon.Qualities.ForBaseValue(MinQualitySum / Options.KeyCount)
+		  BlueprintEntry.MaxQuality = Beacon.Qualities.ForBaseValue(MaxQualitySum / Options.KeyCount)
 		  
 		  Return BlueprintEntry
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Export() As Xojo.Core.Dictionary
-		  Dim Children() As Xojo.Core.Dictionary
+		Function Export() As Dictionary
+		  Dim Children() As Dictionary
 		  For Each Item As Beacon.SetEntryOption In Self.mOptions
-		    Children.Append(Item.Export)
+		    Children.AddRow(Item.Export)
 		  Next
 		  
-		  Dim Keys As New Xojo.Core.Dictionary
+		  Dim Keys As New Dictionary
 		  Keys.Value("ChanceToBeBlueprintOverride") = Self.ChanceToBeBlueprint
 		  Keys.Value("Items") = Children
 		  Keys.Value("MinQuality") = Self.MinQuality.Key
@@ -185,35 +185,29 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetIterator() As Xojo.Core.Iterator
-		  Return New Beacon.SetEntryIterator(Self)
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function Hash() As Text
+		Function Hash() As String
 		  If Self.HashIsStale Then
-		    Dim Items() As Text
-		    Redim Items(Self.mOptions.Ubound)
-		    For I As Integer = 0 To Items.Ubound
+		    Dim Items() As String
+		    Redim Items(Self.mOptions.LastRowIndex)
+		    For I As Integer = 0 To Items.LastRowIndex
 		      Items(I) = Self.mOptions(I).Hash
 		    Next
 		    Items.Sort
 		    
-		    Dim Locale As Xojo.Core.Locale = Xojo.Core.Locale.Raw
-		    Dim Format As Text = "0.000"
+		    Dim Locale As Locale = Locale.Raw
+		    Dim Format As String = "0.000"
 		    
-		    Dim Parts(6) As Text
+		    Dim Parts(6) As String
 		    Parts(0) = Beacon.MD5(Items.Join(",")).Lowercase
-		    Parts(1) = Self.ChanceToBeBlueprint.ToText(Locale, Format)
+		    Parts(1) = Self.ChanceToBeBlueprint.ToString(Locale, Format)
 		    Parts(2) = Self.MaxQuality.Key.Lowercase
-		    Parts(3) = Self.MaxQuantity.ToText(Locale, Format)
+		    Parts(3) = Self.MaxQuantity.ToString(Locale, Format)
 		    Parts(4) = Self.MinQuality.Key.Lowercase
-		    Parts(5) = Self.MinQuantity.ToText(Locale, Format)
-		    Parts(6) = Self.RawWeight.ToText(Locale, Format)
+		    Parts(5) = Self.MinQuantity.ToString(Locale, Format)
+		    Parts(6) = Self.RawWeight.ToString(Locale, Format)
 		    
 		    Self.mHash = Beacon.MD5(Parts.Join(",")).Lowercase
-		    Self.mLastHashTime = Microseconds
+		    Self.mLastHashTime = System.Microseconds
 		  End If
 		  Return Self.mHash
 		End Function
@@ -234,7 +228,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function ImportFromBeacon(Dict As Xojo.Core.Dictionary) As Beacon.SetEntry
+		Shared Function ImportFromBeacon(Dict As Dictionary) As Beacon.SetEntry
 		  Dim Entry As New Beacon.SetEntry
 		  If Dict.HasKey("Weight") Then
 		    Entry.RawWeight = Dict.Value("Weight")
@@ -257,8 +251,8 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    Entry.ChanceToBeBlueprint = Dict.Value("ChanceToBeBlueprintOverride")
 		  End If
 		  If Dict.HasKey("Items") Then
-		    Dim Children() As Auto = Dict.Value("Items")
-		    For Each Child As Xojo.Core.Dictionary In Children
+		    Dim Children() As Variant = Dict.Value("Items")
+		    For Each Child As Dictionary In Children
 		      Entry.Append(Beacon.SetEntryOption.ImportFromBeacon(Child))
 		    Next
 		  End If
@@ -268,15 +262,15 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function ImportFromConfig(Dict As Xojo.Core.Dictionary, Multipliers As Beacon.Range, DifficultyValue As Double) As Beacon.SetEntry
+		Shared Function ImportFromConfig(Dict As Dictionary, Multipliers As Beacon.Range, Difficulty As BeaconConfigs.Difficulty) As Beacon.SetEntry
 		  Dim Entry As New Beacon.SetEntry
 		  Entry.RawWeight = Dict.Lookup("EntryWeight", 1.0)
 		  
 		  If Dict.HasKey("MinQuality") Then
-		    Entry.MinQuality = Beacon.Qualities.ForValue(Dict.Value("MinQuality"), Multipliers.Min, DifficultyValue)
+		    Entry.MinQuality = Beacon.Qualities.ForValue(Dict.Value("MinQuality"), Multipliers.Min, Difficulty)
 		  End If
 		  If Dict.HasKey("MaxQuality") Then
-		    Entry.MaxQuality = Beacon.Qualities.ForValue(Dict.Value("MaxQuality"), Multipliers.Max, DifficultyValue)
+		    Entry.MaxQuality = Beacon.Qualities.ForValue(Dict.Value("MaxQuality"), Multipliers.Max, Difficulty)
 		  End If
 		  If Dict.HasKey("MinQuantity") Then
 		    Entry.MinQuantity = Dict.Value("MinQuantity")
@@ -303,30 +297,30 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  End If
 		  Entry.ChanceToBeBlueprint = Chance
 		  
-		  Dim ClassWeights() As Auto
+		  Dim ClassWeights() As Variant
 		  If Dict.HasKey("ItemsWeights") Then
 		    ClassWeights = Dict.Value("ItemsWeights")
 		  End If
 		  
 		  Dim Engrams() As Beacon.Engram
 		  If Dict.HasKey("ItemClassStrings") Then
-		    Dim ClassStrings() As Auto = Dict.Value("ItemClassStrings")
-		    For Each ClassString As Text In ClassStrings
+		    Dim ClassStrings() As Variant = Dict.Value("ItemClassStrings")
+		    For Each ClassString As String In ClassStrings
 		      Dim Engram As Beacon.Engram = Beacon.Data.GetEngramByClass(ClassString)
 		      If Engram <> Nil Then
-		        Engrams.Append(Engram)
+		        Engrams.AddRow(Engram)
 		      Else
-		        Engrams.Append(Beacon.Engram.CreateUnknownEngram(ClassString))
+		        Engrams.AddRow(Beacon.Engram.CreateUnknownEngram(ClassString))
 		      End If
 		    Next
 		  ElseIf Dict.HasKey("Items") Then
-		    Dim Paths() As Auto = Dict.Value("Items")
-		    For Each Path As Text In Paths
+		    Dim Paths() As Variant = Dict.Value("Items")
+		    For Each Path As String In Paths
 		      If Path.Length > 23 And Path.Left(23) = "BlueprintGeneratedClass" Then
-		        Path = Path.Mid(24, Path.Length - 27)
+		        Path = Path.Middle(24, Path.Length - 27)
 		      ElseIf Path.Length > 9 And Path.Left(9) = "Blueprint" Then
 		        // This technically does not work, but we'll support it
-		        Path = Path.Mid(10, Path.Length - 11)
+		        Path = Path.Middle(10, Path.Length - 11)
 		      Else
 		        // No idea what this says
 		        Break
@@ -343,21 +337,21 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		          Engram = TempEngram
 		        End If
 		      End If
-		      Engrams.Append(Engram)
+		      Engrams.AddRow(Engram)
 		    Next
 		  End If
 		  
-		  If UBound(ClassWeights) < UBound(Engrams) Then
+		  If ClassWeights.LastRowIndex < Engrams.LastRowIndex Then
 		    // Add more values
-		    While UBound(ClassWeights) < UBound(Engrams)
-		      ClassWeights.Append(1)
+		    While ClassWeights.LastRowIndex < Engrams.LastRowIndex
+		      ClassWeights.AddRow(1)
 		    Wend
-		  ElseIf UBound(ClassWeights) > UBound(Engrams) Then
+		  ElseIf ClassWeights.LastRowIndex > Engrams.LastRowIndex Then
 		    // Just truncate
-		    Redim ClassWeights(UBound(Engrams))
+		    Redim ClassWeights(Engrams.LastRowIndex)
 		  End If
 		  
-		  For I As Integer = 0 To UBound(Engrams)
+		  For I As Integer = 0 To Engrams.LastRowIndex
 		    Try
 		      Dim Engram As Beacon.Engram = Engrams(I)
 		      Dim ClassWeight As Double = ClassWeights(I)
@@ -374,7 +368,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Function IndexOf(Item As Beacon.SetEntryOption) As Integer
-		  For I As Integer = 0 To UBound(Self.mOptions)
+		  For I As Integer = 0 To Self.mOptions.LastRowIndex
 		    If Self.mOptions(I) = Item Then
 		      Return I
 		    End If
@@ -385,7 +379,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Sub Insert(Index As Integer, Item As Beacon.SetEntryOption)
-		  Self.mOptions.Insert(Index, Item)
+		  Self.mOptions.AddRowAt(Index, Item)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
@@ -397,34 +391,45 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		      Return False
 		    End If
 		  Next
-		  Return Self.mOptions.Ubound > -1
+		  Return Self.mOptions.LastRowIndex > -1
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Shared Function Join(Entries() As Beacon.SetEntry, Separator As Text, Multipliers As Beacon.Range, UseBlueprints As Boolean, Difficulty As BeaconConfigs.Difficulty) As Text
-		  Dim Values() As Text
+		Function Iterator() As Iterator
+		  Dim Options() As Variant
+		  Redim Options(Self.mOptions.LastRowIndex)
+		  For I As Integer = 0 To Self.mOptions.LastRowIndex
+		    Options(I) = Self.mOptions(I)
+		  Next
+		  Return New Beacon.GenericIterator(Options)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Shared Function Join(Entries() As Beacon.SetEntry, Separator As String, Multipliers As Beacon.Range, UseBlueprints As Boolean, Difficulty As BeaconConfigs.Difficulty) As String
+		  Dim Values() As String
 		  For Each Entry As Beacon.SetEntry In Entries
-		    Values.Append(Entry.TextValue(Multipliers, UseBlueprints, Difficulty))
+		    Values.AddRow(Entry.StringValue(Multipliers, UseBlueprints, Difficulty))
 		  Next
 		  Return Values.Join(Separator)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Label() As Text
-		  If UBound(Self.mOptions) = -1 Then
+		Function Label() As String
+		  If Self.mOptions.LastRowIndex = -1 Then
 		    Return "No Items"
-		  ElseIf UBound(Self.mOptions) = 0 Then
+		  ElseIf Self.mOptions.LastRowIndex = 0 Then
 		    Return Self.mOptions(0).Engram.Label
-		  ElseIf UBound(Self.mOptions) = 1 Then
+		  ElseIf Self.mOptions.LastRowIndex = 1 Then
 		    Return Self.mOptions(0).Engram.Label + " or " + Self.mOptions(1).Engram.Label
 		  Else
-		    Dim Labels() As Text
-		    For I As Integer = 0 To UBound(Self.mOptions) - 1
-		      Labels.Append(Self.mOptions(I).Engram.Label)
+		    Dim Labels() As String
+		    For I As Integer = 0 To Self.mOptions.LastRowIndex - 1
+		      Labels.AddRow(Self.mOptions(I).Engram.Label)
 		    Next
-		    Labels.Append("or " + Self.mOptions(UBound(Self.mOptions)).Engram.Label)
+		    Labels.AddRow("or " + Self.mOptions(Self.mOptions.LastRowIndex).Engram.Label)
 		    
 		    Return Labels.Join(", ")
 		  End If
@@ -448,9 +453,9 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag Method, Flags = &h0
 		Sub Modified(Assigns Value As Boolean)
 		  If Value = False Then
-		    Self.mLastSaveTime = Microseconds
+		    Self.mLastSaveTime = System.Microseconds
 		  Else
-		    Self.mLastModifiedTime = Microseconds
+		    Self.mLastModifiedTime = System.Microseconds
 		  End If
 		  
 		  If Not Value Then
@@ -467,10 +472,10 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    Return 1
 		  End If
 		  
-		  Dim SelfHash As Text = Self.Hash
-		  Dim OtherHash As Text = Other.Hash
+		  Dim SelfHash As String = Self.Hash
+		  Dim OtherHash As String = Other.Hash
 		  
-		  Return SelfHash.Compare(OtherHash, 0)
+		  Return SelfHash.Compare(OtherHash, ComparisonOptions.CaseSensitive)
 		End Function
 	#tag EndMethod
 
@@ -496,14 +501,14 @@ Implements Beacon.Countable,Beacon.DocumentItem
 
 	#tag Method, Flags = &h0
 		Sub Remove(Index As Integer)
-		  Self.mOptions.Remove(Index)
+		  Self.mOptions.RemoveRowAt(Index)
 		  Self.Modified = True
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function SafeForMods(Mods As Beacon.TextList) As Boolean
-		  If Mods.Ubound = -1 Then
+		Function SafeForMods(Mods As Beacon.StringList) As Boolean
+		  If Mods.LastRowIndex = -1 Then
 		    Return True
 		  End If
 		  
@@ -521,9 +526,9 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		Function Simulate() As Beacon.SimulatedSelection()
 		  Dim Quantity As Integer
 		  If Self.mMaxQuantity < Self.mMinQuantity Then
-		    Quantity = Xojo.Math.RandomInt(Self.mMaxQuantity, Self.mMinQuantity)
+		    Quantity = System.Random.InRange(Self.mMaxQuantity, Self.mMinQuantity)
 		  Else
-		    Quantity = Xojo.Math.RandomInt(Self.mMinQuantity, Self.mMaxQuantity)
+		    Quantity = System.Random.InRange(Self.mMinQuantity, Self.mMaxQuantity)
 		  End If
 		  Dim MinQuality As Double = Self.mMinQuality.BaseValue
 		  Dim MaxQuality As Double = Self.mMaxQuality.BaseValue
@@ -536,25 +541,25 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    MaxQuality = Temp
 		  End If
 		  
-		  Dim WeightLookup As New Xojo.Core.Dictionary
+		  Dim WeightLookup As New Dictionary
 		  Dim Sum, Weights() As Double
 		  For Each Entry As Beacon.SetEntryOption In Self.mOptions
 		    If Entry.Weight = 0 Then
 		      Return Selections
 		    End If
 		    Sum = Sum + Entry.Weight
-		    Weights.Append(Sum * 100000)
+		    Weights.AddRow(Sum * 100000)
 		    WeightLookup.Value(Sum * 100000) = Entry
 		  Next
 		  Weights.Sort
 		  
 		  For I As Integer = 1 To Quantity
-		    Dim QualityValue As Double = (Xojo.Math.RandomInt(MinQuality * 100000, MaxQuality * 100000) / 100000)
-		    Dim BlueprintDecision As Integer = Xojo.Math.RandomInt(1, 100)
-		    Dim ClassDecision As Double = Xojo.Math.RandomInt(100000, 100000 + (Sum * 100000)) - 100000
+		    Dim QualityValue As Double = (System.Random.InRange(MinQuality * 100000, MaxQuality * 100000) / 100000)
+		    Dim BlueprintDecision As Integer = System.Random.InRange(1, 100)
+		    Dim ClassDecision As Double = System.Random.InRange(100000, 100000 + (Sum * 100000)) - 100000
 		    Dim Selection As New Beacon.SimulatedSelection
 		    
-		    For X As Integer = 0 To UBound(Weights)
+		    For X As Integer = 0 To Weights.LastRowIndex
 		      If Weights(X) >= ClassDecision Then
 		        Dim SelectedWeight As Double = Weights(X)
 		        Dim SelectedEntry As Beacon.SetEntryOption = WeightLookup.Value(SelectedWeight)
@@ -568,7 +573,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		    
 		    Selection.IsBlueprint = BlueprintDecision > RequiredChance
 		    Selection.Quality = Beacon.Qualities.ForBaseValue(QualityValue)
-		    Selections.Append(Selection)
+		    Selections.AddRow(Selection)
 		  Next
 		  
 		  Return Selections
@@ -576,20 +581,20 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function TextValue(Multipliers As Beacon.Range, UseBlueprints As Boolean, Difficulty As BeaconConfigs.Difficulty) As Text
-		  Dim Paths(), Weights(), Classes() As Text
-		  Redim Paths(UBound(Self.mOptions))
-		  Redim Weights(UBound(Self.mOptions))
-		  Redim Classes(UBound(Self.mOptions))
+		Function StringValue(Multipliers As Beacon.Range, UseBlueprints As Boolean, Difficulty As BeaconConfigs.Difficulty) As String
+		  Dim Paths(), Weights(), Classes() As String
+		  Redim Paths(Self.mOptions.LastRowIndex)
+		  Redim Weights(Self.mOptions.LastRowIndex)
+		  Redim Classes(Self.mOptions.LastRowIndex)
 		  Dim SumOptionWeights As Double
-		  For I As Integer = 0 To UBound(Self.mOptions)
+		  For I As Integer = 0 To Self.mOptions.LastRowIndex
 		    SumOptionWeights = SumOptionWeights + Self.mOptions(I).Weight
 		  Next
-		  For I As Integer = 0 To UBound(Self.mOptions)
-		    Dim RelativeWeight As Integer = Xojo.Math.Round((Self.mOptions(I).Weight / SumOptionWeights) * 1000)
+		  For I As Integer = 0 To Self.mOptions.LastRowIndex
+		    Dim RelativeWeight As Integer = Round((Self.mOptions(I).Weight / SumOptionWeights) * 1000)
 		    Paths(I) = Self.mOptions(I).Engram.GeneratedClassBlueprintPath()
 		    Classes(I) = """" + Self.mOptions(I).Engram.ClassString + """"
-		    Weights(I) = RelativeWeight.ToText
+		    Weights(I) = RelativeWeight.ToString
 		  Next
 		  
 		  Dim MinQuality As Double = Self.mMinQuality.Value(Multipliers.Min, Difficulty)
@@ -602,18 +607,18 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  Dim Chance As Double = if(Self.CanBeBlueprint, Self.mChanceToBeBlueprint, 0)
 		  Dim EntryWeight As Integer = Self.mWeight
 		  
-		  Dim Values() As Text
-		  Values.Append("EntryWeight=" + EntryWeight.ToText)
+		  Dim Values() As String
+		  Values.AddRow("EntryWeight=" + EntryWeight.ToString)
 		  If UseBlueprints Then
-		    Values.Append("Items=(" + Paths.Join(",") + ")")
+		    Values.AddRow("Items=(" + Paths.Join(",") + ")")
 		  Else
-		    Values.Append("ItemClassStrings=(" + Classes.Join(",") + ")")
+		    Values.AddRow("ItemClassStrings=(" + Classes.Join(",") + ")")
 		  End If
-		  Values.Append("ItemsWeights=(" + Weights.Join(",") + ")")
-		  Values.Append("MinQuantity=" + Self.MinQuantity.ToText)
-		  Values.Append("MaxQuantity=" + Self.MaxQuantity.ToText)
-		  Values.Append("MinQuality=" + MinQuality.PrettyText)
-		  Values.Append("MaxQuality=" + MaxQuality.PrettyText)
+		  Values.AddRow("ItemsWeights=(" + Weights.Join(",") + ")")
+		  Values.AddRow("MinQuantity=" + Self.MinQuantity.ToString)
+		  Values.AddRow("MaxQuantity=" + Self.MaxQuantity.ToString)
+		  Values.AddRow("MinQuality=" + MinQuality.PrettyText)
+		  Values.AddRow("MaxQuality=" + MaxQuality.PrettyText)
 		  
 		  // ChanceToActuallyGiveItem and ChanceToBeBlueprintOverride appear to be inverse of each
 		  // other. I'm not sure why both exist, but I've got a theory. Some of the loot source
@@ -625,22 +630,22 @@ Implements Beacon.Countable,Beacon.DocumentItem
 		  // 2017-07-07: As of 261.0, it appears ChanceToActuallyGiveItem does something else. It will
 		  // now be left off.
 		  If Chance < 1 Then
-		    Values.Append("bForceBlueprint=false")
+		    Values.AddRow("bForceBlueprint=false")
 		  Else
-		    Values.Append("bForceBlueprint=true")
+		    Values.AddRow("bForceBlueprint=true")
 		  End If
-		  //Values.Append("ChanceToActuallyGiveItem=" + InverseChance.PrettyText)
-		  Values.Append("ChanceToBeBlueprintOverride=" + Chance.PrettyText)
+		  //Values.AddRow("ChanceToActuallyGiveItem=" + InverseChance.PrettyText)
+		  Values.AddRow("ChanceToBeBlueprintOverride=" + Chance.PrettyText)
 		  
 		  Return "(" + Values.Join(",") + ")"
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function UniqueID() As Text
+		Function UniqueID() As String
 		  // For efficiency, don't create a UUID until it is needed
 		  If Self.mUniqueID = "" Then
-		    Self.mUniqueID = Beacon.CreateUUID
+		    Self.mUniqueID = New v4UUID
 		  End If
 		  Return Self.mUniqueID
 		End Function
@@ -720,7 +725,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mHash As Text
+		Private mHash As String
 	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h0
@@ -795,7 +800,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private mUniqueID As Text
+		Private mUniqueID As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -826,13 +831,19 @@ Implements Beacon.Countable,Beacon.DocumentItem
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="ChanceToBeBlueprint"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Double"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="ForceBlueprint"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Index"
@@ -840,6 +851,7 @@ Implements Beacon.Countable,Beacon.DocumentItem
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -847,28 +859,39 @@ Implements Beacon.Countable,Beacon.DocumentItem
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="MaxQuantity"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="MinQuantity"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -876,11 +899,15 @@ Implements Beacon.Countable,Beacon.DocumentItem
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="RawWeight"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Double"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class
