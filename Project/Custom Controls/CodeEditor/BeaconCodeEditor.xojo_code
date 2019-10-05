@@ -91,7 +91,6 @@ Inherits TextInputCanvas
 		  Dim Area As Graphics = G.Clip(Self.GutterWidth + 1, 0, G.Width - 41, G.Height)
 		  Dim Gutter As Graphics = G.Clip(0, 0, Self.GutterWidth, G.Height)
 		  
-		  //Dim Ascent As Integer = Ceil(G.CapHeight)
 		  Area.DrawingColor = CurrentTheme.PlainTextColor
 		  Gutter.DrawingColor = Area.DrawingColor.AtOpacity(0.5)
 		  Gutter.FontSize = 10
@@ -119,7 +118,6 @@ Inherits TextInputCanvas
 		  Self.mContentWidth = ContentWidth
 		  Self.ScrollX(False) = Self.ScrollX
 		  Self.ScrollY(False) = Self.ScrollY
-		  //System.DebugLog(Str((Microseconds - Start) * 0.001, "0") + "ms to paint")
 		End Sub
 	#tag EndEvent
 

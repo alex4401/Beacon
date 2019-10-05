@@ -1,5 +1,29 @@
 #tag Class
 Protected Class BeaconCodeLine
+	#tag Method, Flags = &h21
+		Private Sub AddText(BasedOn As Graphics, FontColor As Color, Content As String, ByRef X As Double)
+		  Const CharsPerChunk = 200
+		  
+		  Dim Bound As Integer = Content.Length
+		  For Offset As Integer = 0 To Bound Step CharsPerChunk
+		    Dim Chunk As String = Content.Middle(Offset, CharsPerChunk)
+		    Dim Shape As New BeaconTextShape
+		    Shape.FontName = BasedOn.FontName
+		    Shape.FontSize = BasedOn.FontSize
+		    Shape.FontUnit = BasedOn.FontUnit
+		    Shape.FillColor = FontColor
+		    Shape.Value = Chunk
+		    Shape.HorizontalAlignment = TextShape.Alignment.Left
+		    Shape.VerticalAlignment = TextShape.Alignment.BaseLine
+		    Shape.X = X
+		    Shape.Y = 0
+		    Shape.Width = BasedOn.TextWidth(Chunk)
+		    X = X + Shape.Width
+		    Self.mCachedObjects.AddRow(Shape)
+		  Next
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  
@@ -31,24 +55,6 @@ Protected Class BeaconCodeLine
 		End Function
 	#tag EndMethod
 
-	#tag Method, Flags = &h21
-		Private Shared Function NewTextShape(BasedOn As Graphics, FontColor As Color, Content As String, ByRef X As Double) As BeaconTextShape
-		  Dim Shape As New BeaconTextShape
-		  Shape.FontName = BasedOn.FontName
-		  Shape.FontSize = BasedOn.FontSize
-		  Shape.FontUnit = BasedOn.FontUnit
-		  Shape.FillColor = FontColor
-		  Shape.Value = Content
-		  Shape.HorizontalAlignment = TextShape.Alignment.Left
-		  Shape.VerticalAlignment = TextShape.Alignment.BaseLine
-		  Shape.X = X
-		  Shape.Y = 0
-		  Shape.Width = BasedOn.TextWidth(Content)
-		  X = X + Shape.Width
-		  Return Shape
-		End Function
-	#tag EndMethod
-
 	#tag Method, Flags = &h0
 		Function Operator_Convert() As String
 		  Return Self.mContent
@@ -76,23 +82,23 @@ Protected Class BeaconCodeLine
 		    Dim Offset As Double
 		    
 		    If Self.mContent.BeginsWith("[") And Self.mContent.EndsWith("]") Then
-		      Self.mCachedObjects.AddRow(NewTextShape(G, Theme.MarkupColor, Self.mContent, Offset))
+		      Self.AddText(G, Theme.MarkupColor, Self.mContent, Offset)
 		    ElseIf Self.mContent.BeginsWith("//") Then
-		      Self.mCachedObjects.AddRow(NewTextShape(G, Theme.CommentColor, Self.mContent, Offset))
+		      Self.AddText(G, Theme.CommentColor, Self.mContent, Offset)
 		    ElseIf Self.mContent.BeginsWith("#") Then
-		      Self.mCachedObjects.AddRow(NewTextShape(G, Theme.PragmaColor, Self.mContent, Offset))
+		      Self.AddText(G, Theme.PragmaColor, Self.mContent, Offset)
 		    ElseIf KeywordMatches <> Nil Then
 		      Dim Keyword As String = KeywordMatches.SubExpressionString(1)
 		      Dim KeywordParameter As String = If(KeywordMatches.SubExpressionCount > 2, KeywordMatches.SubExpressionString(3), "")
 		      Dim ValuePart As String = Keywordmatches.SubExpressionString(4)
 		      
-		      Self.mCachedObjects.AddRow(NewTextShape(G, Theme.KeywordColor, Keyword, Offset))
+		      Self.AddText(G, Theme.KeywordColor, Keyword, Offset)
 		      If KeywordParameter <> "" Then
-		        Self.mCachedObjects.AddRow(NewTextShape(G, Theme.MarkupColor, "[", Offset))
-		        Self.mCachedObjects.AddRow(NewTextShape(G, Theme.PlainTextColor, KeywordParameter, Offset))
-		        Self.mCachedObjects.AddRow(NewTextShape(G, Theme.MarkupColor, "]", Offset))
+		        Self.AddText(G, Theme.MarkupColor, "[", Offset)
+		        Self.AddText(G, Theme.PlainTextColor, KeywordParameter, Offset)
+		        Self.AddText(G, Theme.MarkupColor, "]", Offset)
 		      End If
-		      Self.mCachedObjects.AddRow(NewTextShape(G, Theme.MarkupColor, "=", Offset))
+		      Self.AddText(G, Theme.MarkupColor, "=", Offset)
 		      If ValuePart.Length > 1 And ValuePart.BeginsWith("(") Then
 		        Dim Pos As UInteger = 0
 		        Self.RenderArray(ValuePart, Pos, G, Offset, Theme)
@@ -111,10 +117,10 @@ Protected Class BeaconCodeLine
 		        Else
 		          ValueColor = Theme.StringColor
 		        End If
-		        Self.mCachedObjects.AddRow(NewTextShape(G, ValueColor, ValuePart, Offset))
+		        Self.AddText(G, ValueColor, ValuePart, Offset)
 		      End If
 		    Else
-		      Self.mCachedObjects.AddRow(NewTextShape(G, Theme.PlainTextColor, Self.mContent, Offset))
+		      Self.AddText(G, Theme.PlainTextColor, Self.mContent, Offset)
 		    End If
 		    
 		    Self.mLineWidth = Offset
@@ -140,7 +146,7 @@ Protected Class BeaconCodeLine
 		    Return
 		  End If
 		  
-		  Self.mCachedObjects.AddRow(NewTextShape(G, Theme.MarkupColor, "(", OffsetX))
+		  Self.AddText(G, Theme.MarkupColor, "(", OffsetX)
 		  StartPos = StartPos + 1
 		  
 		  Dim ValueMatcher As New Regex
@@ -153,7 +159,7 @@ Protected Class BeaconCodeLine
 		      Self.RenderArray(ValuePart, StartPos, G, OffsetX, Theme)
 		      Continue
 		    ElseIf NextChar = "," Or NextChar = ")" Or NextChar = "" Then
-		      Self.mCachedObjects.AddRow(NewTextShape(G, Theme.MarkupColor, NextChar, OffsetX))
+		      Self.AddText(G, Theme.MarkupColor, NextChar, OffsetX)
 		      StartPos = StartPos + 1
 		      Continue
 		    End If
@@ -169,13 +175,13 @@ Protected Class BeaconCodeLine
 		    Dim Value As String = ValueMatch.SubExpressionString(5)
 		    
 		    If KeywordPart <> "" Then
-		      Self.mCachedObjects.AddRow(NewTextShape(G, Theme.KeywordColor, KeywordPart, OffsetX))
+		      Self.AddText(G, Theme.KeywordColor, KeywordPart, OffsetX)
 		      If ParameterPart <> "" Then
-		        Self.mCachedObjects.AddRow(NewTextShape(G, Theme.MarkupColor, "[", OffsetX))
-		        Self.mCachedObjects.AddRow(NewTextShape(G, Theme.PlainTextColor, ParameterPart, OffsetX))
-		        Self.mCachedObjects.AddRow(NewTextShape(G, Theme.MarkupColor, "]", OffsetX))
+		        Self.AddText(G, Theme.MarkupColor, "[", OffsetX)
+		        Self.AddText(G, Theme.PlainTextColor, ParameterPart, OffsetX)
+		        Self.AddText(G, Theme.MarkupColor, "]", OffsetX)
 		      End If
-		      Self.mCachedObjects.AddRow(NewTextShape(G, Theme.MarkupColor, "=", OffsetX))
+		      Self.AddText(G, Theme.MarkupColor, "=", OffsetX)
 		      StartPos = StartPos + ValueMatch.SubExpressionString(1).Length
 		    End If
 		    
@@ -194,7 +200,7 @@ Protected Class BeaconCodeLine
 		      Else
 		        ValueColor = Theme.StringColor
 		      End If
-		      Self.mCachedObjects.AddRow(NewTextShape(G, ValueColor, Value, OffsetX))
+		      Self.AddText(G, ValueColor, Value, OffsetX)
 		      StartPos = StartPos + Value.Length
 		    End If
 		  Loop Until NextChar = ")" Or NextChar = ""
