@@ -44,18 +44,65 @@ Implements AnimationKit.ValueAnimator
 		  If RaiseEvent MouseWheel(X, Y, WheelData) Then
 		    Return True
 		  End If
-		  If WheelData.Phase = BeaconUI.ScrollEvent.PhaseMayBegin Then
-		    // The user has rested fingers on the trackpad, so light up the scrollers
+		  
+		  #if DebugBuild
+		    Dim Phase As String
+		    Select Case WheelData.Phase
+		    Case BeaconUI.ScrollEvent.PhaseBegan
+		      Phase = "PhaseBegan"
+		    Case BeaconUI.ScrollEvent.PhaseCancelled
+		      Phase = "PhaseCancelled"
+		    Case BeaconUI.ScrollEvent.PhaseChanged
+		      Phase = "PhaseChanged"
+		    Case BeaconUI.ScrollEvent.PhaseEnded
+		      Phase = "PhaseEnded"
+		    Case BeaconUI.ScrollEvent.PhaseMayBegin
+		      Phase = "PhaseMayBegin"
+		    Case BeaconUI.ScrollEvent.PhaseNone
+		      Phase = "PhaseNone"
+		    Case BeaconUI.ScrollEvent.PhaseStationary
+		      Phase = "PhaseStationary"
+		    End Select
+		    
+		    Dim MomentumPhase As String
+		    Select Case WheelData.MomentumPhase
+		    Case BeaconUI.ScrollEvent.PhaseBegan
+		      MomentumPhase = "PhaseBegan"
+		    Case BeaconUI.ScrollEvent.PhaseCancelled
+		      MomentumPhase = "PhaseCancelled"
+		    Case BeaconUI.ScrollEvent.PhaseChanged
+		      MomentumPhase = "PhaseChanged"
+		    Case BeaconUI.ScrollEvent.PhaseEnded
+		      MomentumPhase = "PhaseEnded"
+		    Case BeaconUI.ScrollEvent.PhaseMayBegin
+		      MomentumPhase = "PhaseMayBegin"
+		    Case BeaconUI.ScrollEvent.PhaseNone
+		      MomentumPhase = "PhaseNone"
+		    Case BeaconUI.ScrollEvent.PhaseStationary
+		      MomentumPhase = "PhaseStationary"
+		    End Select
+		    
+		    //System.DebugLog("Phase: " + Phase + ", Momentum: " + MomentumPhase + ", DeltaX: " + WheelData.ScrollX.ToString + ", DeltaY: " + WheelData.ScrollY.ToString)
+		  #endif
+		  
+		  // Phase is the act of actively dragging, MomentumPhase takes over if the scrolling is "thrown"
+		  // This transition ends a phase and begins a momentum phase, such as
+		  // Phase: PhaseEnded, Momentum: PhaseNone, DeltaX: 0, DeltaY: 0
+		  // Phase: PhaseNone, Momentum: PhaseBegan, DeltaX: 0, DeltaY: -48
+		  
+		  If WheelData.Phase = BeaconUI.ScrollEvent.PhaseMayBegin  Or WheelData.Phase = BeaconUI.ScrollEvent.PhaseBegan Or WheelData.MomentumPhase = BeaconUI.ScrollEvent.PhaseBegan Then
+		    // The user has rested fingers on the trackpad or started a scroll, so light up the scrollers
 		    Self.RunAnimation(Self.HorizontalOpacityKey, 1.0)
 		    Self.RunAnimation(Self.VerticalOpacityKey, 1.0)
-		  ElseIf WheelData.Phase = BeaconUI.ScrollEvent.PhaseNone Then
-		    // The scroll has stopped completely, but this should really fade the scrollers after a couple seconds
-		    //Self.RunAnimation(Self.HorizontalOpacityKey, 0.0)
-		    //Self.RunAnimation(Self.VerticalOpacityKey, 0.0)
+		  ElseIf WheelData.Phase = BeaconUI.ScrollEvent.PhaseCancelled Or WheelData.Phase = BeaconUI.ScrollEvent.PhaseEnded Or WheelData.MomentumPhase = BeaconUI.ScrollEvent.PhaseEnded Then
+		    // The user has lifted their fingers from the trackpad or the scroll simply ended
+		    Self.RunAnimation(Self.HorizontalOpacityKey, 0.0, Self.CommonAnimationDuration, 1.0)
+		    Self.RunAnimation(Self.VerticalOpacityKey, 0.0, Self.CommonAnimationDuration, 1.0)
 		  End If
+		  
 		  Self.ScrollX = Self.mScrollX + WheelData.ScrollX
 		  Self.ScrollY = Self.mScrollY + WheelData.ScrollY
-		  If WheelData.Phase = BeaconUI.ScrollEvent.PhaseNone Then
+		  If (WheelData.MomentumPhase = BeaconUI.ScrollEvent.PhaseEnded And WheelData.Phase = BeaconUI.ScrollEvent.PhaseNone) Or (WheelData.MomentumPhase = BeaconUI.ScrollEvent.PhaseNone And WheelData.Phase = BeaconUI.ScrollEvent.PhaseEnded) Then
 		    If Self.mScrollX < 0 Then
 		      Self.RunAnimation(Self.HorizontalPositionKey, 0)
 		    ElseIf Self.mScrollX > Self.OverflowWidth Then
@@ -136,7 +183,17 @@ Implements AnimationKit.ValueAnimator
 		    Return
 		  End Select
 		  
-		  Self.Invalidate
+		  System.DebugLog(Identifier + " is now " + Value.ToString)
+		  
+		  If App.CurrentThread = Nil Then
+		    Self.Invalidate
+		  Else
+		    If Self.mInvalidateCallback <> "" Then
+		      CallLater.Cancel(Self.mInvalidateCallback)
+		      Self.mInvalidateCallback = ""
+		    End If
+		    Self.mInvalidateCallback = CallLater.Schedule(0, WeakAddressOf InvalidateLater)
+		  End If
 		End Sub
 	#tag EndMethod
 
@@ -164,6 +221,15 @@ Implements AnimationKit.ValueAnimator
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub Destructor()
+		  If Self.mInvalidateCallback <> "" Then
+		    CallLater.Cancel(Self.mInvalidateCallback)
+		    Self.mInvalidateCallback = ""
+		  End If
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub Invalidate(EraseBackground As Boolean = True)
 		  #Pragma Unused EraseBackground
 		  Super.Invalidate(False)
@@ -174,6 +240,15 @@ Implements AnimationKit.ValueAnimator
 		Sub Invalidate(X As Integer, Y As Integer, Width As Integer, Height As Integer, EraseBackground As Boolean = True)
 		  #Pragma Unused EraseBackground
 		  Super.Invalidate(X, Y, Width, Height, False)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub InvalidateLater()
+		  If Self.mInvalidateCallback <> "" Then
+		    Self.mInvalidateCallback = ""
+		  End If
+		  Self.Invalidate
 		End Sub
 	#tag EndMethod
 
@@ -226,13 +301,16 @@ Implements AnimationKit.ValueAnimator
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub RunAnimation(Identifier As String, NewValue As Double, Duration As Double = 0.15)
+		Private Sub RunAnimation(Identifier As String, NewValue As Double, Duration As Double = CommonAnimationDuration, Delay As Double = 0)
 		  If Self.mAnimations = Nil Then
 		    Self.mAnimations = New Dictionary
 		  End If
 		  If Self.mAnimations.HasKey(Identifier) Then
-		    Dim Task As AnimationKit.ValueTask = Self.mAnimations.Value(Identifier)
-		    Task.Cancel
+		    Dim Ref As WeakRef = Self.mAnimations.Value(Identifier)
+		    If Ref <> Nil And Ref.Value <> Nil Then
+		      AnimationKit.ValueTask(Ref.Value).Cancel
+		      System.DebugLog("Cancelled " + Identifier)
+		    End If
 		    Self.mAnimations.Remove(Identifier)
 		  End If
 		  
@@ -263,13 +341,18 @@ Implements AnimationKit.ValueAnimator
 		  End Select
 		  
 		  If StartValue = NewValue Then
+		    System.DebugLog("No reason to animation " + Identifier + " from " + StartValue.ToString + " to " + NewValue.ToString)
 		    Return
 		  End If
 		  
+		  System.DebugLog("Animating " + Identifier + " from " + StartValue.ToString + " to " + NewValue.ToString)
+		  
 		  Dim Task As New AnimationKit.ValueTask(Self, Identifier, StartValue, NewValue)
 		  Task.DurationInSeconds = Duration
+		  Task.DelayInSeconds = Delay
 		  Task.Curve = AnimationKit.Curve.CreateEaseOut
-		  Self.mAnimations.Value(Identifier) = Task
+		  Task.Threaded = True
+		  Self.mAnimations.Value(Identifier) = New WeakRef(Task)
 		  Task.Run
 		End Sub
 	#tag EndMethod
@@ -453,6 +536,10 @@ Implements AnimationKit.ValueAnimator
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
+		Private mInvalidateCallback As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
 		Private mLeftGutter As Integer
 	#tag EndProperty
 
@@ -556,6 +643,9 @@ Implements AnimationKit.ValueAnimator
 		ViewportWidth As Integer
 	#tag EndComputedProperty
 
+
+	#tag Constant, Name = CommonAnimationDuration, Type = Double, Dynamic = False, Default = \"0.15", Scope = Private
+	#tag EndConstant
 
 	#tag Constant, Name = HorizontalOpacityKey, Type = String, Dynamic = False, Default = \"HorizontalOpacity", Scope = Private
 	#tag EndConstant

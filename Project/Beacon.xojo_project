@@ -385,6 +385,7 @@ Class=BeaconCodeRange;Custom Controls/CodeEditor/BeaconCodeRange.xojo_code;&h000
 Class=BeaconCodeTheme;Custom Controls/CodeEditor/BeaconCodeTheme.xojo_code;&h000000002EF67FFF;&h000000005DDE87FF;false
 Class=BeaconTextShape;Custom Controls/CodeEditor/BeaconTextShape.xojo_code;&h000000006F5D6FFF;&h000000005DDE87FF;false
 Class=ScrollCanvas;Custom Controls/ScrollCanvas.xojo_code;&h000000005838D7FF;&h0000000030DCFFFF;false
+Class=DeltaTask;Modules/AnimationKit/DeltaTask.xojo_code;&h000000001F0FBFFF;&h00000000116B320C;false
 AppMenuBar=MainMenuBar
 MajorVersion=1
 MinorVersion=3
