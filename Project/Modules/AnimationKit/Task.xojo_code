@@ -162,6 +162,10 @@ Protected Class Task
 		Private StartTime As Double
 	#tag EndProperty
 
+	#tag Property, Flags = &h0
+		Threaded As Boolean
+	#tag EndProperty
+
 
 	#tag ViewBehavior
 		#tag ViewProperty
