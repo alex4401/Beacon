@@ -166,6 +166,8 @@ Begin ConfigEditor CustomContentConfigEditor Implements NotificationKit.Receiver
    Begin BeaconCodeEditor BeaconCodeEditor1
       AutoDeactivate  =   True
       Content         =   ""
+      ContentHeight   =   0
+      ContentWidth    =   0
       Enabled         =   True
       Height          =   221
       HelpTag         =   ""
@@ -177,7 +179,10 @@ Begin ConfigEditor CustomContentConfigEditor Implements NotificationKit.Receiver
       LockLeft        =   True
       LockRight       =   True
       LockTop         =   False
+      OverflowHeight  =   0
+      OverflowWidth   =   0
       Scope           =   2
+      ScrollSpeed     =   0
       SelContent      =   ""
       SelEnd          =   ""
       SelLength       =   ""
@@ -186,6 +191,13 @@ Begin ConfigEditor CustomContentConfigEditor Implements NotificationKit.Receiver
       TabPanelIndex   =   0
       TabStop         =   True
       Top             =   161
+      Value           =   ""
+      ViewportBottom  =   0
+      ViewportHeight  =   0
+      ViewportLeft    =   0
+      ViewportRight   =   0
+      ViewportTop     =   0
+      ViewportWidth   =   0
       Visible         =   True
       Width           =   608
    End

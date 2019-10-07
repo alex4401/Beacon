@@ -156,6 +156,7 @@ Begin BeaconDialog DocumentExportWindow
       Width           =   140
    End
    Begin Timer ClipboardWatcher
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Mode            =   2
@@ -372,6 +373,7 @@ Begin BeaconDialog DocumentExportWindow
       Width           =   442
    End
    Begin Beacon.Rewriter GameIniRewriter
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Priority        =   5
@@ -380,6 +382,7 @@ Begin BeaconDialog DocumentExportWindow
       TabPanelIndex   =   0
    End
    Begin Beacon.Rewriter GameUserSettingsRewriter
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Priority        =   5
@@ -388,6 +391,7 @@ Begin BeaconDialog DocumentExportWindow
       TabPanelIndex   =   0
    End
    Begin Beacon.Rewriter FileRewriter
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Priority        =   5
@@ -396,6 +400,7 @@ Begin BeaconDialog DocumentExportWindow
       TabPanelIndex   =   0
    End
    Begin Beacon.Rewriter ClipboardRewriter
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       Priority        =   5
@@ -405,6 +410,8 @@ Begin BeaconDialog DocumentExportWindow
    End
    Begin BeaconCodeEditor ContentArea
       AutoDeactivate  =   True
+      ContentHeight   =   0
+      ContentWidth    =   0
       Enabled         =   True
       Height          =   553
       HelpTag         =   ""
@@ -416,13 +423,27 @@ Begin BeaconDialog DocumentExportWindow
       LockLeft        =   True
       LockRight       =   True
       LockTop         =   True
+      OverflowHeight  =   0
+      OverflowWidth   =   0
       Scope           =   2
-      ScrollMaxX      =   0
-      ScrollMaxY      =   0
+      ScrollMaxX      =   "0"
+      ScrollMaxY      =   "0"
+      ScrollSpeed     =   0
+      SelContent      =   ""
+      SelEnd          =   ""
+      SelLength       =   ""
+      SelStart        =   ""
       TabIndex        =   13
       TabPanelIndex   =   0
       TabStop         =   True
       Top             =   61
+      Value           =   ""
+      ViewportBottom  =   0
+      ViewportHeight  =   0
+      ViewportLeft    =   0
+      ViewportRight   =   0
+      ViewportTop     =   0
+      ViewportWidth   =   0
       Visible         =   True
       Width           =   900
    End
