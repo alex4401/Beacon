@@ -491,6 +491,23 @@
 		background-color: mix($text-yellow, $background-color, 3%);
 	}
 	
+	/* !Account Navigation */
+	#account_toolbar_menu {
+		li {
+			a {
+				color: $accent-color;
+				background-color: none;
+			}
+			
+			&.active {
+				a {
+					color: $accent-text-color;
+					background-color: $accent-color;
+				}
+			}
+		}
+	}
+	
 	@media print {
 		table.generic {
 			border-color: #d9d9d9;

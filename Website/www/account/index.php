@@ -4,7 +4,7 @@ require(dirname(__FILE__, 3) . '/framework/loader.php');
 
 $session = BeaconSession::GetFromCookie();
 if (is_null($session)) {
-	BeaconCommon::Redirect('/account/login/');
+	BeaconLogin::Present('Please log in to access your account.');
 	exit;
 }
 
@@ -21,24 +21,33 @@ BeaconTemplate::StartStyles(); ?>
 	padding: 0px;
 	display: flex;
 	flex-direction: row;
-	max-width: 320px;
 	margin-left: auto;
 	margin-right: auto;
 	justify-content: center;
 	border-color: inherit;
+	flex-wrap: wrap;
 	
 	li {
-		flex-grow: 1;
+		flex: 0 0 0px;
 		text-align: center;
-		font-size: larger;
+		
 		border-color: inherit;
+		white-space: nowrap;
+		margin: 0px;
 		
 		a {
 			text-decoration: none;
+			padding: 0px;
+			margin: 0px;
+			display: block;
+			border-radius: 6px;
+			padding: 0.35em 0.45em;
+			font-size: 1.2em;
+			line-height: 1.0em;
 		}
 		
 		&.active {
-			font-weight: 600;
+			font-weight: 500;
 		}
 	}
 }
@@ -48,6 +57,15 @@ BeaconTemplate::FinishStyles();
 
 BeaconTemplate::StartScript(); ?>
 <script>
+var switchViewFromFragment = function() {
+	var fragment = window.location.hash.substr(1);
+	if (fragment !== '') {
+		switchView(fragment);
+	} else {
+		switchView('documents');
+	}
+}	
+
 var currentView = 'documents';
 var switchView = function(newView) {
 	if (newView == currentView) {
@@ -59,6 +77,10 @@ var switchView = function(newView) {
 	document.getElementById('account_view_' + currentView).className = 'hidden';
 	document.getElementById('account_view_' + newView).className = '';
 	currentView = newView;
+	
+	if (window.location.hash !== '#' + newView) {
+		history.pushState({}, '', '#' + newView);
+	}
 };
 
 document.addEventListener('DOMContentLoaded', function(event) {
@@ -71,12 +93,17 @@ document.addEventListener('DOMContentLoaded', function(event) {
 	document.getElementById('toolbar_settings_button').addEventListener('click', function(event) {
 		switchView('settings');
 	});
+	document.getElementById('toolbar_team_button').addEventListener('click', function(event) {
+		switchView('team');
+	});
 	
-	var fragment = window.location.hash.substr(1);
-	if (fragment !== '') {
-		switchView(fragment);
-	}
+	switchViewFromFragment();
 });
+
+window.addEventListener('popstate', function(ev) {
+	switchViewFromFragment();
+});
+
 </script><?php
 BeaconTemplate::FinishScript();
 
@@ -85,9 +112,11 @@ BeaconTemplate::FinishScript();
 	<li id="account_toolbar_menu_documents" class="active"><a href="#documents" id="toolbar_documents_button">Documents</a></li>
 	<li id="account_toolbar_menu_omni"><a href="#omni" id="toolbar_omni_button">Omni</a></li>
 	<li id="account_toolbar_menu_settings"><a href="#settings" id="toolbar_settings_button">Settings</a></li>
+	<li id="account_toolbar_menu_team"><a href="#team" id="toolbar_team_button">Team Members</a></li>
 </ul>
 <div id="account_views">
 	<div id="account_view_documents"><?php include('includes/documents.php'); ?></div>
 	<div id="account_view_omni" class="hidden"><?php include('includes/omni.php'); ?></div>
 	<div id="account_view_settings" class="hidden"><?php include('includes/settings.php'); ?></div>
+	<div id="account_view_team" class="hidden"><?php include('includes/children.php'); ?></div>
 </div>

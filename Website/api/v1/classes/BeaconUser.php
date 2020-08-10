@@ -15,6 +15,8 @@ class BeaconUser implements JsonSerializable {
 	protected $expiration = '';
 	protected $usercloud_key = null;
 	protected $banned = false;
+	protected $enabled = true;
+	protected $parent_account_id = null;
 	
 	public function __construct($source = null) {
 		if ($source instanceof BeaconRecordSet) {
@@ -27,10 +29,12 @@ class BeaconUser implements JsonSerializable {
 			$this->private_key_iterations = intval($source->Field('private_key_iterations'));
 			$this->usercloud_key = $source->Field('usercloud_key');
 			$this->banned = $source->Field('banned');
+			$this->enabled = $source->Field('enabled');
+			$this->parent_account_id = $source->Field('parent_account_id');
 			
 			if (self::OmniFree) {
 				$this->purchased_omni_version = 1;
-			} else {
+			} elseif ($this->enabled && is_null($this->parent_account_id)) {
 				$database = BeaconCommon::Database();
 				$purchases = $database->Query('SELECT * FROM purchased_products WHERE purchaser_email = $1;', $this->email_id);
 				while (!$purchases->EOF()) {
@@ -108,6 +112,14 @@ class BeaconUser implements JsonSerializable {
 	
 	public function IsBanned() {
 		return $this->banned;
+	}
+	
+	public function IsEnabled() {
+		return $this->enabled;
+	}
+	
+	public function IsChildAccount() {
+		return is_null($this->parent_account_id) === false;
 	}
 	
 	public function jsonSerialize() {
@@ -325,7 +337,7 @@ class BeaconUser implements JsonSerializable {
 	}
 	
 	private static function SQLColumns() {
-		return array('user_id', 'email_id', 'username', 'public_key', 'private_key', 'private_key_salt', 'private_key_iterations', 'usercloud_key', 'banned');
+		return array('user_id', 'email_id', 'username', 'public_key', 'private_key', 'private_key_salt', 'private_key_iterations', 'usercloud_key', 'banned', 'enabled', 'parent_account_id');
 	}
 	
 	public static function GetByEmail(string $email) {

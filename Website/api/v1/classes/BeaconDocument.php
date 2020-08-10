@@ -344,7 +344,7 @@ class BeaconDocument implements JsonSerializable {
 	}
 	
 	protected static function BuildSQL(string $clause = '', string $order_by = 'last_update DESC', int $count = 0, int $offset = 0) {
-		$sql = 'SELECT ' . implode(', ', static::DatabaseColumns()) . ' FROM allowed_documents';
+		$sql = 'SELECT DISTINCT ' . implode(', ', static::DatabaseColumns()) . ' FROM allowed_documents';
 		if ($clause !== '') {
 			$sql .= ' WHERE ' . $clause;
 		}

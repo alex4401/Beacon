@@ -8,7 +8,7 @@ BeaconCommon::StartSession();
 
 $session = BeaconSession::GetFromCookie();
 if (is_null($session)) {
-	BeaconCommon::Redirect('/account/login/?return=' . $_SERVER['REQUEST_URI']);
+	BeaconLogin::Present('An account is required to redeem gift codes.');
 	exit;
 }
 
@@ -16,7 +16,7 @@ header('Cache-Control: no-cache');
 
 $database = BeaconCommon::Database();
 $user = BeaconUser::GetByUserID($session->UserID());
-BeaconTemplate::SetTitle('Account: ' . $user->LoginKey());
+BeaconTemplate::SetTitle('Gift Code Redeem: ' . $user->LoginKey());
 
 BeaconTemplate::StartStyles(); ?>
 <style>
@@ -38,6 +38,11 @@ if (isset($_REQUEST['code'])) {
 }
 
 $email_id = $user->Email();
+
+if ($user->IsChildAccount()) {
+	echo '<div id="redeem_form"><p class="text-center">Your account is controlled by another user. You cannot redeem gift codes on this account.</p></div>';
+	exit;
+}
 
 $results = $database->Query('SELECT * FROM purchased_products WHERE purchaser_email = $1 AND product_id = $2;', $email_id, OMNI_PRODUCT_ID);
 if ($results->RecordCount() > 0) {

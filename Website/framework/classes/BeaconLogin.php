@@ -5,6 +5,14 @@ class BeaconLogin {
 	public $with_remember_me = true;
 	public $session_consumer_uri = '';
 	
+	public static function Present($reason) {
+		BeaconCommon::StartSession();
+		$_SESSION['login_return_url'] = $_SERVER['REQUEST_URI'];
+		$_SESSION['login_explanation'] = $reason;
+		BeaconCommon::Redirect('/account/login');
+		exit;
+	}
+	
 	public function Show() {
 		BeaconTemplate::AddStylesheet(BeaconCommon::AssetURI('login.scss'));
 		BeaconTemplate::AddScript(BeaconCommon::AssetURI('login.js'));
@@ -18,6 +26,9 @@ class BeaconLogin {
 	<p class="text-center"><img id="loading_spinner" src="/assets/images/spinner.svg" class="white-on-dark" width="64"></p>
 </div>
 <div id="page_login">
+	<?php if (empty($_SESSION['login_explanation']) === false) { ?>
+	<p><?php echo htmlentities($_SESSION['login_explanation']); ?></p>
+	<?php } ?>
 	<form id="login_form_intro" action="check.php" method="post">
 		<p><input type="email" name="email" placeholder="E-Mail Address" id="login_email_field" required></p>
 		<p><input type="password" name="password" placeholder="Password" id="login_password_field" minlength="8" title="Enter a password with at least 8 characters" required></p>
@@ -87,6 +98,21 @@ class BeaconLogin {
 	}
 	
 	public static function SendVerification(string $email, $key = null, string $subject = 'Please Verify Your E-Mail Address') {
+		$user = BeaconUser::GetByEmail($email);
+		if (is_null($user) === false) {
+			if ($user->IsChildAccount()) {
+				$parent_user = $user->ParentAccount();
+				$plain = 'Somebody, hopefully you, has attempted to reset your Beacon account password. Unfortunately, your account is controlled by another user. You will need ' . $parent_user->Username() . ' to change your password for you.';
+				$html = '<center>Somebody, hopefully you, has attempted to reset your Beacon account password. Unfortunately, your account is controlled by another user. You will need ' . htmlentities($parent_user->Username()) . ' to change your password for you.</center>';
+				BeaconEmail::SendMail($email, $subject, $plain, $html);
+				return true;
+			}
+			
+			$introduction = 'A request was received to reset the password for the Beacon account at this email address.';
+		} else {
+			$introduction = 'A request was received to create a new Beacon account with this email address.';
+		}
+		
 		$code = static::GenerateVerificationCode($email, $key);
 		if (is_null($code)) {
 			return false;
@@ -94,8 +120,8 @@ class BeaconLogin {
 		
 		$code_spaced = implode(' ', str_split($code));
 		$url = BeaconCommon::AbsoluteURL('/account/login/?email=' . urlencode($email) . '&code=' . urlencode($code) . (is_null($key) ? '' : '&key=' . urlencode($key)));
-		$plain = "You recently started the process of creating a new Beacon account or recovery of an existing Beacon account. In order to complete the process, please enter the code below.\n\n$code\n\nAlternatively, you may use the following link to continue the process automatically:\n\n$url\n\nIf you need help, simply reply to this email." . (isset($_SERVER['REMOTE_ADDR']) ? ' This process was started from a device at the following ip address: ' . htmlentities($_SERVER['REMOTE_ADDR']) : '');
-		$html = '<center>You recently started the process of creating a new Beacon account or recovery of an existing Beacon account. In order to complete the process, please enter the code below.<br /><br /><span style="font-weight:bold;font-size: x-large">' . $code_spaced . '</span><br /><br />Alternatively, you may use the following link to continue the process automatically:<br /><br /><a href="' . $url . '">' . $url . '</a><br /><br />If you need help, simply reply to this email.' . (isset($_SERVER['REMOTE_ADDR']) ? ' This process was started from a device at the following ip address: <span style="font-weight:bold">' . htmlentities($_SERVER['REMOTE_ADDR']) . '</span>' : '') . '</center>';
+		$plain = "$introduction In order to complete the process, please enter the code below.\n\n$code\n\nAlternatively, you may use the following link to continue the process automatically:\n\n$url\n\nIf you need help, simply reply to this email." . (isset($_SERVER['REMOTE_ADDR']) ? ' This process was started from a device at the following ip address: ' . htmlentities($_SERVER['REMOTE_ADDR']) : '');
+		$html = '<center>' . htmlentities($introduction) . ' In order to complete the process, please enter the code below.<br /><br /><span style="font-weight:bold;font-size: x-large">' . $code_spaced . '</span><br /><br />Alternatively, you may use the following link to continue the process automatically:<br /><br /><a href="' . $url . '">' . $url . '</a><br /><br />If you need help, simply reply to this email.' . (isset($_SERVER['REMOTE_ADDR']) ? ' This process was started from a device at the following ip address: <span style="font-weight:bold">' . htmlentities($_SERVER['REMOTE_ADDR']) . '</span>' : '') . '</center>';
 		
 		return BeaconEmail::SendMail($email, $subject, $plain, $html);
 	}

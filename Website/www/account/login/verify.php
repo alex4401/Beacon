@@ -24,6 +24,7 @@ if (isset($_POST['key'])) {
 	if ($results->RecordCount() == 1) {
 		$encrypted_code = $results->Field('code');
 		$verified = $results->Field('verified');
+		$email_id = $results->Field('email_id');
 		if ($verified) {
 			try {
 				$code = BeaconEncryption::SymmetricDecrypt($key, hex2bin($encrypted_code));
@@ -47,6 +48,7 @@ if (isset($_POST['key'])) {
 	$code = preg_replace('/\s+/', '', $_POST['code']);
 	$results = $database->Query('SELECT email_id FROM email_verification WHERE email_id = uuid_for_email($1) AND code = encode(digest($2, \'sha512\'), \'hex\');', $email, $code);
 	$verified = $results->RecordCount() == 1;
+	$email_id = $results->Field('email_id');
 }
 
 $response = array(
@@ -57,10 +59,13 @@ $response = array(
 );
 
 if ($verified) {
-	$results = $database->Query('SELECT username FROM users WHERE email_id = $1;', $results->Field('email_id'));
+	$database->BeginTransaction();
+	$results = $database->Query('SELECT username FROM users WHERE email_id = $1;', $email_id);
 	if ($results->RecordCount() == 1) {
 		$response['username'] = $results->Field('username');
 	}
+	$database->Query('UPDATE email_addresses SET verified = TRUE WHERE email_id = $1;', $email_id);
+	$database->Commit();
 }
 
 http_response_code(200);

@@ -92,13 +92,13 @@ abstract class BeaconAPI {
 	
 	private static function AuthorizeWithSessionID(string $session_id) {
 		$session = BeaconSession::GetBySessionID($session_id);
-		if (is_null($session) == false) {
+		if (is_null($session) === false) {
 			self::$user_id = $session->UserID();
 			self::$auth_style = self::AUTH_STYLE_SESSION;
 			
 			$database = BeaconCommon::Database();
 			$database->BeginTransaction();
-			$database->Query('UPDATE sessions SET valid_until = CURRENT_TIMESTAMP + \'30 days\'::INTERVAL, remote_ip = $2 WHERE (remote_ip IS DISTINCT FROM $2 OR valid_until < CURRENT_TIMESTAMP + \'15 days\'::INTERVAL) AND session_id = encode(digest($1, \'sha512\'), \'hex\');', $session_id, $_SERVER['REMOTE_ADDR']);
+			$database->Query('UPDATE sessions SET valid_until = CURRENT_TIMESTAMP + \'30 days\'::INTERVAL WHERE valid_until < CURRENT_TIMESTAMP + \'15 days\'::INTERVAL AND session_id = encode(digest($1, \'sha512\'), \'hex\');', $session_id);
 			$database->Query('DELETE FROM sessions WHERE valid_until < CURRENT_TIMESTAMP;');
 			$database->Commit();
 			
@@ -110,7 +110,7 @@ abstract class BeaconAPI {
 	private static function AuthorizeWithPassword(string $username, string $password) {
 		$user = BeaconUser::GetByEmail($username);
 		$upgrade = isset($_SERVER['HTTP_X_BEACON_UPGRADE_ENCRYPTION']) && boolval($_SERVER['HTTP_X_BEACON_UPGRADE_ENCRYPTION']);
-		if (is_null($user) == false && $user->TestPassword($password, $upgrade)) {
+		if (is_null($user) == false && $user->IsEnabled() && $user->IsChildAccount() === false && $user->TestPassword($password, $upgrade)) {
 			self::$user_id = $user->UserID();
 			self::$auth_style = self::AUTH_STYLE_EMAIL_WITH_PASSWORD;
 			return true;
@@ -119,7 +119,7 @@ abstract class BeaconAPI {
 	}
 	
 	private static function AuthorizeWithSignature(BeaconUser $user, string $challenge, string $signature) {
-		if (is_null($user)) {
+		if (is_null($user) || $user->IsEnabled() === false || $user->IsChildAccount()) {
 			return false;
 		}
 		

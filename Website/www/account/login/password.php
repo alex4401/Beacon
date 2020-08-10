@@ -81,9 +81,9 @@ $public_key = null;
 $private_key = null;
 BeaconEncryption::GenerateKeyPair($public_key, $private_key);
 
-$useUpgradedEncryption = isset($_SERVER['HTTP_X_BEACON_UPGRADE_ENCRYPTION']) && boolval($_SERVER['HTTP_X_BEACON_UPGRADE_ENCRYPTION']);
 $user->SetPublicKey($public_key);
-if ($user->AddAuthentication($username, $email, $password, $private_key, $useUpgradedEncryption) == false && $user->ReplacePassword($password, $private_key, $useUpgradedEncryption) == false) {
+$child_passwords = [];
+if ($user->AddAuthentication($username, $email, $password, $private_key) == false && $user->ReplacePassword($password, $private_key, $child_passwords) == false) {
 	http_response_code(500);
 	echo json_encode(array('message' => 'There was an error updating authentication parameters.'), JSON_PRETTY_PRINT);
 	exit;
@@ -93,6 +93,18 @@ if ($user->Commit() == false) {
 	echo json_encode(array('message' => 'There was an error saving the user.'), JSON_PRETTY_PRINT);
 	exit;
 }
+
+$children = [];
+foreach ($child_passwords as $child_id => $child_password) {
+	$child = BeaconUser::GetByUserUD($child_id);
+	$children[] = [
+		'user_id' => $child->UserID(),
+		'username' => $child->Username(),
+		'suffix' => $child->Suffix();
+		'password' => $child_password
+	];
+}
+
 $session = BeaconSession::Create($user->UserID());
 $token = $session->SessionID();
 
@@ -101,12 +113,23 @@ $database->Query('DELETE FROM email_verification WHERE email_id = $1;', $email_i
 $database->Commit();
 
 $response = array(
-	'session_id' => $token
+	'session_id' => $token,
+	'children' => $children
 );
 
 if ($new_user) {
 	$subject = 'Welcome to Beacon';
-	$body = "You just created a Beacon Account, which means you can easily share your documents with multiple devices. You can manage your account at <" . BeaconCommon::AbsoluteURL("/account/") . "> to change your password, manage documents, and see your Beacon Omni purchase status.\n\nFor reference, you can view Beacon's privacy policy at <" . BeaconCommon::AbsoluteURL("/privacy.php") . ">. The summary of it is simple: your data is yours and won't be sold or monetized in any way.\n\nHave fun and happy looting!\nThom McGrath, developer of Beacon.";
+	$body = "You just created a Beacon account, which means you can easily share your documents with multiple devices. You can manage your account at <" . BeaconCommon::AbsoluteURL("/account/") . "> to change your password, manage documents, and see your Beacon Omni purchase status.\n\nFor reference, you can view Beacon's privacy policy at <" . BeaconCommon::AbsoluteURL("/privacy.php") . ">. The summary of it is simple: your data is yours and won't be sold or monetized in any way.\n\nHave fun and happy looting!\nThom McGrath, developer of Beacon.";
+	BeaconEmail::SendMail($email, $subject, $body);
+}
+
+if (count($children) > 0) {
+	$subject = 'Beacon Team Member Passwords';
+	$body = "Because you reset your Beacon account password, a new private key was generated for your account. This also required a password reset for all your team members. Included is the new passwords for each of your team members. Every team member will be required to change their password next time they log in.\n\n";
+	foreach ($children as $child) {
+		$body .= $child['username'] . '#' . $child['suffix'] . ': ' . $child['password'] . "\n\n";
+	}
+	$body .= "Please safely distribute these passwords to your team members.";
 	BeaconEmail::SendMail($email, $subject, $body);
 }
 

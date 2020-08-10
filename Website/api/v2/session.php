@@ -24,6 +24,17 @@ case 'GET':
 	break;
 case 'POST':
 	// create a session, returns a session object
+	$user = BeaconUser::GetByUserID($user_id);
+	if (is_null($user)) {
+		BeaconAPI::ReplyError('User not found', null, 400);
+	}
+	if ($user->IsEnabled() === false) {
+		BeaconAPI::ReplyError('User is disabled', null, 400);
+	}
+	if ($user->IsAnonymous() === false && $user->IsVerified() === false) {
+		BeaconAPI::ReplyError('User email address is not verified', null, 400);
+	}
+	
 	$session = BeaconSession::Create($user_id);
 	
 	BeaconAPI::ReplySuccess($session);

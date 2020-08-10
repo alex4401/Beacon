@@ -7,6 +7,11 @@ class BeaconSession implements JsonSerializable {
 	protected $user_id = '';
 	protected $valid_until = '';
 	
+	const ERROR_ACCOUNT_DISABLED = 1;
+	const ERROR_EMAIL_NOT_VERIFIED = 2;
+	const ERROR_2FA_FAILED = 3;
+	const ERROR_NO_USER = 4;
+	
 	public function SessionID() {
 		return $this->session_id;
 	}
@@ -32,11 +37,23 @@ class BeaconSession implements JsonSerializable {
 	
 	public static function Create(string $user_id) {
 		$session_id = BeaconCommon::GenerateUUID();
-		$remote_ip = $_SERVER['REMOTE_ADDR'];
 		
 		$database = BeaconCommon::Database();
 		$database->BeginTransaction();
-		$database->Query("INSERT INTO sessions (session_id, user_id, valid_until, remote_ip) VALUES (encode(digest($1, 'sha512'), 'hex'), $2, CURRENT_TIMESTAMP + '30d', $3);", $session_id, $user_id, $remote_ip);
+		$results = $database->Query('SELECT users.user_id, users.enabled, email_verification.verified FROM users INNER JOIN email_verification ON (users.email_id = email_verification.email_id) WHERE users.user_id = $1;', $user_id);
+		if ($result->RecordCount() !== 1) {
+			$database->Rollback();
+			return self::ERROR_NO_USER;
+		}
+		if ($results->Field('enabled') === false) {
+			$database->Rollback();
+			return self::ERROR_ACCOUNT_DISABLED;
+		}
+		if ($results->Field('verified') === false) {
+			$database->Rollback();
+			return self::ERROR_EMAIL_NOT_VERIFIED;
+		}
+		$database->Query("INSERT INTO sessions (session_id, user_id, valid_until) VALUES (encode(digest($1, 'sha512'), 'hex'), $2, CURRENT_TIMESTAMP + '30d');", $session_id, $user_id);
 		$database->Query('DELETE FROM sessions WHERE valid_until < CURRENT_TIMESTAMP;');
 		$database->Commit();
 		
@@ -45,7 +62,7 @@ class BeaconSession implements JsonSerializable {
 	
 	public static function GetBySessionID(string $session_id) {
 		$database = BeaconCommon::Database();
-		$results = $database->Query("SELECT $1::text AS session_id, user_id, date_trunc('second', valid_until) AS valid_until FROM sessions WHERE session_id = encode(digest($1, 'sha512'), 'hex') AND valid_until >= CURRENT_TIMESTAMP;", $session_id);
+		$results = $database->Query("SELECT $1::text AS session_id, sessions.user_id, date_trunc('second', sessions.valid_until) AS valid_until FROM sessions INNER JOIN users ON (sessions.user_id = users.user_id) WHERE users.enabled = TRUE AND sessions.session_id = encode(digest($1, 'sha512'), 'hex') AND sessions.valid_until >= CURRENT_TIMESTAMP;", $session_id);
 		if ($results->RecordCount() === 1) {
 			return self::GetFromResult($results);
 		} else {

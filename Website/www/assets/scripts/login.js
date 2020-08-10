@@ -170,6 +170,9 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (loginRemember == false && localStorage) {
 				localStorage.removeItem('email');
 			}
+			if (sessionStorage) {
+				sessionStorage.removeItem('email');
+			}
 			
 			if (loginEmail === '' || loginPassword.length < 8) {
 				dialog.show('Incomplete Login', 'Email must not be blank and password have at least 8 characters.');
@@ -192,6 +195,9 @@ document.addEventListener('DOMContentLoaded', function() {
 			request.post('https://' + apiHost + '/v2/session', {}, function(obj) {
 				if (localStorage && loginRemember) {
 					localStorage.setItem('email', loginEmail);
+				}
+				if (sessionStorage) {
+					sessionStorage.setItem('email', loginEmail);
 				}
 				
 				var url = consumeURI;

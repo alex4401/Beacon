@@ -4,13 +4,13 @@ require(dirname(__FILE__) . '/loader.php');
 
 BeaconAPI::Authorize(true);
 $method = BeaconAPI::Method();
-$remote_path = '/' . BeaconAPI::UserID();
+$remote_path = '/' . BeaconAPI::CloudUserID();
 $components = explode('/', substr($_SERVER['PATH_INFO'], 1));
 foreach ($components as $component) {
 	$remote_path .= '/' . urlencode($component);
 }
 
-$prohibited_path = '/' . BeaconAPI::UserID() . '/Documents/';
+$prohibited_path = '/' . BeaconAPI::CloudUserID() . '/Documents/';
 $prohibited_path_len = strlen($prohibited_path);
 if (substr($remote_path, 0, $prohibited_path_len) === $prohibited_path) {
 	BeaconAPI::ReplyError('Use the document API for accessing documents', null, 446);
