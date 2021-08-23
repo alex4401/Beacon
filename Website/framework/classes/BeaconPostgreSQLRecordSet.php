@@ -103,6 +103,26 @@ class BeaconPostgreSQLRecordSet extends BeaconRecordSet {
 		}
 		return -1;
 	}
+	
+	public function rewind() {
+		$this->MoveTo(0);
+	}
+	
+	public function current() {
+		return $this->AsArray();
+	}
+	
+	public function key() {
+		return $this->offset;
+	}
+	
+	public function next() {
+		$this->MoveNext();
+	}
+	
+	public function valid() {
+		return $this->EOF() === false;
+	}
 }
 
 ?>

@@ -1,6 +1,18 @@
 <?php
 require(dirname(__FILE__, 3) . '/framework/loader.php');
+BeaconTemplate::SetTitle('Download');
 header('Cache-Control: no-cache');
+
+$database = BeaconCommon::Database();
+$download_links = [
+	'current' => BuildLinksForStage($database, 3),
+	'legacy' => BuildLinksForVersion($database, 10408304)
+];
+$prerelease_stage = $database->Query('SELECT stage FROM updates WHERE build_number > $1 AND stage < 3 ORDER BY build_number DESC LIMIT 1;', $download_links['current']['build_number']);
+if ($prerelease_stage->RecordCount() === 1) {
+	$download_links['preview'] = BuildLinksForStage($database, $prerelease_stage->Field('stage'));
+}
+
 ?><p class="notice-block notice-caution hidden" id="screenCompatibilityNotice"></p>
 <div id="stable-table" class="downloads-table"></div>
 <div id="prerelease-table" class="downloads-table"></div>
@@ -19,19 +31,14 @@ header('Cache-Control: no-cache');
 		<ul>
 			<li id="win_version_requirements">Windows 7 with Service Pack 1, Windows 8, Windows 8.1, Windows 10, or newer.</li>
 			<li>1280x720 screen resolution or greater. Windows scaling settings will affect this number. For example, a 150% scaling setting would require 1.5 times more pixels, which is 1920x1080. At 200% scaling, the minimum screen resolution is 2560x1440.</li>
-		</ul>
+		</ul><?php if ($download_links['current']['build_number'] >= 10502300) { ?>
+		<p>The following requirements are handled automatically when running the Beacon installer for all users. Users installing Beacon without admin permission may need the following dependencies.</p>
+		<ul>
+			<li><a href="https://www.microsoft.com/en-us/download/details.aspx?id=53587">Visual C++ Redistributable for Visual Studio 2015 Update 3</a></li>
+			<li>Windows 7 and 8.0: TLS v1.2 support, enabled with <a href="https://support.microsoft.com/en-us/topic/update-to-enable-tls-1-1-and-tls-1-2-as-default-secure-protocols-in-winhttp-in-windows-c4bd73d2-31d7-761e-0178-11268bb10392">Windows Update KB3140245</a>.</li>
+		</ul><?php } ?>
 	</div>
 </div><?php
-
-$database = BeaconCommon::Database();
-$download_links = [
-	'current' => BuildLinksForStage($database, 3),
-	'legacy' => BuildLinksForVersion($database, 10408304)
-];
-$prerelease_stage = $database->Query('SELECT stage FROM updates WHERE build_number > $1 AND stage < 3 ORDER BY build_number DESC LIMIT 1;', $download_links['current']['build_number']);
-if ($prerelease_stage->RecordCount() === 1) {
-	$download_links['preview'] = BuildLinksForStage($database, $prerelease_stage->Field('stage'));
-}
 
 BeaconTemplate::StartScript();
 ?><script>
@@ -42,7 +49,6 @@ let updateScreenNotice = function() {
 	let screenWidthPixels = screenWidthPoints * window.devicePixelRatio;
 	let screenHeightPixels = screenHeightPoints * window.devicePixelRatio;
 	
-	let isMac = navigator.platform.indexOf('Mac') > -1;
 	let isWindows = navigator.platform.indexOf('Win') > -1;
 	
 	let notice = null;
@@ -178,24 +184,112 @@ document.addEventListener('DOMContentLoaded', function() {
 BeaconTemplate::FinishScript();
 
 function BuildLinksForStage(BeaconDatabase $database, int $stage) {
-	$results = $database->Query("SELECT mac_url, win_64_url, win_combo_url, win_32_url, build_display, build_number, stage, delta_version, min_mac_version, min_win_version FROM updates WHERE stage = $1 ORDER BY build_number DESC LIMIT 1;", $stage);
+	$results = $database->Query("SELECT update_id, build_number, build_display, delta_version, stage, min_mac_version, min_win_version FROM updates WHERE stage = $1 ORDER BY build_number DESC LIMIT 1;", $stage);
 	if ($results->RecordCount() === 0) {
 		return null;
 	}
 	
-	return BuildLinksForResults($database, $results);
+	return BuildLinksForUpdate($database, $results->Field('update_id'), $results->Field('build_number'), $results->Field('delta_version'), $results->Field('stage'), $results->Field('build_display'), $results->Field('min_mac_version'), $results->Field('min_win_version'));
 }
 
 function BuildLinksForVersion(BeaconDatabase $database, int $build) {
-	$results = $database->Query("SELECT mac_url, win_64_url, win_combo_url, win_32_url, build_display, build_number, stage, delta_version, min_mac_version, min_win_version FROM updates WHERE build_number = $1;", $build);
+	$results = $database->Query("SELECT update_id, build_number, build_display, delta_version, stage, min_mac_version, min_win_version FROM updates WHERE build_number = $1;", $build);
 	if ($results->RecordCount() === 0) {
 		return null;
 	}
 	
-	return BuildLinksForResults($database, $results);
+	return BuildLinksForUpdate($database, $results->Field('update_id'), $results->Field('build_number'), $results->Field('delta_version'), $results->Field('stage'), $results->Field('build_display'), $results->Field('min_mac_version'), $results->Field('min_win_version'));
 }
 
-function BuildLinksForResults(BeaconDatabase $database, BeaconRecordSet $results) {
+function BuildLinksForUpdate(BeaconDatabase $database, string $update_id, int $build, int $delta_version, int $stage, string $build_display, string $min_mac_version, string $min_win_version) {
+	$data = [
+		'build_display' => $build_display,
+		'build_number' => $build,
+		'stage' => $stage
+	];
+	
+	$results = $database->Query('SELECT platform, TRIM(\'{}\' FROM architectures::TEXT) AS architectures, url, portable FROM update_downloads WHERE update_id = $1;', $update_id);
+	while ($results->EOF() === false) {
+		$architectures = explode(',', $results->Field('architectures'));
+		$url = $results->Field('url');
+		if ($results->Field('portable') == true) {
+			$results->MoveNext();
+			continue;
+		}
+		switch ($results->Field('platform')) {
+		case 'macOS':
+			$data['mac_url'] = $url;
+			break;
+		case 'Windows':
+			$x64 = in_array('x64', $architectures);
+			$x86 = in_array('x86', $architectures);
+			if ($x64 === true && $x86 === false) {
+				$data['win_64_url'] = $url;
+			} elseif ($x64 === false && $x86 === true) {
+				$data['win_32_url'] = $url;
+			}
+			break;
+		}
+		$results->MoveNext();
+	}
+	
+	list($mac_major, $mac_minor, $mac_bug) = explode('.', $min_mac_version, 3);
+	$min_mac_version = ($mac_major * 10000) + ($mac_minor * 100) + $mac_bug;
+	$mac_versions = [];
+	if ($min_mac_version <= 101600) {
+		$mac_versions[] = '11 Big Sur';
+	}
+	if ($min_mac_version <= 101500) {
+		$mac_versions[] = '10.15 Catalina';
+	}
+	if ($min_mac_version <= 101400) {
+		$mac_versions[] = '10.14 Mojave';
+	}
+	if ($min_mac_version <= 101300) {
+		$mac_versions[] = '10.13 High Sierra';
+	}
+	if ($min_mac_version <= 101200) {
+		$mac_versions[] = '10.12 Sierra';
+	}
+	if ($min_mac_version <= 101100) {
+		$mac_versions[] = '10.11 El Capitan';
+	}
+	$data['mac_display_versions'] = BeaconCommon::ArrayToEnglish($mac_versions, 'or');
+	
+	list($win_major, $win_minor, $win_build) = explode('.', $min_win_version, 3);
+	$min_win_version = ($win_major * 1000000) + ($win_minor * 10000) + $win_build;
+	$win_versions = [];
+	if ($min_win_version <= 100000000) {
+		$win_versions[] = 'Windows 10';
+	}
+	if ($min_win_version <= 60309600) {
+		$win_versions[] = 'Windows 8.1';
+	}
+	if ($min_win_version <= 60309200) {
+		$win_versions[] = 'Windows 8';
+	}
+	if ($min_win_version <= 60107601) {
+		$win_versions[] = 'Windows 7 with Service Pack 1';
+	}
+	$data['win_display_versions'] = BeaconCommon::ArrayToEnglish($win_versions, 'or');
+	
+	if ($delta_version >= 5) {
+		$results = $database->Query('SELECT path, created FROM update_files WHERE version = $1 AND type = \'Complete\';', $delta_version);
+		$last_database_update = new DateTime($results->Field('created'));
+		$data['engrams_url'] = 'https://updates.usebeacon.app' . $results->Field('path');
+	} else {
+		$last_database_update = BeaconCommon::NewestUpdateTimestamp($build);
+		$data['engrams_url'] = BeaconCommon::AbsoluteURL('/download/classes?version=' . $build);
+	}
+	$data['engrams_date'] = $last_database_update->format('c');
+	$data['engrams_date_display'] = $last_database_update->format('F jS, Y') . ' at ' . $last_database_update->format('g:i A') . ' UTC';
+	
+	$data['history_url'] = BeaconCommon::AbsoluteURL('/history?stage=' . $stage . '#build' . $build);
+	
+	return $data;
+}
+
+/*function BuildLinksForResults(BeaconDatabase $database, BeaconRecordSet $results) {
 	$build = intval($results->Field('build_number'));
 	$delta_version = intval($results->Field('delta_version'));
 	$stage = intval($results->Field('stage'));
@@ -266,6 +360,6 @@ function BuildLinksForResults(BeaconDatabase $database, BeaconRecordSet $results
 	$data['history_url'] = BeaconCommon::AbsoluteURL('/history?stage=' . $stage . '#build' . $build);
 	
 	return $data;
-}
+}*/
 
 ?>

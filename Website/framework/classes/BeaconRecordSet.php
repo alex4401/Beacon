@@ -1,6 +1,6 @@
 <?php
 
-abstract class BeaconRecordSet {
+abstract class BeaconRecordSet implements Iterator {
 	abstract public function __construct($result);
 	abstract public function RecordCount();
 	abstract public function MoveTo(int $offset);
@@ -14,6 +14,17 @@ abstract class BeaconRecordSet {
 	abstract public function FieldCount();
 	abstract public function FieldName(int $index);
 	abstract public function IndexOf(string $column);
+	
+	public function AsArray() {
+		$bound = $this->FieldCount();
+		$row = [];
+		for ($idx = 0; $idx < $bound; $idx++) {
+			$field = $this->FieldName($idx);
+			$value = $this->Field($idx);
+			$row[$field] = $value;
+		}
+		return $row;
+	}
 }
 
 ?>

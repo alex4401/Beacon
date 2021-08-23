@@ -5,11 +5,19 @@ header('Cache-Control: no-cache');
 
 $stage = 3;
 $current_build = 0;
-$arch_priority = array('combo', '64', '32');
+$portable = false;
+$match_architecture = null;
+$platform = null;
+$arch_points = [
+	'x86' => 1,
+	'x64' => 1, 
+	'arm' => 1,
+	'arm64' => 1
+];
 if (isset($_GET['build'])) {
 	$current_build = intval($_GET['build']);
-}
-if (isset($_GET['stage'])) {
+	$stage = floor($current_build / 100) % 10;
+} elseif (isset($_GET['stage'])) {
 	$stage = intval($_GET['stage']);
 }
 if (isset($_GET['html'])) {
@@ -19,35 +27,75 @@ if (isset($_GET['html'])) {
 	$html_mode = false;
 	header('Content-Type: application/json');
 }
+if (isset($_GET['portable'])) {
+	$portable = strtolower($_GET['portable']) === 'true';
+}
 // Beacon 1.2.0 and its betas did not report architecture correctly
 if ($current_build >= 10201300 && isset($_GET['arch'])) {
 	switch ($_GET['arch']) {
 	case 'x86_64':
-	case 'arm_64':
-	case 'arm64':
 	case 'x64':
-		$arch_priority = array('64', 'combo');
+		$match_architecture = 'x64';
+		$arch_points['x64'] = 2;
+		$arch_points['x86'] = 1;
+		$arch_points['arm64'] = 0;
+		$arch_points['arm'] = 0;
 		break;
 	case 'x86':
+		$match_architecture = 'x86';
+		$arch_points['x64'] = 0;
+		$arch_points['x86'] = 1;
+		$arch_points['arm64'] = 0;
+		$arch_points['arm'] = 0;
+		break;
+	case 'arm_64':
+	case 'arm64':
+		$match_architecture = 'arm64';
+		$arch_points['x64'] = 1;
+		$arch_points['x86'] = 2;
+		$arch_points['arm64'] = 4;
+		$arch_points['arm'] = 3;
+		break;
 	case 'arm':
-		$arch_priority = array('32', 'combo');
+		$match_architecture = 'arm';
+		$arch_points['x64'] = 0;
+		$arch_points['x86'] = 1;
+		$arch_points['arm64'] = 0;
+		$arch_points['arm'] = 2;
 		break;
 	}
 }
-if (isset($_GET['platform']) && isset($_GET['osversion']) && preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,6}$/', $_GET['osversion']) === 1) {
-	switch ($_GET['platform']) {
+if (isset($_GET['platform'])) {
+	$platform = strtolower($_GET['platform']);
+	switch ($platform) {
 	case 'mac':
+		$platform = 'macOS';
+		break;
+	case 'win':
+		$platform = 'Windows';
+		break;
+	case 'lin':
+		$platform = 'Linux';
+		break;
+	default:
+		$platform = null;
+		break;
+	}
+}
+if (is_null($platform) === false && isset($_GET['osversion']) && preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,6}$/', $_GET['osversion']) === 1) {
+	switch ($platform) {
+	case 'macOS':
 		$version_column = 'min_mac_version';
 		$os_version = $_GET['osversion'];
 		break;
-	case 'win':
+	case 'Windows':
 		$version_column = 'min_win_version';
 		$os_version = $_GET['osversion'];
 		break;
 	}
 }
 
-$include_notices = $current_build > 33;
+$include_notices = $current_build > 33 && $current_build < 10500000;
 
 $database = BeaconCommon::Database();
 if ($include_notices) {
@@ -65,14 +113,23 @@ if ($include_notices) {
 	}
 }
 
+$values = [$current_build, $stage];
+$update_sql = 'SELECT * FROM updates WHERE build_number > $1 AND stage >= $2';
+$is_required_sql = 'SELECT COUNT(update_id) AS num_required_updates FROM updates WHERE build_number >= $1 AND stage >= $2 AND $1 <@ lock_versions';
 if (isset($version_column) && isset($os_version)) {
-	$results = $database->Query('SELECT * FROM updates WHERE build_number > $1 AND stage >= $2 AND os_version_as_integer(' . $version_column . ') <= os_version_as_integer($3) ORDER BY build_number DESC;', $current_build, $stage, $os_version);
-	$required = $database->Query('SELECT COUNT(update_id) AS num_required_updates FROM updates WHERE stage >= $2 AND build_number >= $1 AND $1 <@ lock_versions AND os_version_as_integer(' . $version_column . ') <= os_version_as_integer($3);', $current_build, $stage, $os_version)->Field('num_required_updates') > 0;
-} else {
-	$results = $database->Query('SELECT * FROM updates WHERE build_number > $1 AND stage >= $2 ORDER BY build_number DESC;', $current_build, $stage);
-	$required = $database->Query('SELECT COUNT(update_id) AS num_required_updates FROM updates WHERE stage >= $2 AND build_number >= $1 AND $1 <@ lock_versions;', $current_build, $stage)->Field('num_required_updates') > 0;
+	$os_version_sql = ' AND os_version_as_integer(' . $version_column . ') <= os_version_as_integer($3)';
+	$update_sql .= $os_version_sql;
+	$is_required_sql .= $os_version_sql;
+	$values[] = $os_version;
 }
-if ($results->RecordCount() == 0) {
+$update_sql .= ' ORDER BY build_number DESC';
+if ($current_build === 0) {
+	$update_sql .= ' LIMIT 1';
+}
+$update_sql .= ';';
+
+$update_results = $database->Query($update_sql, $values);
+if ($update_results->RecordCount() === 0) {
 	if ($html_mode) {
 		echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Beacon Update</title></head><body><h1>No update</h1></body></html>';
 	} elseif ($include_notices) {
@@ -85,36 +142,94 @@ if ($results->RecordCount() == 0) {
 	}
 	exit;
 }
+$is_required = $database->Query($is_required_sql, $values)->Field('num_required_updates') > 0;
+$update_id = $update_results->Field('update_id');
 
-
-
-$values = array(
-	'build' => intval($results->Field('build_number')),
-	'version' => $results->Field('build_display'),
-	'preview' => ($current_build < 10500000) ? 'Beacon\'s biggest update ever is here!' : $results->Field('preview'),
-	'notes_url' => BeaconCommon::AbsoluteURL('/history' . (intval($results->Field('stage')) != 3 ? '?stage=' . $results->Field('stage') : '')),
-	'required' => $required,
-	'mac' => array(
-		'url' => BeaconCommon::SignDownloadURL($results->Field('mac_url')),
-		'signature' => $results->Field('mac_signature')
-	)
-);
+if (is_null($platform) === false) {
+	$download_results = $database->Query('SELECT platform, TRIM(\'{}\' FROM architectures::TEXT) AS architectures, url, portable, signature FROM update_downloads WHERE update_id = $1 AND platform = $2;', $update_id, $platform);
+} else {
+	$download_results = $database->Query('SELECT platform, TRIM(\'{}\' FROM architectures::TEXT) AS architectures, url, portable, signature FROM update_downloads WHERE update_id = $1;', $update_id);
+}
+$scores = [
+	'macOS' => [
+		'score' => 0,
+		'download' => null
+	],
+	'Windows' => [
+		'score' => 0,
+		'download' => null
+	],
+	'Linux' => [
+		'score' => 0,
+		'download' => null
+	]
+];
+foreach ($download_results as $download) {
+	$score = 0;
+	$architectures = explode(',', $download['architectures']);
+	if (count($architectures) === 1 && $architectures[0] === $match_architecture) {
+		// Perfect match
+		$score += 100;
+	} else {
+		foreach ($architectures as $arch) {
+			$score += $arch_points[$arch];
+		}
+	}
+	if ($score === 0) {
+		// This version has no compatibility at all
+		continue;
+	}
+	if ($portable == $download['portable']) {
+		$score += 1;
+	}
+	
+	if ($score > $scores[$download['platform']]['score']) {
+		$scores[$download['platform']]['score'] = $score;
+		$scores[$download['platform']]['download'] = [
+			'url' => $download['url'],
+			'signature' => $download['signature'],
+			'architectures' => $architectures,
+			'portable' => $download['portable']
+		];
+	}
+}
 
 $notes_path = '/history';
-if ($results->Field('stage') < 3) {
+if ($update_results->Field('stage') < 3) {
 	// It may seem odd, but preview releases should show notes for both alphas and betas.
 	$notes_path .= '?stage=1';
 }
-$notes_path .= '#build' . $results->Field('build_number');
+$notes_path .= '#build' . $update_results->Field('build_number');
 
-foreach ($arch_priority as $part) {
-	if (is_null($results->Field('win_' . $part . '_url')) === false) {
-		$values['win'] = array(
-			'url' => BeaconCommon::SignDownloadURL($results->Field('win_' . $part . '_url')),
-			'signature' => $results->Field('win_' . $part . '_signature')
-		);
-		break;
-	}
+$values = [
+	'build' => intval($update_results->Field('build_number')),
+	'version' => $update_results->Field('build_display'),
+	'preview' => ($current_build < 10500000) ? 'Beacon\'s biggest update ever is here!' : $update_results->Field('preview'),
+	'notes' => '',
+	'notes_url' => BeaconCommon::AbsoluteURL($notes_path),
+	'required' => $is_required
+];
+
+if (is_null($scores['macOS']['download']) === false) {
+	$download = $scores['macOS']['download'];
+	$values['mac'] = [
+		'url' => BeaconCommon::SignDownloadURL($download['url']),
+		'signature' => $download['signature']
+	];
+}
+if (is_null($scores['Windows']['download']) === false) {
+	$download = $scores['Windows']['download'];
+	$values['win'] = [
+		'url' => BeaconCommon::SignDownloadURL($download['url']),
+		'signature' => $download['signature']
+	];
+}
+if (is_null($scores['Linux']['download']) === false) {
+	$download = $scores['Linux']['download'];
+	$values['lin'] = [
+		'url' => BeaconCommon::SignDownloadURL($download['url']),
+		'signature' => $download['signature']
+	];
 }
 
 if ($include_notices) {
@@ -122,13 +237,13 @@ if ($include_notices) {
 }
 
 $markdown = '';
-while (!$results->EOF()) {
+while (!$update_results->EOF()) {
 	if ($markdown === '') {
-		$markdown = "# Beacon " . $results->Field('build_display') . " is now available\n\n" . $results->Field('notes');
+		$markdown = "# Beacon " . $update_results->Field('build_display') . " is now available\n\n" . $update_results->Field('notes');
 	} else {
-		$markdown .= "\n\n## Changes in " . $results->Field('build_display') . "\n\n" . $results->Field('notes');
+		$markdown .= "\n\n## Changes in " . $update_results->Field('build_display') . "\n\n" . $update_results->Field('notes');
 	}
-	$results->MoveNext();
+	$update_results->MoveNext();
 }
 
 $parser = new Parsedown();
