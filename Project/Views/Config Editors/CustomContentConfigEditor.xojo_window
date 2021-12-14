@@ -26,52 +26,25 @@ Begin ConfigEditor CustomContentConfigEditor Implements NotificationKit.Receiver
    UseFocusRing    =   False
    Visible         =   True
    Width           =   608
-   Begin CodeArea ConfigArea
-      AcceptTabs      =   False
-      Alignment       =   0
+   Begin BeaconCodeArea ConfigArea
       AutoDeactivate  =   True
-      AutomaticallyCheckSpelling=   False
-      BackColor       =   &cFFFFFF00
-      Bold            =   False
-      Border          =   False
-      DataField       =   ""
-      DataSource      =   ""
       Enabled         =   True
-      Format          =   ""
       Height          =   341
       HelpTag         =   ""
-      HideSelection   =   True
       Index           =   -2147483648
-      Italic          =   False
+      InitialParent   =   ""
       Left            =   0
-      LimitText       =   0
-      LineHeight      =   0.0
-      LineSpacing     =   1.0
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
       LockRight       =   True
       LockTop         =   True
-      Mask            =   ""
-      Multiline       =   True
-      ReadOnly        =   False
       Scope           =   2
-      ScrollbarHorizontal=   True
-      ScrollbarVertical=   True
-      Styled          =   False
+      ShowInfoBar     =   False
       TabIndex        =   1
       TabPanelIndex   =   0
       TabStop         =   True
-      Text            =   ""
-      TextColor       =   &c00000000
-      TextFont        =   "Source Code Pro"
-      TextSize        =   0.0
-      TextUnit        =   0
       Top             =   41
-      Transparent     =   False
-      Underline       =   False
-      UnicodeMode     =   0
-      UseFocusRing    =   False
       Visible         =   True
       Width           =   608
    End
@@ -479,42 +452,44 @@ End
 		Private Sub UpdateTextColors()
 		  Self.mEncryptedRanges.ResizeTo(-1)
 		  
-		  Var Pos As Integer
-		  Var Source As String = Self.ConfigArea.Text
-		  Var Tag As String = BeaconConfigs.CustomContent.EncryptedTag
-		  Var TagLen As Integer = Tag.Length
-		  Var Styles As StyledText = Self.ConfigArea.StyledText
-		  If Styles <> Nil Then
-		    Styles.TextColor(0, Source.Length) = SystemColors.LabelColor
-		    Styles.Bold(0, Source.Length) = False
-		    Styles.Italic(0, Source.Length) = False
-		  End If
-		  
-		  Do
-		    Pos = Source.IndexOf(Pos, Tag)
-		    If Pos = -1 Then
-		      Return
-		    End If
-		    
-		    Var StartPos As Integer = Pos + TagLen
-		    Var EndPos As Integer = Source.IndexOf(StartPos, Tag)
-		    If EndPos = -1 Then
-		      EndPos = Source.Length
-		    End If
-		    
-		    Self.mEncryptedRanges.Add(New Beacon.Range(StartPos, EndPos))
-		    
+		  #if false
+		    Var Pos As Integer
+		    Var Source As String = Self.ConfigArea.Text
+		    Var Tag As String = BeaconConfigs.CustomContent.EncryptedTag
+		    Var TagLen As Integer = Tag.Length
+		    Var Styles As StyledText = Self.ConfigArea.StyledText
 		    If Styles <> Nil Then
-		      Styles.TextColor(StartPos - TagLen, TagLen) = SystemColors.TertiaryLabelColor
-		      Styles.Italic(StartPos - TagLen, TagLen) = True
-		      Styles.TextColor(StartPos, EndPos - StartPos) = SystemColors.SystemGreenColor
-		      Styles.Bold(StartPos, EndPos - StartPos) = True
-		      Styles.TextColor(EndPos, Min(TagLen, Source.Length - EndPos)) = SystemColors.TertiaryLabelColor
-		      Styles.Italic(EndPos, Min(TagLen, Source.Length - EndPos)) = True
+		      Styles.TextColor(0, Source.Length) = SystemColors.LabelColor
+		      Styles.Bold(0, Source.Length) = False
+		      Styles.Italic(0, Source.Length) = False
 		    End If
 		    
-		    Pos = EndPos + TagLen
-		  Loop
+		    Do
+		      Pos = Source.IndexOf(Pos, Tag)
+		      If Pos = -1 Then
+		        Return
+		      End If
+		      
+		      Var StartPos As Integer = Pos + TagLen
+		      Var EndPos As Integer = Source.IndexOf(StartPos, Tag)
+		      If EndPos = -1 Then
+		        EndPos = Source.Length
+		      End If
+		      
+		      Self.mEncryptedRanges.Add(New Beacon.Range(StartPos, EndPos))
+		      
+		      If Styles <> Nil Then
+		        Styles.TextColor(StartPos - TagLen, TagLen) = SystemColors.TertiaryLabelColor
+		        Styles.Italic(StartPos - TagLen, TagLen) = True
+		        Styles.TextColor(StartPos, EndPos - StartPos) = SystemColors.SystemGreenColor
+		        Styles.Bold(StartPos, EndPos - StartPos) = True
+		        Styles.TextColor(EndPos, Min(TagLen, Source.Length - EndPos)) = SystemColors.TertiaryLabelColor
+		        Styles.Italic(EndPos, Min(TagLen, Source.Length - EndPos)) = True
+		      End If
+		      
+		      Pos = EndPos + TagLen
+		    Loop
+		  #endif
 		  
 		  Self.UpdateEncryptButton()
 		End Sub

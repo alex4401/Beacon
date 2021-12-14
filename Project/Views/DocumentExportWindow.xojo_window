@@ -59,52 +59,28 @@ Begin BeaconDialog DocumentExportWindow
       Visible         =   True
       Width           =   96
    End
-   Begin CodeArea ContentArea
-      AcceptTabs      =   False
-      Alignment       =   0
+   Begin BeaconCodeArea ContentArea
       AutoDeactivate  =   True
-      AutomaticallyCheckSpelling=   False
-      BackColor       =   &cFFFFFF00
-      Bold            =   False
-      Border          =   False
-      DataField       =   ""
-      DataSource      =   ""
       Enabled         =   True
-      Format          =   ""
       Height          =   428
       HelpTag         =   ""
-      HideSelection   =   True
+      HorizontalScrollPosition=   0
       Index           =   -2147483648
-      Italic          =   False
+      InitialParent   =   ""
       Left            =   251
-      LimitText       =   0
-      LineHeight      =   0.0
-      LineSpacing     =   1.0
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
       LockRight       =   True
       LockTop         =   True
-      Mask            =   ""
-      Multiline       =   True
-      ReadOnly        =   True
       Scope           =   2
-      ScrollbarHorizontal=   True
-      ScrollbarVertical=   True
-      Styled          =   False
+      SelectionLength =   0
+      ShowInfoBar     =   False
       TabIndex        =   6
       TabPanelIndex   =   0
       TabStop         =   True
-      Text            =   ""
-      TextColor       =   &c00000000
-      TextFont        =   "Source Code Pro"
-      TextSize        =   0.0
-      TextUnit        =   0
       Top             =   111
-      Transparent     =   False
-      Underline       =   False
-      UnicodeMode     =   0
-      UseFocusRing    =   True
+      VerticalScrollPosition=   0
       Visible         =   True
       Width           =   597
    End
@@ -666,7 +642,6 @@ Begin BeaconDialog DocumentExportWindow
    End
    Begin Beacon.Rewriter SharedRewriter
       DebugIdentifier =   ""
-      Enabled         =   True
       FinishedCommandLineContent=   ""
       FinishedGameIniContent=   ""
       FinishedGameUserSettingsIniContent=   ""
@@ -982,7 +957,7 @@ End
 		  End Select
 		  If Self.CurrentContent <> IntendedContent Then
 		    Self.CurrentContent = IntendedContent
-		    Self.ContentArea.ScrollPositionX = 0
+		    Self.ContentArea.HorizontalScrollPosition = 0
 		  End If
 		End Sub
 	#tag EndMethod
@@ -1094,7 +1069,10 @@ End
 			  Value = Value.ReplaceLineEndings(EndOfLine)
 			  If Self.mCurrentContent <> Value Then
 			    Self.mCurrentContent = Value
+			    Self.ContentArea.ReadOnly = False
 			    Self.ContentArea.Text = Value
+			    Self.ContentArea.ReadOnly = True
+			    Self.ContentArea.UpdateLineNumbersGutter()
 			  End If
 			End Set
 		#tag EndSetter
@@ -1258,6 +1236,11 @@ End
 		  Var Content As String = Me.Text
 		  Return Self.CanCopy(Content, Self.CurrentFilename)
 		End Function
+	#tag EndEvent
+	#tag Event
+		Sub Open()
+		  Me.ReadOnly = True
+		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ProfileMenu

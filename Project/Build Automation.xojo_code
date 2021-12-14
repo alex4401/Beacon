@@ -57,6 +57,9 @@
 					Destination = 1
 					Subdirectory = 
 					FolderItem = Li4vLi4vRm9udHMv
+					FolderItem = Li4vLi4vSWNvbnMvaW5mb19iYXJfYmcudGlmZg==
+					FolderItem = Li4vLi4vSWNvbnMvbWFjX2N1cnNvcl9idXN5LnRpZmY=
+					FolderItem = Li4vLi4vSWNvbnMvbWFjX2N1cnNvcl9mbGlwcGVkLnRpZmY=
 				End
 				Begin CopyFilesBuildStep CopyDebugResourcesMac
 					AppliesTo = 1
