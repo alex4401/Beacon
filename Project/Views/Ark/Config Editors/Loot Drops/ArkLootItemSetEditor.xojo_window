@@ -32,12 +32,12 @@ Begin BeaconContainer ArkLootItemSetEditor
       AutoHideScrollbars=   True
       Bold            =   False
       Border          =   False
-      ColumnCount     =   4
+      ColumnCount     =   1
       ColumnsResizable=   False
-      ColumnWidths    =   "*,80,120,140"
+      ColumnWidths    =   ""
       DataField       =   ""
       DataSource      =   ""
-      DefaultRowHeight=   22
+      DefaultRowHeight=   47
       DefaultSortColumn=   0
       DefaultSortDirection=   0
       EditCaption     =   "Edit"
@@ -46,14 +46,14 @@ Begin BeaconContainer ArkLootItemSetEditor
       EnableDragReorder=   False
       GridLinesHorizontal=   1
       GridLinesVertical=   1
-      HasHeading      =   True
+      HasHeading      =   False
       HeadingIndex    =   0
       Height          =   343
       HelpTag         =   ""
       Hierarchical    =   False
       Index           =   -2147483648
       InitialParent   =   ""
-      InitialValue    =   "Description	Quantity	Quality	Figures"
+      InitialValue    =   ""
       Italic          =   False
       Left            =   0
       LockBottom      =   True
@@ -187,44 +187,97 @@ End
 #tag EndWindow
 
 #tag WindowCode
-	#tag Event
-		Sub Resize(Initial As Boolean)
-		  #Pragma Unused Initial
+	#tag Method, Flags = &h21
+		Private Sub DrawEntryCell(Entry As Ark.LootItemSetEntry, G As Graphics, Width As Integer, ForegroundColor As Color)
+		  Const Margin = 10
 		  
-		  Var ShouldUseCompactMode As Boolean = Self.Width < 600
-		  If ShouldUseCompactMode = Self.mUsingCompactMode Then
-		    Return
-		  End If
-		  
-		  If ShouldUseCompactMode Then
-		    Self.mExpandedSortColumn = Self.EntryList.HeadingIndex
-		    Self.mExpandedSortDirection = Self.EntryList.ColumnSortDirectionAt(Self.EntryList.HeadingIndex)
-		    
-		    Self.EntryList.ColumnCount = 1
-		    
-		    Self.EntryList.HeadingIndex = 0
-		    Self.EntryList.ColumnSortDirectionAt(0) = Self.mCompactSortDirection
-		    Self.EntryList.DefaultRowHeight = BeaconListbox.DoubleLineRowHeight
+		  Var QuantityText As String
+		  If Entry.MinQuantity = Entry.MaxQuantity Then
+		    QuantityText = Entry.MinQuantity.ToString
 		  Else
-		    Self.mCompactSortDirection = Self.EntryList.ColumnSortDirectionAt(0)
-		    
-		    Self.EntryList.ColumnCount = 4
-		    
-		    Self.EntryList.HeadingIndex = Self.mExpandedSortColumn
-		    Self.EntryList.ColumnSortDirectionAt(Self.mExpandedSortColumn) = Self.mExpandedSortDirection
-		    Self.EntryList.DefaultRowHeight = BeaconListbox.StandardRowHeight
+		    QuantityText = Entry.MinQuantity.ToString + " to " + Entry.MaxQuantity.ToString
 		  End If
 		  
-		  Self.mUsingCompactMode = ShouldUseCompactMode
+		  Var MainLine As String = QuantityText + " of " + Entry.Label
+		  Var MainBaseline As Integer = Round(Margin + G.CapHeight)
+		  G.DrawingColor = ForegroundColor
+		  G.FontUnit = FontUnits.Point
+		  G.FontSize = 0
+		  G.FontName = "System"
+		  G.DrawText(MainLine, Margin, MainBaseline, Width - (Margin * 2), True)
+		  G.FontName = "SmallSystem"
 		  
-		  Self.UpdateEntryList()
-		End Sub
-	#tag EndEvent
-
-
-	#tag Method, Flags = &h0
-		Sub Constructor()
-		  Self.mCompactSortDirection = Listbox.SortDirections.Ascending
+		  Var StatLineTop As Integer = MainBaseline + Margin
+		  Var StatLineHeight As Integer = Max(12, Round(G.CapHeight))
+		  Var StatMidLine As Double = StatLineTop + (StatLineHeight / 2)
+		  Var StatBaseline As Integer = Round(StatMidLine + (G.CapHeight / 2))
+		  Var StatIconTop As Integer = Round(StatMidLine - 6)
+		  Var StatTextLeft As Integer = Margin
+		  
+		  #if false
+		    // Odd place to do this, but it knows the metrics
+		    If Self.mHasSizedRows = False Then
+		      Self.EntryList.DefaultRowHeight = StatLineTop + StatLineHeight + Margin
+		      Self.EntryList.Invalidate
+		      Self.mHasSizedRows = True
+		    End If
+		  #endif
+		  
+		  Var SecondaryColor As Color = ForegroundColor.AtOpacity(0.4)
+		  G.DrawingColor = SecondaryColor
+		  
+		  Var QualityIcon As Picture = BeaconUI.IconWithColor(IconMiniQuality, SecondaryColor, G.ScaleX, G.ScaleX)
+		  G.DrawPicture(QualityIcon, StatTextLeft, StatIconTop)
+		  StatTextLeft = StatTextLeft + QualityIcon.Width + (Margin / 2)
+		  Var QualityText As String
+		  If Entry.MinQuality = Entry.MaxQuality Then
+		    QualityText = Entry.MinQuality.Label
+		  Else
+		    QualityText = Entry.MinQuality.Label(False) + " to " + Entry.MaxQuality.Label(False)
+		  End If
+		  G.DrawText(QualityText, StatTextLeft, StatBaseline)
+		  StatTextLeft = StatTextLeft + Ceiling(G.TextWidth(QualityText)) + Margin
+		  
+		  Var WeightIcon As Picture = BeaconUI.IconWithColor(IconMiniWeight, SecondaryColor, G.ScaleX, G.ScaleX)
+		  G.DrawPicture(WeightIcon, StatTextLeft, StatIconTop)
+		  StatTextLeft = StatTextLeft + WeightIcon.Width + (Margin / 2)
+		  Var WeightText As String
+		  If Entry.RawWeight = Floor(Entry.RawWeight) Then
+		    // Show as integer
+		    WeightText = Entry.RawWeight.ToString(Locale.Current, ",##0")
+		  Else
+		    WeightText = Entry.RawWeight.ToString(Locale.Current, ",##0.00")
+		  End If
+		  G.DrawText(WeightText, StatTextLeft, StatBaseline)
+		  StatTextLeft = StatTextLeft + Ceiling(G.TextWidth(WeightText)) + Margin
+		  
+		  Var BlueprintIcon As Picture = BeaconUI.IconWithColor(IconMiniBlueprint, SecondaryColor, G.ScaleX, G.ScaleX)
+		  G.DrawPicture(BlueprintIcon, StatTextLeft, StatIconTop)
+		  StatTextLeft = StatTextLeft + BlueprintIcon.Width + (Margin / 2)
+		  Var BlueprintText As String = Entry.ChanceToBeBlueprint.ToString(Locale.Current, "0%")
+		  G.DrawText(BlueprintText, StatTextLeft, StatBaseline)
+		  StatTextLeft = StatTextLeft + Ceiling(G.TextWidth(BlueprintText)) + Margin
+		  
+		  If Entry.StatClampMultiplier <> 1.0 Then
+		    Var StatIcon As Picture = BeaconUI.IconWithColor(IconMiniStats, SecondaryColor, G.ScaleX, G.ScaleX)
+		    G.DrawPicture(StatIcon, StatTextLeft, StatIconTop)
+		    StatTextLeft = StatTextLeft + StatIcon.Width + (Margin / 2)
+		    Var StatText As String = Entry.StatClampMultiplier.ToString(Locale.Current, ",##0.0####")
+		    G.DrawText(StatText, StatTextLeft, StatBaseline)
+		    StatTextLeft = StatTextLeft + Ceiling(G.TextWidth(StatText)) + Margin
+		  End If
+		  
+		  If Entry.SingleItemQuantity And Entry.Count > 1 Then
+		    Var SingleIcon As Picture = BeaconUI.IconWithColor(IconMiniSingle, SecondaryColor, G.ScaleX, G.ScaleX)
+		    G.DrawPicture(SingleIcon, StatTextLeft, StatIconTop)
+		    StatTextLeft = StatTextLeft + SingleIcon.Width + Margin
+		  End If
+		  
+		  If Entry.PreventGrinding Then
+		    Var UngrindableIcon As Picture = BeaconUI.IconWithColor(IconMiniUngrindable, SecondaryColor, G.ScaleX, G.ScaleX)
+		    G.DrawPicture(UngrindableIcon, StatTextLeft, StatIconTop)
+		    StatTextLeft = StatTextLeft + UngrindableIcon.Width + Margin
+		  End If
 		End Sub
 	#tag EndMethod
 
@@ -375,85 +428,23 @@ End
 		    Return
 		  End If
 		  
-		  Var RangeSeparator As String = " - "
-		  If Self.mUsingCompactMode Then
-		    RangeSeparator = "-"
-		  End If
-		  
 		  For I As Integer = 0 To ItemSet.LastIndex
 		    Var Entry As Ark.LootItemSetEntry = ItemSet(I)
 		    If Entry Is Nil Then
 		      Continue
-		    End If
-		    Var BlueprintChance As Double = if(Entry.CanBeBlueprint, Entry.ChanceToBeBlueprint, 0)
-		    Var RelativeWeight As Double = ItemSet.RelativeWeight(I)
-		    Var ChanceText As String
-		    If RelativeWeight < 0.01 Then
-		      Var OnePercent As Double = 0.01
-		      ChanceText = "< " + OnePercent.ToString(Locale.Current, "0%")
-		    Else
-		      ChanceText = RelativeWeight.ToString(Locale.Current, "0%")
-		    End If
-		    
-		    Var QualityText As String
-		    If Entry.MinQuality = Entry.MaxQuality Then
-		      QualityText = Entry.MinQuality.Label
-		    Else
-		      QualityText = Entry.MinQuality.Label(False) + RangeSeparator + Entry.MaxQuality.Label(False)
 		    End If
 		    
 		    Var QuantityText As String
 		    If Entry.MinQuantity = Entry.MaxQuantity Then
 		      QuantityText = Entry.MinQuantity.ToString
 		    Else
-		      QuantityText = Entry.MinQuantity.ToString + RangeSeparator + Entry.MaxQuantity.ToString
+		      QuantityText = Entry.MinQuantity.ToString + " to " + Entry.MaxQuantity.ToString
 		    End If
 		    
-		    Var WeightText As String
-		    Var Weight As Double = Entry.RawWeight
-		    If Floor(Weight) = Weight Then
-		      WeightText = Weight.ToString(Locale.Current, ",##0")
-		    Else
-		      WeightText = Weight.ToString(Locale.Current, ",##0.0####")
-		    End If
+		    Var MainLine As String = QuantityText + " of " + Entry.Label
 		    
-		    Var BlueprintText As String = BlueprintChance.ToString(Locale.Current, "0%")
-		    
-		    Var FiguresText As String
-		    
-		    Var MainColumnTag As String = Entry.Label
-		    Var MainColumnText As String
-		    If Self.mUsingCompactMode Then
-		      If Entry.Count > 1 Then
-		        MainColumnText = QuantityText + " of " + MainColumnTag
-		      Else
-		        MainColumnText = QuantityText + " " + MainColumnTag
-		      End If
-		      MainColumnText = MainColumnText + EndOfLine + "Quality: " + QualityText + Encodings.UTF8.Chr(9) + "Weight: " + WeightText 
-		      If Entry.CanBeBlueprint Then
-		        MainColumnText = MainColumnText + Encodings.UTF8.Chr(9) + "Blueprint Chance: " + BlueprintText
-		      End If
-		    Else
-		      MainColumnText = MainColumnTag
-		      
-		      FiguresText = WeightText + " wt"
-		      
-		      If Entry.CanBeBlueprint Then
-		        FiguresText = FiguresText + ", " + BlueprintText + " bp"
-		      End If
-		    End If
-		    
-		    EntryList.AddRow("")
+		    EntryList.AddRow(MainLine) // Even though we're drawing over it, this can help screen readers
 		    Var Idx As Integer = EntryList.LastAddedRowIndex
-		    EntryList.CellValueAt(Idx, Self.ColumnLabel) = MainColumnText
-		    If Self.mUsingCompactMode Then
-		    Else
-		      EntryList.CellValueAt(Idx, Self.ColumnQuality) = QualityText
-		      EntryList.CellValueAt(Idx, Self.ColumnQuantity) = QuantityText
-		      EntryList.CellValueAt(Idx, Self.ColumnFigures) = FiguresText
-		    End If
-		    
-		    EntryList.CellTagAt(Idx, Self.ColumnLabel) = MainColumnTag
 		    EntryList.RowTagAt(Idx) = Entry
 		    EntryList.Selected(Idx) = Selected.IndexOf(Entry.UUID) > -1
 		  Next
@@ -498,37 +489,13 @@ End
 
 
 	#tag Property, Flags = &h21
-		Private mCompactSortDirection As Listbox.SortDirections
-	#tag EndProperty
-
-	#tag Property, Flags = &h21
-		Private mExpandedSortColumn As Integer
-	#tag EndProperty
-
-	#tag Property, Flags = &h21
-		Private mExpandedSortDirection As Listbox.SortDirections
+		Private mHasSizedRows As Boolean
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
 		Private mRef As WeakRef
 	#tag EndProperty
 
-	#tag Property, Flags = &h21
-		Private mUsingCompactMode As Boolean
-	#tag EndProperty
-
-
-	#tag Constant, Name = ColumnFigures, Type = Double, Dynamic = False, Default = \"3", Scope = Private
-	#tag EndConstant
-
-	#tag Constant, Name = ColumnLabel, Type = Double, Dynamic = False, Default = \"0", Scope = Private
-	#tag EndConstant
-
-	#tag Constant, Name = ColumnQuality, Type = Double, Dynamic = False, Default = \"2", Scope = Private
-	#tag EndConstant
-
-	#tag Constant, Name = ColumnQuantity, Type = Double, Dynamic = False, Default = \"1", Scope = Private
-	#tag EndConstant
 
 	#tag Constant, Name = kClipboardType, Type = String, Dynamic = False, Default = \"com.thezaz.beacon.ark.loot.itemsetentry", Scope = Private
 	#tag EndConstant
@@ -753,39 +720,7 @@ End
 		  Var Entry1 As Ark.LootItemSetEntry = Me.RowTagAt(Row1)
 		  Var Entry2 As Ark.LootItemSetEntry = Me.RowTagAt(Row2)
 		  
-		  Var Value1, Value2 As Double
-		  Select Case Column
-		  Case Self.ColumnLabel
-		    Result = Me.CellTagAt(Row1, Column).StringValue.Compare(Me.CellTagAt(Row2, Column).StringValue, ComparisonOptions.CaseInsensitive, Locale.Raw)
-		    Return True
-		  Case Self.ColumnQuantity
-		    If Entry1.MinQuantity = Entry2.MinQuantity Then
-		      Value1 = Entry1.MaxQuantity
-		      Value2 = Entry2.MaxQuantity
-		    Else
-		      Value1 = Entry1.MinQuantity
-		      Value2 = Entry2.MinQuantity
-		    End If
-		  Case Self.ColumnQuality
-		    If Entry1.MinQuality = Entry2.MinQuality Then
-		      Value1 = Entry1.MaxQuality.BaseValue
-		      Value2 = Entry2.MaxQuality.BaseValue
-		    Else
-		      Value1 = Entry1.MinQuality.BaseValue
-		      Value2 = Entry2.MinQuality.BaseValue
-		    End If
-		  Case Self.ColumnFigures
-		    Value1 = Entry1.RawWeight
-		    Value2 = Entry2.RawWeight
-		  End Select
-		  
-		  If Value1 = Value2 Then
-		    Result = 0
-		  ElseIf Value1 > Value2 Then
-		    Result = 1
-		  Else
-		    Result = -1
-		  End If
+		  Result = Entry1.Label.Compare(Entry2.Label, ComparisonOptions.CaseInsensitive)
 		  Return True
 		End Function
 	#tag EndEvent
@@ -798,6 +733,31 @@ End
 		Sub PerformEdit()
 		  Self.EditSelectedEntries()
 		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub CellBackgroundPaint(G As Graphics, Row As Integer, Column As Integer, BackgroundColor As Color, TextColor As Color, IsHighlighted As Boolean)
+		  #Pragma Unused BackgroundColor
+		  #Pragma Unused IsHighlighted
+		  
+		  If Column <> 0 Or Row >= Me.RowCount Then
+		    Return
+		  End If
+		  
+		  Self.DrawEntryCell(Me.RowTagAt(Row), G, Me.ColumnAt(Column).WidthActual, TextColor)
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Function CellTextPaint(G As Graphics, Row As Integer, Column As Integer, Line As String, ByRef TextColor As Color, HorizontalPosition As Integer, VerticalPosition As Integer, IsHighlighted As Boolean) As Boolean
+		  #Pragma Unused G
+		  #Pragma Unused Row
+		  #Pragma Unused Line
+		  #Pragma Unused TextColor
+		  #Pragma Unused HorizontalPosition
+		  #Pragma Unused VerticalPosition
+		  #Pragma Unused IsHighlighted
+		  
+		  Return True
+		End Function
 	#tag EndEvent
 #tag EndEvents
 #tag Events Settings
