@@ -44,10 +44,10 @@ if (is_array($cached)) {
 $cmd = BeaconCommon::FrameworkPath() . '/dart-sass/sass --style=compressed ' . escapeshellarg($path) . ' 2>&1';
 $content = trim(shell_exec($cmd));
 
-$cached = array(
+$cached = [
 	'timestamp' => $timestamp,
 	'content' => $content
-);
+];
 
 BeaconCache::Set($path, $cached);
 echo $cached['content'];
