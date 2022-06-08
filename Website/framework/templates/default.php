@@ -11,7 +11,7 @@ $description = BeaconTemplate::PageDescription();
 <html lang="en"<?php if (BeaconTemplate::BodyClass() != '') { echo ' class="' . BeaconTemplate::BodyClass() . '"'; } ?>>
 	<head>
 		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<?php if (!empty($description)) { ?><meta name="description" content="<?php echo htmlentities($description); ?>">
 		<?php } ?><link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png">
@@ -21,12 +21,15 @@ $description = BeaconTemplate::PageDescription();
 		<link rel="shortcut icon" href="/assets/favicon/favicon.ico">
 		<link rel="alternate" type="application/json" title="Beacon Developer Blog" href="/blog/json.php">
 		<link rel="alternate" type="application/rss+xml" title="Beacon Developer Blog" href="/blog/rss.php">
+		<link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
 		<meta name="apple-mobile-web-app-title" content="Beacon">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 		<meta name="application-name" content="Beacon">
 		<meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
 		<meta name="theme-color" content="#9c0fb0">
-		<link href="<?php echo BeaconCommon::AssetURI('default.scss'); ?>" rel="stylesheet" type="text/css">
-		<link href="<?php echo BeaconCommon::AssetURI('colors.scss'); ?>" rel="stylesheet" type="text/css">
+		<link href="<?php echo BeaconCommon::AssetURI('default.css'); ?>" rel="stylesheet" type="text/css">
+		<link href="<?php echo BeaconCommon::AssetURI('colors.css'); ?>" rel="stylesheet" type="text/css">
 		<script src="<?php echo BeaconCommon::AssetURI('common.js'); ?>"></script>
 		<script src="<?php echo BeaconCommon::AssetURI('default.js'); ?>"></script>
 		<title><?php echo htmlentities(BeaconTemplate::Title()); ?></title>
@@ -62,6 +65,12 @@ $description = BeaconTemplate::PageDescription();
 				<p><a class="external_logo" href="https://github.com/thommcgrath/Beacon" title="GitHub"><img height="24" class="white-on-dark" src="<?php echo BeaconCommon::AssetURI('github-color.svg'); ?>" alt="Beacon on GitHub"></a><a class="external_logo" href="/discord" title="Discord"><img height="24" class="white-on-dark" src="<?php echo BeaconCommon::AssetURI('discord-color.svg'); ?>" alt="Beacon Discord Server"></a></p>
 				<p>Get in touch using <a href="/help/contact">our support form</a>.<span class="smaller"><br><a href="/help/about_user_privacy">Privacy Policy</a></span></p>
 			</div>
+		</div>
+		<div id="mobile_menu">
+			Hello World
+		</div>
+		<div id="mobile_nav">
+			Hello World
 		</div>
 		<div id="explore_container">
 			<div id="explore_popover">

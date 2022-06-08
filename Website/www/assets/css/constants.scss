@@ -1,0 +1,16 @@
+$header-link-opacity: 0.6;
+$header-link-border-opacity: 0.4;
+$header-link-pressed-opacity: 0.2;
+$header-blurred-opacity: 0.5;
+$header-border-opacity: 0.15;
+$button-border-radius: 0.5em;
+$form-font-size: 16px;
+
+$page_margins: 20px;
+$max_content_width: 1200px;
+
+$breakpoint_mini: 400px;
+$breakpoint_mobile: 635px;
+$breakpoint_desktop: 800px + ($page_margins * 2);
+
+$animation-timing: 0.15s;
