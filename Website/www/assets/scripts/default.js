@@ -1,9 +1,11 @@
-var explore = {
+'use strict';
+
+const explore = {
 	container: null,
 	popover: null,
 	field: null,
 	link: null,
-	init: function() {
+	init() {
 		this.container = document.getElementById('explore_container');
 		this.popover = document.getElementById('explore_popover');
 		this.field = document.getElementById('explore_search_field');
@@ -52,14 +54,14 @@ var explore = {
 			explore.dismiss();
 		});
 	},
-	toggle: function() {
+	toggle() {
 		if (this.container.style.display == 'none' || this.container.style.display == '') {
 			this.present();
 		} else {
 			this.dismiss();
 		}
 	},
-	dismiss: function() {
+	dismiss() {
 		if (this.container.style.display == 'none') {
 			return;
 		}
@@ -69,18 +71,18 @@ var explore = {
 		this.field.value = '';
 		this.displayResults();
 	},
-	present: function() {
+	present() {
 		if (this.container.style.display == 'block') {
 			return;
 		}
 		
-		var rect = this.link.getBoundingClientRect();
+		let rect = this.link.getBoundingClientRect();
 		this.popover.style.top = rect.bottom + 'px';
 		this.popover.style.left = Math.max(rect.left + ((rect.width - 320) / 2), 20) + 'px';
 		this.container.style.display = 'block';
 		this.link.className = 'expanded';
 	},
-	search: function(terms) {
+	search(terms) {
 		if (!terms) {
 			terms = '';
 		}
@@ -97,27 +99,27 @@ var explore = {
 			explore.displayResults();
 		});
 	},
-	displayResults: function(data) {
-		var results_container = document.getElementById('explore_results');
-		var menu = document.getElementById('explore_links');
+	displayResults(data) {
+		let results_container = document.getElementById('explore_results');
+		let menu = document.getElementById('explore_links');
 		if (data && data.results) {
-			var list = document.getElementById('explore_results_list');
+			let list = document.getElementById('explore_results_list');
 			
 			while (list.firstChild) {
 				list.removeChild(list.firstChild);
 			}
 			
-			var results = data.results;
-			var total = data.total;
-			var terms = data.terms;
+			let results = data.results;
+			let total = data.total;
+			let terms = data.terms;
 			if (results.length > 0) {
 				menu.style.display = 'block';
 				document.getElementById('explore_results_empty').style.display = 'none';
 				
-				for (var i = 0; i < results.length; i++) {
-					var link = document.createElement('a');
+				for (let i = 0; i < results.length; i++) {
+					let link = document.createElement('a');
 					link.href = results[i].url;
-					var tag = document.createElement('span');
+					let tag = document.createElement('span');
 					tag.className = 'result_type';
 					tag.appendChild(document.createTextNode(results[i].type));
 					link.appendChild(tag);
@@ -131,7 +133,7 @@ var explore = {
 						link.appendChild(preview);
 					}
 					
-					var node = document.createElement('li');
+					let node = document.createElement('li');
 					if ((i % 2) == 0) {
 						node.className = 'result even';
 					} else {
@@ -162,6 +164,56 @@ var explore = {
 	}
 };
 
+const mobileMenu = {
+	button: null,
+	menu: null,
+	animating: false,
+	init() {
+		this.button = document.querySelector('#nav_more a');
+		this.menu = document.getElementById('mobile_menu');
+		
+		this.button.addEventListener('click', function(ev) {
+			ev.stopPropagation();
+			ev.preventDefault();
+			ev.stopImmediatePropagation();
+			this.toggleMenu();
+			return false;
+		}.bind(this));
+	},
+	showMenu() {
+		this.animating = true;
+		this.menu.classList.add('visible');
+		this.button.classList.add('on');
+		setTimeout(function() {
+			this.menu.classList.add('active');
+		}.bind(this), 1);
+		setTimeout(function() {
+			this.animating = false;
+		}.bind(this), 150);
+	},
+	hideMenu() {
+		this.animating = true;
+		this.menu.classList.remove('active');
+		setTimeout(function() {
+			this.menu.classList.remove('visible');
+			this.button.classList.remove('on');
+			this.animating = false;
+		}.bind(this), 150);
+	},
+	toggleMenu() {
+		if (this.animating) {
+			return;
+		}
+		
+		if (this.menu.classList.contains('active')) {
+			this.hideMenu();
+		} else {
+			this.showMenu();
+		}
+	}
+};
+
 document.addEventListener('DOMContentLoaded', function() {
 	explore.init();
+	mobileMenu.init();
 });

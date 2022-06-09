@@ -183,7 +183,7 @@
 		}
 	}
 	
-	#header_wrapper {
+	#header_wrapper, #mobile_nav {
 		background-color: $background-color;
 		border-color: rgba($foreground-color, 0.1);
 	}
@@ -350,7 +350,7 @@
 	}
 	
 	@supports (-webkit-backdrop-filter: blur(30px)) {
-		#header_wrapper {
+		#header_wrapper, #mobile_nav {
 			-webkit-backdrop-filter: blur(30px);
 			background-color: rgba($background-color, 0.5);
 		}
@@ -582,6 +582,32 @@
 				border-color: $accent-color;
 			}
 		}
+	}
+	
+	#mobile_nav {
+		a:not(.on) {
+			img {
+				background-color: mix($foreground-color, $background-color, 50%);
+			}
+			
+			&:hover {
+				img {
+					background-color: $accent-color;
+				}
+			}
+		}
+		
+		a.on {
+			background-color: $accent-color;
+		
+			img {
+				background-color: $background-color;
+			}
+		}
+	}
+	
+	#mobile_menu {
+		background-color: $background-color;
 	}
 }
 

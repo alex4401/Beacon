@@ -93,7 +93,7 @@ BeaconErrors::StartWatching();
 			"https://use.typekit.net"
 		],
 		'object-src' => [
-			"'none'"
+			"'self'"
 		],
 		'base-uri' => [
 			"'self'"

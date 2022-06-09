@@ -28,8 +28,8 @@ $description = BeaconTemplate::PageDescription();
 		<meta name="application-name" content="Beacon">
 		<meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
 		<meta name="theme-color" content="#9c0fb0">
-		<link href="<?php echo BeaconCommon::AssetURI('default.css'); ?>" rel="stylesheet" type="text/css">
-		<link href="<?php echo BeaconCommon::AssetURI('colors.css'); ?>" rel="stylesheet" type="text/css">
+		<link href="<?php echo BeaconCommon::AssetURI('default.scss'); ?>" rel="stylesheet" type="text/css">
+		<link href="<?php echo BeaconCommon::AssetURI('colors.scss'); ?>" rel="stylesheet" type="text/css">
 		<script src="<?php echo BeaconCommon::AssetURI('common.js'); ?>"></script>
 		<script src="<?php echo BeaconCommon::AssetURI('default.js'); ?>"></script>
 		<title><?php echo htmlentities(BeaconTemplate::Title()); ?></title>
@@ -70,7 +70,10 @@ $description = BeaconTemplate::PageDescription();
 			Hello World
 		</div>
 		<div id="mobile_nav">
-			Hello World
+			<div id="nav_download"><a href="/download/"><img src="/assets/images/spacer.png" alt="Download"></a></div>
+			<div id="nav_help"><a href="https://help.usebeacon.app/"><img src="/assets/images/spacer.png" alt="Help"></a></div>
+			<div id="nav_buy"><a href="/omni/"><img src="/assets/images/spacer.png" alt="Buy"></a></div>
+			<div id="nav_more"><a href="#"><img src="/assets/images/spacer.png" alt="More"></a></div>
 		</div>
 		<div id="explore_container">
 			<div id="explore_popover">
